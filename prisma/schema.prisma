@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int       @id @default(autoincrement())
+  username String    @unique
+  email    String    @unique
+  password String
+  role     String    @default("siswa")
+  attempts Attempt[]
+}
+
+model Test {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique // Misalnya "SKD" atau "TPA"
+  packages  Package[]
+  attempts  Attempt[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Package {
+  id        Int        @id @default(autoincrement())
+  testName  String
+  title     String // Misalnya "Paket 1", "Paket 2", dll.
+  questions Question[]
+  Test      Test       @relation(fields: [testName], references: [name])
+  attempts  Attempt[]
+}
+
+model Question {
+  id          Int        @id @default(autoincrement())
+  content     String // Konten pertanyaan
+  type        String // Misalnya "TIU", "TWK", "TKP", atau "TPA"
+  packageId   Int // ID Paket
+  image       String? // Optional URL to an image for the question
+  explanation String? // Penjelasan atas jawaban
+  Package     Package    @relation(fields: [packageId], references: [id])
+  Choices     Choice[] // Pilihan jawaban untuk pertanyaan
+  responses   Response[]
+}
+
+model Choice {
+  id         Int      @id @default(autoincrement())
+  content    String // Konten pilihan
+  isCorrect  Boolean // Apakah pilihan ini jawaban yang benar
+  scoreValue Int // Nilai skor untuk pilihan ini
+  questionId Int // ID Pertanyaan
+  Question   Question @relation(fields: [questionId], references: [id])
+}
+
+model Attempt {
+  id          Int        @id @default(autoincrement())
+  score       Int? // Skor yang dicapai
+  testId      Int // ID Test
+  packageId   Int // ID Paket yang dipilih
+  userId      Int // ID User
+  Test        Test       @relation(fields: [testId], references: [id])
+  Package     Package    @relation(fields: [packageId], references: [id])
+  User        User       @relation(fields: [userId], references: [id])
+  responses   Response[]
+  createdAt   DateTime   @default(now())
+  completedAt DateTime?
+}
+
+model Response {
+  id         Int      @id @default(autoincrement())
+  content    String? // Respon user
+  score      Int // Skor yang didapat untuk respons ini
+  attemptId  Int // ID Attempt
+  questionId Int // ID Pertanyaan
+  Attempt    Attempt  @relation(fields: [attemptId], references: [id])
+  Question   Question @relation(fields: [questionId], references: [id])
+}
