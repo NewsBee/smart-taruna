@@ -48,7 +48,7 @@ export default function PlayerScreen({
     parseInt(params.slug[1])
   );
   // console.log(params.slug[0]);
-  //   console.log(data.data[0].content);
+    // console.log(data);
   const [activeIndex, setActiveIndex] = useState(0);
   const [response, setResponse] = useState<IResponse[]>(dummyResponses);
   const [quizEnd, setQuizEnd] = useState(false);
@@ -64,17 +64,6 @@ export default function PlayerScreen({
     handleConfirmSubmitModalOpen();
   };
 
-  // const handleSubmitAnswer = async () => {
-  //   try {
-  //     // Call your API to submit the responses
-  //     const res = await axios.post('/api/ujian/submit', { attemptId, response });
-  //     console.log('Submit response:', res.data);
-  //     handleConfirmSubmitModalClose();
-  //     // Handle post-submit actions (e.g., navigate to results page)
-  //   } catch (error) {
-  //     console.error('Error submitting quiz:', error);
-  //   }
-  // };
 
   // Fungsi dummy untuk menghitung skor
   const findScore = () => {
@@ -84,21 +73,6 @@ export default function PlayerScreen({
     setScore(dummyScore);
   };
 
-
-  // useEffect(() => {
-  //   if (data && data.quiz) {
-  //     const transformedQuiz = data.quiz.map((q:any) => ({
-  //       _id: q.id.toString(),
-  //       title: q.content,
-  //       options: q.choices.map((choice:any) => ({
-  //         value: choice.content,
-  //         label: choice.content, // Atau sesuaikan label dengan kebutuhan Anda
-  //         // Jika Anda ingin menyertakan informasi lain dari choice, tambahkan di sini
-  //       })),
-  //     }));
-  //     setResponse(transformedQuiz);
-  //   }
-  // }, [data]);
   useEffect(() => {
     if (data && data.questions) {
       // Mengubah data soal menjadi format yang dibutuhkan oleh state response

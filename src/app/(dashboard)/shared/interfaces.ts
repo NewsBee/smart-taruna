@@ -2,6 +2,8 @@ export interface IQuestionForm {
     title: string;
     correct: string;
     options: IOption[];
+    poin : number;
+    type : string;
 }
 export interface IQuestion {
     _id: string;
@@ -13,6 +15,7 @@ export interface IQuestion {
 export interface IOption {
     value: string;
     _id?: string;
+    poin : number;
 }
 
 export interface IOptionWithFrequency extends IOption {
@@ -36,14 +39,14 @@ export interface IQuizForm {
 
 export interface IQuiz extends IQuizForm {
     status: string;
-    _id: string;
-    author: string;
-    createdAt: Date;
-    updatedAt: Date;
-    __v: number;
-    id: string;
-    attemptsCount: number;
-    questionsCount: number;
+    _id?: string;
+    author?: string;
+    createdAt?: Date;
+    updatedAt?: Date;
+    __v?: number;
+    id?: string;
+    attemptsCount?: number;
+    questionsCount?: number;
 }
 
 export interface IAttempt {

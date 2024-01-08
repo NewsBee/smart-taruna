@@ -21,8 +21,8 @@ export const Option: React.FC<Props> = ({
       !userSelectedCorrectOption && selectedOption === option.value
         ? " border-indigo-600"
         : " border-gray-300"
-    }${correctAns === option.value ? " bg-green-600" : ""}${
-      userSelectedCorrectOption ? " bg-yellow-600" : ""
+    }${correctAns === option.value ? " bg-indigo-600" : ""}${
+      userSelectedCorrectOption ? " bg-blue-600" : ""
     }`;
   };
 

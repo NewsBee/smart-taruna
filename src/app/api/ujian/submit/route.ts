@@ -58,6 +58,15 @@ export const POST = async (req: NextRequest) => {
       });
     }
 
+    const checkBeforeUpdate = await prismadb.attempt.findUnique({
+      where:{
+        id:attemptNumber
+      }
+    })
+    if(checkBeforeUpdate?.completedAt){
+      return NextResponse.json({ message:"Anda telah menyelesaikan ujian ini" }, { status: 400 });
+    }
+
     // Update skor dan tandai Attempt sebagai selesai
     await prismadb.attempt.update({
       where: { id: attemptNumber },

@@ -16,7 +16,15 @@ export const AddEditQuestionValidation = Yup.object().shape({
     ),
 })
 
-export const FiltersValidation = Yup.object().shape({
-    search: Yup.string().nullable(),
-    tags: Yup.string().nullable(),
-})
+export const AddEditQuestionValidationNew = Yup.object().shape({
+    title: Yup.string().required('Title is required.'),
+    type: Yup.string().required('Type is required.'),
+    correct: Yup.string().required('Correct Option is Required.'),
+    poin: Yup.number(), // Validate poin normally without conditions
+    options: Yup.array().of(
+      Yup.object().shape({
+        value: Yup.string().required('Required.'),
+        poin: Yup.number().required('Poin is required for each option.'),
+      })
+    ),
+  });

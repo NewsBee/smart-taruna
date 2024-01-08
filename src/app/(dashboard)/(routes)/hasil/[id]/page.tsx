@@ -41,6 +41,7 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
 
     fetchAttemptData();
   }, [attemptId]);
+  console.log(attemptData)
 
   if (loading) {
     return <Loader halfScreen />;
@@ -60,6 +61,7 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
     quiz: resp.quiz,
     response: resp.content,
     correct: resp.Question.Choices.find((choice: IChoice) => choice.isCorrect)?.content,
+    explanation: resp.Question.explanation, 
     options: resp.Question.Choices.map((choice: IChoice) => ({
       value: choice.content,
       label: choice.content
@@ -69,11 +71,13 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
   return (
     <>
       {transformedResponses.length > 0 ? (
-        <ShowResponses
-          responses={transformedResponses}
-          score={attemptData.score}
-          as="AFTER_QUIZ_RESPONSE"
-        />
+        <div>
+          <ShowResponses
+            responses={transformedResponses}
+            score={attemptData.score}
+            as="AFTER_QUIZ_RESPONSE"
+          />
+        </div>
       ) : (
         <EmptyResponse resource="Responses" />
       )}

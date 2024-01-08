@@ -6,6 +6,7 @@ import { signOut, useSession } from "next-auth/react";
 import { StyledButton } from "@/components/styled-button";
 import { useRouter } from "next/navigation";
 import Box from "@mui/material/Box";
+import Image from "next/image";
 
 interface Props {}
 
@@ -19,7 +20,7 @@ export const NavBar: React.FC<Props> = () => {
     const result = await signOut({
       // Redirect to the home page or any other page after logging out
       redirect: true,
-      callbackUrl: '/'
+      callbackUrl: "/",
     });
     if (result) {
       router.push("/"); // Redirect to the URL provided by NextAuth.js or a desired path
@@ -31,11 +32,15 @@ export const NavBar: React.FC<Props> = () => {
         href={"/"}
         className="font-semibold text-gray-888 text-xs sm:text-xl flex items-center"
       >
-        <img
-          src="/images/logo.png"
-          alt="Quizco Logo"
-          className="w-10 h-10 object-fit"
-        />
+        <div className="relative w-10 h-10">
+          <Image
+            src="/images/logo.png"
+            alt="Quizco Logo"
+            layout="fill"
+            objectFit="cover" // or any other fitting method
+          />
+        </div>
+
         <p>Smart Taruna</p>
       </Link>
       <div className="ml-auto flex items-center">

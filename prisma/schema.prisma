@@ -29,12 +29,20 @@ model Test {
 }
 
 model Package {
-  id        Int        @id @default(autoincrement())
-  testName  String
-  title     String // Misalnya "Paket 1", "Paket 2", dll.
-  questions Question[]
-  Test      Test       @relation(fields: [testName], references: [name])
-  attempts  Attempt[]
+  id          Int        @id @default(autoincrement())
+  testName    String
+  title       String // Misalnya "Paket 1", "Paket 2", dll.
+  questions   Question[]
+  Test        Test       @relation(fields: [testName], references: [name])
+  attempts    Attempt[]
+  description String? // Deskripsi opsional
+  tags        Tag[] // Relasi many-to-many dengan Tag
+}
+
+model Tag {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  packages Package[] // Relasi many-to-many dengan Package
 }
 
 model Question {
@@ -55,7 +63,7 @@ model Choice {
   isCorrect  Boolean // Apakah pilihan ini jawaban yang benar
   scoreValue Int // Nilai skor untuk pilihan ini
   questionId Int // ID Pertanyaan
-  Question   Question @relation(fields: [questionId], references: [id])
+  Question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
 model Attempt {
@@ -79,5 +87,5 @@ model Response {
   attemptId  Int // ID Attempt
   questionId Int // ID Pertanyaan
   Attempt    Attempt  @relation(fields: [attemptId], references: [id])
-  Question   Question @relation(fields: [questionId], references: [id])
+  Question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }

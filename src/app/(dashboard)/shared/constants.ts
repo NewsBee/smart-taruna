@@ -12,18 +12,18 @@ export const globalColors = {
 type TactionSuccess =
     | 'Updated'
     | 'Deleted'
-    | 'Created';
+    | 'Membuat';
 
 type TactionLoading =
     | 'Updating'
     | 'Deleting'
     | 'Creating';
 
-type TResource = 'Question' | 'Quiz'
+type TResource = 'Question' | 'Paket'
 
 export const successMessages = {
     actionSuccess: (action: TactionSuccess, resource?: TResource) =>
-        `Successfully ${action} ${resource || 'resource'}`,
+        `Berhasil ${action} ${resource || 'resource'}`,
 }
 
 export const loadingMessages = {

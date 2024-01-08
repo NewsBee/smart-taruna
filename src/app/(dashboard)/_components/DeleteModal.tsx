@@ -18,8 +18,8 @@ export const DeleteModal = ({
   deleteLoading,
   onDelete,
   resource,
-  confirmMessage = "Are you sure?",
-  informMessage = `You want to delete this ${resource || "resource"}.`,
+  confirmMessage = "Apakah anda yakin??",
+  informMessage = `Anda ingin menghapus ${resource || "resource"} ini.`,
   modalTitle = `Delete ${resource || "Resource"}`,
 }: IDeleteModal) => (
   <Modal

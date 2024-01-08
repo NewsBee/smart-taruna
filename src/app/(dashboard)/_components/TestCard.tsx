@@ -20,7 +20,6 @@ export const TestCard: React.FC<Props> = (props) => {
     id,
     title,
     description = "No description available.", // Default value if not provided
-    tags = ["skd","tpa"], // Default empty array if not provided
     onSelect,
     status,
     score,
@@ -30,6 +29,12 @@ export const TestCard: React.FC<Props> = (props) => {
   } = props;
   // const isDashboardPage = useMatch("/dashboard");
   // const navigate = useNavigate();
+  let tags = ["SKD", "TPA"]; // Default tags
+  if (title.toLowerCase() === "skd") {
+    tags = ["TIU", "TWK", "TKP"];
+  } else if (title.toLowerCase() === "tpa") {
+    tags = ["Test Potensi Akademik"];
+  }
 
   const [quizModalActive, setQuizModalActive] = useState(false);
   const handleQuizModalActive = () => setQuizModalActive(true);
@@ -45,7 +50,7 @@ export const TestCard: React.FC<Props> = (props) => {
             onSelect
               ? onSelect()
               : redirect
-              ? router.push(`/ujian/${title}`)
+              ? router.push(`${redirect}`)
               : handleQuizModalActive()
           // : navigate(`/quizes/${_id}`)
         }

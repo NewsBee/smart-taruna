@@ -2,15 +2,15 @@ import { useSnackbar } from "notistack";
 import { useState } from "react";
 import { AiFillDelete, AiFillEdit } from "react-icons/ai";
 import { useQueryClient } from "react-query";
-import { useNavigate, useParams } from "react-router-dom";
 import {
   errorMessages,
   loadingMessages,
   successMessages,
 } from "../shared/constants";
 import { IQuestion } from "../shared/interfaces";
-import { useDeleteQuestion } from "../shared/queries";
 import { DeleteModal } from "./DeleteModal";
+import { useRouter } from "next/navigation";
+import { useDeleteQuestion } from "../shared/queries";
 
 interface SidebarProps {
   index: number;
@@ -20,6 +20,7 @@ interface SidebarProps {
   expandQuestion: string;
   setExpandQuestion: React.Dispatch<React.SetStateAction<string>>;
   setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
+  id?: number;
 }
 
 export const SidebarQuestion: React.FC<SidebarProps> = ({
@@ -30,30 +31,36 @@ export const SidebarQuestion: React.FC<SidebarProps> = ({
   setExpandQuestion,
   expandQuestion,
   setExpanded,
+  id,
 }) => {
-  const { id } = useParams() as { id: string };
-  const { mutate, reset, isLoading } = useDeleteQuestion(id, question._id);
+  if (typeof id === 'undefined') {
+    throw new Error("id is undefined");
+  }
+
+  const { mutate, reset, isLoading } = useDeleteQuestion(id)
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  const router = useRouter()
   const { enqueueSnackbar } = useSnackbar();
 
   const [deleteModalActive, setDeleteModalActive] = useState(false);
   const handleDeleteModalOpen = () => setDeleteModalActive(true);
   const handleDeleteModalClose = () => setDeleteModalActive(false);
+  // console.log(id)
 
-  const onDeleteQuestion = async () => {
+  
+  const onDeleteQuestion = () => {
+    if (typeof id === 'undefined') {
+      console.error("id is undefined, cannot delete question");
+      return;
+    }
     enqueueSnackbar(loadingMessages.actionLoading("Deleting", "Question"), {
       variant: "info",
     });
     mutate(
-      {},
+      { id: question._id },
       {
         onError: () => {
           enqueueSnackbar(errorMessages.default, { variant: "error" });
-        },
-        onSettled: () => {
-          reset();
-          handleDeleteModalClose();
         },
         onSuccess: () => {
           queryClient.invalidateQueries(["Quiz Questions", id]);
@@ -61,10 +68,36 @@ export const SidebarQuestion: React.FC<SidebarProps> = ({
             successMessages.actionSuccess("Deleted", "Question"),
             { variant: "success" }
           );
+          handleDeleteModalClose();
         },
       }
     );
   };
+
+  // const onDeleteQuestion = async () => {
+  //   enqueueSnackbar(loadingMessages.actionLoading("Deleting", "Question"), {
+  //     variant: "info",
+  //   });
+  //   mutate(
+  //     { 'id': parseInt(question._id) },
+  //     {
+  //       onError: () => {
+  //         enqueueSnackbar(errorMessages.default, { variant: "error" });
+  //       },
+  //       onSettled: () => {
+  //         reset();
+  //         handleDeleteModalClose();
+  //       },
+  //       onSuccess: () => {
+  //         // queryClient.invalidateQueries(["Quiz Questions", question._id]);
+  //         enqueueSnackbar(
+  //           successMessages.actionSuccess("Deleted", "Question"),
+  //           { variant: "success" }
+  //         );
+  //       },
+  //     }
+  //   );
+  // };
 
   return (
     <div
@@ -115,7 +148,7 @@ export const SidebarQuestion: React.FC<SidebarProps> = ({
             />
             <div
               onClick={() =>
-                navigate(`/quizes/${id}/questions/${question._id}`)
+                router.push(`/dashboard/SKD/${id}/update/${question._id}`)
               }
               className="p-2 bg-indigo-600 rounded-full mr-4 cursor-pointer"
             >

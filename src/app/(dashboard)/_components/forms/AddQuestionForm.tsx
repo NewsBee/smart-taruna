@@ -2,39 +2,56 @@ import axios from "axios";
 import { Formik } from "formik";
 import { useSnackbar } from "notistack";
 import { useQueryClient } from "react-query";
-import { useParams } from "react-router-dom";
 import {
   errorMessages,
   loadingMessages,
   successMessages,
 } from "../../shared/constants";
 import { IQuestionForm } from "../../shared/interfaces";
-import { useCreateQuestion } from "../../shared/queries";
-import { AddEditQuestionValidation } from "../../shared/validationSchema";
+import { AddEditQuestionValidation, AddEditQuestionValidationNew } from "../../shared/validationSchema";
 import { AddEditQuestionFormFields } from "./AddEditQuestionFormFields";
+import { useCreateQuestion } from "../../shared/queries";
 
-interface Props {}
+interface Props {
+  quizId?: number | undefined;
+}
 
-export const AddQuestionForm: React.FC<Props> = () => {
-  const { id: quizId } = useParams() as { id: string };
+export const AddQuestionForm: React.FC<Props> = ({
+  quizId
+}) => {
+  const { enqueueSnackbar } = useSnackbar();
+  if (quizId === undefined) {
+    enqueueSnackbar(errorMessages.default, { variant: "error" });
+  }
+
   const {
     mutate: createQuestionMutate,
     reset: createQuestionReset,
     isLoading,
+
   } = useCreateQuestion(quizId);
+  
+  
 
   const queryClient = useQueryClient();
 
-  const { enqueueSnackbar } = useSnackbar();
 
   return (
     <Formik<IQuestionForm>
       initialValues={{
         title: "",
         correct: "",
-        options: [{ value: "" }, { value: "" }, { value: "" }, { value: "" }],
+        options: [
+          { value: "", poin: 0 },
+          { value: "", poin: 0 },
+          { value: "", poin: 0 },
+          { value: "", poin: 0 },
+          { value: "", poin: 0 }
+        ],
+        poin:5,
+        type: "",
       }}
-      validationSchema={AddEditQuestionValidation}
+      validationSchema={AddEditQuestionValidationNew}
       onSubmit={async (values, { setSubmitting, setFieldError, resetForm }) => {
         try {
           setSubmitting(true);
@@ -94,12 +111,12 @@ export const AddQuestionForm: React.FC<Props> = () => {
               onSuccess: () => {
                 queryClient.invalidateQueries(["Quiz Questions", quizId]);
                 enqueueSnackbar(
-                  successMessages.actionSuccess("Created", "Question"),
+                  successMessages.actionSuccess("Membuat", "Question"),
                   { variant: "success" }
                 );
                 resetForm();
               },
-              onError: (err) => {
+              onError: (err:any) => {
                 if (axios.isAxiosError(err)) {
                   enqueueSnackbar(err.response?.data.message, {
                     variant: "error",

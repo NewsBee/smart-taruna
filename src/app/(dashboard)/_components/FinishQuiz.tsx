@@ -6,6 +6,7 @@ interface Props {
   score: number;
   as: "AFTER_QUIZ_RESPONSE" | "AUTHOR_CHECK_RESPONSE" | "USER_CHECK_RESPONSE";
   quizDeleted?: boolean;
+  ref?: string;
 }
 // {AUTHOR_CHECK_RESPONSE ? "his" : "your"}
 
@@ -14,6 +15,7 @@ export const ShowResponses: React.FC<Props> = ({
   score,
   as,
   quizDeleted,
+  ref,
 }) => {
   const AFTER_QUIZ_RESPONSE = as === "AFTER_QUIZ_RESPONSE";
   const AUTHOR_CHECK_RESPONSE = as === "AUTHOR_CHECK_RESPONSE";
@@ -28,13 +30,9 @@ export const ShowResponses: React.FC<Props> = ({
           </h1>
         )}
         {quizDeleted && (
-          <p className="text-xl mb-2 text-rose-600">
-            Quiz ini sudah dihapus.
-          </p>
+          <p className="text-xl mb-2 text-rose-600">Quiz ini sudah dihapus.</p>
         )}
-        <p className="text-xl">
-          Nilai anda  adalah: {score}
-        </p>
+        <p className="text-xl">Nilai anda adalah: {score}</p>
 
         <div className="mt-4 mx-5 /12 md:mx-0 md:w-8/12 ">
           <p className="mb-2 text-xl font-bold">Perhatian!</p>
@@ -61,9 +59,7 @@ export const ShowResponses: React.FC<Props> = ({
                   />
                 </div>
                 <div>
-                  <p>
-                    Anda memilih jawaban benar
-                  </p>
+                  <p>Anda memilih jawaban benar</p>
 
                   <Option
                     selectedOption={"Opsi 3"}
@@ -80,7 +76,10 @@ export const ShowResponses: React.FC<Props> = ({
               <p className="mb-2 text-xl font-bold">Jawaban</p>
               {responses.map((resp: any, i: number) => (
                 <div className="mb-20 shadow-sm" key={i}>
-                  <p>{resp.title}</p>
+                  <p>
+                    {" "}
+                    <span className="text-lg">{i + 1}.</span> {resp.title}
+                  </p>
                   <div className="flex flex-col items-start">
                     {resp.options.map((option: IOption, i: number) => (
                       <Option
@@ -91,6 +90,10 @@ export const ShowResponses: React.FC<Props> = ({
                         disabled
                       />
                     ))}
+                  </div>
+                  <div className="bg-emerald-500 p-4 mt-2 rounded-md">
+                    <h2 className="text-white font-bold">Penjelasan</h2>
+                    <p className="text-white">{resp.explanation}</p>
                   </div>
                 </div>
               ))}

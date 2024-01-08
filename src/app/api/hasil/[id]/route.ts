@@ -40,7 +40,6 @@ export const GET = async (req: NextRequest, context: { params: { id: any } }) =>
       },
     });
     if (attempt) {
-      // console.log("Halooo")
       return NextResponse.json({attempt})
     } else {
       return NextResponse.json({message:"Attempt not found"}, {status:404})

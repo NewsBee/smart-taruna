@@ -1,12 +1,13 @@
 "use client";
 
-import { Button, IconButton } from "@mui/material";
+import { Button, IconButton, CircularProgress } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { RiFilterFill } from "react-icons/ri";
 import { QuizCard } from "../../_components/QuizCard";
 import { useSession } from "next-auth/react";
-import { getAccessToken } from '@auth0/nextjs-auth0';
+import { getAccessToken } from "@auth0/nextjs-auth0";
 import { TestCard } from "../../_components/TestCard";
+import { useRouter } from "next/navigation";
 
 const globalColors = {
   brand: "#4f46e5",
@@ -26,7 +27,7 @@ export default function TestPage() {
   const [tests, setTests] = useState<Test[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+  const router = useRouter();
 
   useEffect(() => {
     setLoading(true);
@@ -39,7 +40,7 @@ export default function TestPage() {
         return response.json();
       })
       .then((data) => {
-        setTests(data.tests); // Set state dengan array tests
+        setTests(data.tests); // Set state with the array of tests
         setLoading(false);
       })
       .catch((error) => {
@@ -62,7 +63,13 @@ export default function TestPage() {
           </Button> */}
 
           <div className="ml-4">
-            <Button variant="outlined" color="primary">
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={() => {
+                router.push("/history");
+              }}
+            >
               History
             </Button>
           </div>
@@ -77,11 +84,25 @@ export default function TestPage() {
         </h2>
       </div>
       <div className="flex justify-center flex-wrap gap-4 mt-10 pb-8">
-        {tests.map((test) => (
-          <div className="w-full sm:w-1/2 md:w-1/3 lg:w-full p-4" key={test?.id}>
-            <TestCard className="w-full" redirect={"/ujian/"+test.name} title={test.name} status="aktif" />
-          </div>
-        ))}
+        {loading ? (
+          <CircularProgress />
+        ) : (
+          <>
+            {tests.map((test) => (
+              <div
+                className="w-full sm:w-1/2 md:w-1/3 lg:w-full p-4"
+                key={test?.id}
+              >
+                <TestCard
+                  className="w-full"
+                  redirect={"/ujian/" + test.name}
+                  title={test.name}
+                  status="aktif"
+                />
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );

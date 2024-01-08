@@ -3,9 +3,11 @@ import { useSession } from "next-auth/react";
 import {
   MutationOptions,
   QueryKey,
+  UseMutationOptions,
   UseQueryOptions,
   useMutation,
   useQuery,
+  useQueryClient,
 } from "react-query";
 import { getToken } from "next-auth/jwt";
 
@@ -90,10 +92,30 @@ const DeleteMutationFactory = (
 };
 
 // Contoh fungsi untuk mengambil data soal berdasarkan id test
+// export const useQuizQuestions = (testId: any) => {
+//   return useQuery(["quizQuestions", testId], async () => {
+//     try {
+//       const { data } = await axios.get(`/api/test/${testId}/questions`);
+//       return data;
+//     } catch (error) {
+//       // console.log(error)
+//       throw new Error('Gagal mengambil data');
+//     }
+//     // const { data } = await axios.get(`/api/test/${testId}/questions`);
+//     // return data;
+//   });
+// };
+
 export const useQuizQuestions = (testId: any) => {
   return useQuery(["quizQuestions", testId], async () => {
-    const { data } = await axios.get(`/api/test/${testId}/questions`);
-    return data;
+    try {
+      const { data } = await axios.get(`/api/test/${testId}/questions`);
+      // console.log(data); // Tambahkan ini
+      return data;
+    } catch (error) {
+      console.error(error);
+      throw new Error('Gagal mengambil data');
+    }
   });
 };
 
@@ -108,10 +130,113 @@ export const useMyAttemptById = (id:any, options = {}) => {
   }, options);
 };
 
-export const usePackagesByTestName = (testName:any, options = {}) => {
+export const usePackagesByTestName = (testName:any,refreshData:any, options = {}) => {
   return QueryFactory(
-    ["Packages", testName],
+    ["Packages", testName, refreshData],
     `/api/paket/${testName}`,
     options
+  );
+};
+
+export const usePackageStats  = (testName:any, options = {}) => {
+  return QueryFactory(
+    ["Packages", testName],
+    `/api/paket/info/${testName}`,
+    options
+  );
+};
+
+export const useTestStats = (testName:any) => {
+  return useQuery(['testStats', testName], async () => {
+    const { data } = await axios.get(`/api/paket/info/${testName}`);
+    return data;
+  });
+};
+
+// export const useUserAttempts = () => {
+//   return useQuery(['userAttempts', userId], async () => {
+//     const { data } = await axios.get(`/api/hasil/byuser`);
+//     return data;
+//   });
+// };
+
+export const useCreatePackage = () => {
+  return useMutation(
+    async (data) => {
+      return axios.post('/api/paket/create', data);
+    }
+  );
+};
+
+export const useCreatePaket = (options?: MutationOptions) => MutationFactory('Create Package', '/api/paket/create', 'POST', options)
+// export const useDeleteQuiz = (options?: MutationOptions) => DeleteMutationFactory('Delete Package', '/api/paket/delete', options)
+export const useDeleteQuiz = (options?: UseMutationOptions<any, AxiosError, { id: number }>) => {
+  const queryClient = useQueryClient();
+
+  return useMutation<any, AxiosError, { id: number }>(
+    ({ id }) => axios.delete(`/api/paket/delete`, { data: { id } }),
+    {
+      ...options,
+      onSuccess: () => {
+        // Invalidate and refetch data
+        queryClient.invalidateQueries('Quizes');
+      },
+      onError: (error: AxiosError) => {
+        // Optionally, handle the error here
+        console.error('Error deleting quiz:', error.response?.data?.message || error.message);
+      }
+    }
+  );
+};
+
+// export const useCreateQuestion = () => {
+//   const queryClient = useQueryClient();
+
+//   return useMutation(
+//     (newQuestionData) => axios.post('/api/pertanyaan/create', newQuestionData),
+//     {
+//       onSuccess: () => {
+//         // Invalidate dan refetch data pertanyaan
+//         queryClient.invalidateQueries('Quiz Questions');
+//       },
+//     }
+//   );
+// };
+// export const useCreateQuestion = (id: number, options?: MutationOptions) => MutationFactory('Create Question', `/api/test/${id}/questions`, 'POST', options)
+// export const useDeleteQuestion = (quizId: number, options?: MutationOptions) => DeleteMutationFactory('Delete Question', `/api/test/${quizId}/questions`, options)
+
+export const useDeleteQuestion = (quizId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    async (deleteData: { id: number }) => {
+      const response = await axios.delete(`/api/test/${quizId}/questions`, {
+        data: deleteData
+      });
+      return response.data;
+    },
+    {
+      onSuccess: () => {
+        // Invalidate dan refetch
+        queryClient.invalidateQueries(["quizQuestions", quizId]);
+      },
+    }
+  );
+};
+
+export const useCreateQuestion = (quizId: number) => {
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    async (newQuestionData: { content: string; type: string; options: any[]; explanation?: string }) => {
+      const response = await axios.post(`/api/test/${quizId}/questions`, newQuestionData);
+      return response.data;
+    },
+    {
+      onSuccess: () => {
+        // Invalidate and refetch
+        queryClient.invalidateQueries(["quizQuestions", quizId]);
+      },
+    }
   );
 };

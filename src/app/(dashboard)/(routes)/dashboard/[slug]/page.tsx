@@ -6,13 +6,14 @@ import { RiFilterFill } from "react-icons/ri";
 import { useSession } from "next-auth/react";
 import { getAccessToken } from "@auth0/nextjs-auth0";
 import { TestCard } from "../../../_components/TestCard";
-import { usePackagesByTestName } from "@/app/(dashboard)/shared/queries";
+import { useDeleteQuiz, usePackagesByTestName } from "@/app/(dashboard)/shared/queries";
 import { DeleteModal } from "@/app/(dashboard)/_components/DeleteModal";
 import { EmptyResponse } from "@/app/(dashboard)/_components/EmptyResponse";
 import { QuizCard } from "@/app/(dashboard)/_components/QuizCard";
 import { Loader } from "@/app/(dashboard)/_components/Svgs";
 import { IQuiz } from "@/app/(dashboard)/shared/interfaces";
 import { useRouter } from "next/navigation";
+import { enqueueSnackbar } from "notistack";
 
 const globalColors = {
   brand: "#4f46e5",
@@ -65,22 +66,55 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
   const [tests, setTests] = useState<Test[]>([]);
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshData, setRefreshData] = useState(false);
   const { data, isLoading, isError, error } = usePackagesByTestName(
-    params.slug
+    params.slug,refreshData
   );
-  const [selectedQuiz, setSelectedQuiz] = useState<IQuiz | null>();
+  const [selectedQuiz, setSelectedQuiz] = useState<Package | null>();
   const [packageDetails, setPackageDetails] = useState<{ [key: number]: PackageDetail }>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const [deleteModalActive, setDeleteModalActive] = useState(false);
+  const handleDeleteModalOpen = () => setDeleteModalActive(true);
+  const handleDeleteModalClose = () => setDeleteModalActive(false);
 
 
-  // useEffect(() => {
-  //   if (data) {
-  //     setPackages(data.packages);
+
+  const { mutateAsync: deleteQuiz, isLoading: IsDeleteCampaignLoading, reset } = useDeleteQuiz();
+
+  // const handleDelete = async (id: number) => {
+  //   try {
+  //     await deleteQuiz({ id: selectedQuiz?.id || 0 });
+  //     enqueueSnackbar('Paket berhasil dihapus', { variant: 'success' });
+  //     handleDeleteModalClose();
+  //     setRefreshData(prev => !prev);
+  //   } catch (error) {
+  //     // console.log(error)
+  //     enqueueSnackbar('Gagal menghapus paket', { variant: 'error' });
   //   }
-  // }, [data, params.slug]);
+  // };
+  const handleDelete = async (id: number) => {
+    if (id !== undefined) {
+      try {
+        await deleteQuiz({ id });
+        enqueueSnackbar('Paket berhasil dihapus', { variant: 'success' });
+        setRefreshData(prev => !prev); // Toggle to trigger re-fetch
+      } catch (error) {
+        enqueueSnackbar('Gagal menghapus paket', { variant: 'error' });
+      } finally {
+        handleDeleteModalClose();
+      }
+    } else {
+      enqueueSnackbar('ID Paket tidak valid', { variant: 'error' });
+    }
+  };
+
 
   useEffect(() => {
     if (data) {
       setPackages(data.packages);
+      setTotalPages(data.count ? Math.ceil(data.count / 6) : 1);
     }
     async function loadPackageDetails() {
       if (data && data.packages) {
@@ -101,9 +135,7 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
     }
 
     loadPackageDetails();
-    // if (data.length > 0) {
-    // }
-  }, [data, params.slug]);
+  }, [data, params.slug, refreshData]);
 
   return (
     <div className="pb-10 px-10">
@@ -119,47 +151,83 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
       )}
       <div className="flex justify-between mb-4 flex-wrap">
         <h4 className="text-xl font-medium text-left mb-3 items-center">
-          Tryout saya
+          Paket saya
         </h4>
         <div className="flex items-center w-full sm:w-auto">
-          {/* <Button
-          onClick={() => router.push(`/quizes/add`)}
-          variant="contained"
+          <Button
+          onClick={() => router.push(`/dashboard/${params.slug}/create`)}
+          variant="outlined"
           color="primary"
         >
-          + Create Quiz
-        </Button> */}
+          + Buat Paket
+        </Button>
 
           <div className="ml-4">
             <Button
-              onClick={() => router.push(`/history`)}
+              onClick={() => router.push(`/dashboard`)}
               variant="outlined"
               color="primary"
             >
-              History
+              Kembali
             </Button>
           </div>
         </div>
       </div>
       {data && (
         <div className="bg-gray-200 rounded px-8 py-6 transition-all flex flex-col lg:flex-row items-center justify-between mb-4">
-          <h2
-            style={{ maxWidth: 500 }}
-            className="text-regular text-lg font-medium text-default whitespace-nowrap overflow-hidden text-ellipsis	break-all"
-          >
-            {`${
-              selectedQuiz
-                ? `Selected Quiz : ${selectedQuiz.title}`
-                : "Pilih Paket"
-            }`}
-          </h2>
+        <h2
+          style={{ maxWidth: 500 }}
+          className="text-regular text-lg font-medium text-default whitespace-nowrap overflow-hidden text-ellipsis	break-all"
+        >
+          {`${
+            selectedQuiz
+              ? `Peket yang dipilih : ${selectedQuiz.title}`
+              : "Pilih paket"
+          }`}
+        </h2>
+        <div className="mt-6 lg:mt-0">
+          {selectedQuiz && (
+            <div className="flex flex-wrap">
+              {/* <div className="mr-4">
+                <Button
+                  onClick={() =>
+                    router.push(`/statistics/quiz/${selectedQuiz._id}`)
+                  }
+                  className="mr-6"
+                >
+                  Statistics
+                </Button>
+              </div> */}
+              <div className="mr-4">
+                <Button className="mr-6">
+                  Update
+                </Button>
+              </div>
+              <div className="mr-4">
+                <Button onClick={handleDeleteModalOpen} variant="text">
+                  Delete
+                </Button>
+              </div>
+
+              <Button
+                variant="outlined"
+                color="info"
+                onClick={() =>
+                  router.push(`/dashboard/${params.slug}/${selectedQuiz.id}`)
+                }
+              >
+                + Add/Update Paket
+              </Button>
+            </div>
+          )}
         </div>
+      </div>
       )}
       {isLoading ? (
         <Loader halfScreen />
       ) : data ? (
         <div className="mt-10 pb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {packages.map((pkg) => {
+          {packages.map((pkg:any) => {
             // Access detail for each package
             const detail = packageDetails[pkg.id];
             return (
@@ -173,12 +241,14 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
                 status="active"
                 description="No desc available"
                 tags={['kedinasan']}
+                onSelect={() => setSelectedQuiz(pkg)}
                   questionsCount={detail?.totalQuestions}
                   score={detail?.highestScore}
                   attemptsCount={detail?.attemptCount}
                   _id={pkg.id.toString()}
                   {...pkg}
                   currTest={params.slug}
+                  selected={selectedQuiz?.id === pkg.id}
                 />
               </div>
             );
@@ -186,6 +256,28 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
         </div>
       ) : (
         <EmptyResponse resource="Dashboard Quizes" />
+      )}
+      <div>
+        {totalPages > 1 &&
+          Array.from(Array(totalPages).keys()).map((loader, index) => (
+            <Button
+              color="primary"
+              variant={currentPage - 1 === index ? "contained" : "text"}
+              key={index}
+              onClick={() => setCurrentPage(index + 1)}
+            >
+              {index + 1}
+            </Button>
+          ))}
+      </div>
+      {deleteModalActive && (
+        <DeleteModal
+          deleteLoading={IsDeleteCampaignLoading}
+          deleteModalActive={deleteModalActive}
+          handleDeleteModalClose={handleDeleteModalClose}
+          onDelete={() => handleDelete(selectedQuiz?.id || 0)}
+          resource="Paket"
+        />
       )}
     </div>
   );

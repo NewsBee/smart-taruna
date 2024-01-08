@@ -3,11 +3,11 @@ import { AxiosError } from "axios";
 import { Formik } from "formik";
 import { useSnackbar } from "notistack";
 import { UseMutateAsyncFunction, useQueryClient } from "react-query";
-import { useNavigate } from "react-router-dom";
 import { errorMessages, successMessages } from "../../shared/constants";
 import { IQuizForm } from "../../shared/interfaces";
 import { AddEditQuizValidation } from "../../shared/validationSchema";
 import { AddEditQuizFormFields } from "../AddEditQuizFormFields";
+import { useRouter } from "next/navigation";
 
 interface Props {
   mutateAsync: UseMutateAsyncFunction<any, AxiosError<any, any>, any, unknown>;
@@ -18,6 +18,7 @@ interface Props {
   redirect: string;
   id?: string;
   status?: string;
+  testname ?: string;
 }
 
 export const QuizForm: React.FC<Props> = ({
@@ -29,9 +30,10 @@ export const QuizForm: React.FC<Props> = ({
   redirect,
   id,
   status,
+  testname,
 }) => {
   const { enqueueSnackbar } = useSnackbar();
-  const navigate = useNavigate();
+  const router = useRouter()
 
   const queryClient = useQueryClient();
 
@@ -46,8 +48,14 @@ export const QuizForm: React.FC<Props> = ({
       validationSchema={AddEditQuizValidation}
       onSubmit={async (values, { setSubmitting, setFieldError }) => {
         setSubmitting(true);
-        const body = { ...values };
-        if (!id) delete body.status;
+        // const body = { ...values };
+        const body = {
+          testName: testname, // Menggunakan testName dari props bertipe string
+          title: values.title,
+          description: values.description,
+          tagNames : values.tags,
+        };
+        // if (!id) delete body.status;
         try {
           if (!!!values.title.trim()) {
             setFieldError("title", "Only Spaces not allowed.");
@@ -64,12 +72,12 @@ export const QuizForm: React.FC<Props> = ({
                 queryClient.invalidateQueries("Quizes");
                 enqueueSnackbar(
                   successMessages.actionSuccess(
-                    id ? "Updated" : "Created",
-                    "Quiz"
+                    id ? "Updated" : "Membuat",
+                    "Paket"
                   )
                 );
                 id && queryClient.invalidateQueries(["Quiz", id]);
-                navigate(redirect);
+                router.push(redirect);
               },
               onError: () => {
                 enqueueSnackbar(errorMessages.default);
@@ -80,7 +88,9 @@ export const QuizForm: React.FC<Props> = ({
               },
             }
           );
-        } catch (e) {}
+        } catch (e) {
+          console.log(e)
+        }
       }}
     >
       {({ handleSubmit, isSubmitting }) => (
@@ -89,7 +99,7 @@ export const QuizForm: React.FC<Props> = ({
             <AddEditQuizFormFields id={id} />
             <div className="flex justify-end mt-4">
               <div className="mr-4">
-                <Button onClick={() => navigate(-1)}>Cancel</Button>
+                <Button onClick={() => router.push('/dashboard')}>Cancel</Button>
               </div>
 
               <Button
@@ -97,6 +107,7 @@ export const QuizForm: React.FC<Props> = ({
                 color="primary"
                 disabled={isSubmitting}
                 type="submit"
+                className="bg-blue-500"
               >
                 Submit
               </Button>

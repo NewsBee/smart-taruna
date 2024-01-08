@@ -1,9 +1,10 @@
-import { Button } from "@material-ui/core";
+import { Button, styled } from "@material-ui/core";
 import { IQuiz } from "../shared/interfaces";
 import { useRouter } from "next/navigation";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
 import axios from "axios";
+import { Box } from "@mui/material";
 
 interface Props extends IQuiz {
   onSelect?: () => void;
@@ -14,6 +15,24 @@ interface Props extends IQuiz {
   onClose: () => void;
   currTest: string;
 }
+
+const CountBadge = styled(Box)(({ theme }) => ({
+  backgroundColor: "#00ADB5",
+  backgroundImage: "linear-gradient(45deg, #00ADB5 30%, #393E46 90%)",
+  color: "white",
+  borderRadius: "50%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: theme.spacing(6), // equivalent to 48px
+  height: theme.spacing(6), // equivalent to 48px
+  fontWeight: "bold",
+  boxShadow: "0 3px 5px 2px rgba(0, 0, 0, .3)",
+  transition: "transform 0.3s ease-in-out",
+  "&:hover": {
+    transform: "scale(1.1)",
+  },
+}));
 
 export const QuizModalContents: React.FC<Props> = ({
   onClose,
@@ -35,7 +54,7 @@ export const QuizModalContents: React.FC<Props> = ({
       // Jika berhasil, navigasikan ke halaman quiz
       // console.log(response);
       router.push(`/ujian/${currTest}/${response.data.attemptId}`);
-    } catch (error:any) {
+    } catch (error: any) {
       // Jika gagal, cek apakah pengguna sedang mengerjakan paket soal lain
       if (
         error.response &&
@@ -81,28 +100,40 @@ export const QuizModalContents: React.FC<Props> = ({
           <p className="text-xl font-medium">Ujian {title}</p>
           <p className="my-6">{description}</p>
           <div className="grid items-center mb-2 grid-quiz-modal-descriptions">
-            <Typography
-              component="h2"
-              sx={{
-                position: "relative",
-                fontSize: { xs: 15, md: 20 },
-                letterSpacing: 1.5,
-                fontWeight: "bold",
-                lineHeight: 1.3,
-              }}
-            >
-              Anda telah mengikuti ujian:
-            </Typography>
-            {/* <p className="font-medium text-indigo-600">
-              Number of times People played this Quiz:{" "}
-            </p> */}
-            <span className="justify-self-start ml-4 text-white font-bold h-8 w-8 flex items-center justify-center bg-[#00ADB5] rounded-full">
-              {attemptsCount}
-            </span>
+            {!attemptsCount ? (
+              <p className="my-6 font-semibold">
+                Anda belum pernah mengerjakan paket ini
+              </p>
+            ) : (
+              <>
+                {/* <Typography
+                  component="h2"
+                  sx={{
+                    position: "relative",
+                    fontSize: { xs: 18, md: 24 },
+                    letterSpacing: 2,
+                    fontWeight: 600,
+                    lineHeight: 1.3,
+                    marginBottom: 2,
+                    color: "#303030", // Adjust the color to match your theme
+                    fontStyle: "italic",
+                  }}
+                >
+                  Anda telah mengikuti ujian:
+                </Typography>
+                <CountBadge>{attemptsCount}</CountBadge>kali */}
+                <div className="my-6 font-semibold">
+                  Anda telah mengikuti ujian ini
+                  <p className=" px-3 py-0.5 text-xs w-fit rounded-md font-medium text-white bg-emerald-500">
+                    {attemptsCount} kali
+                  </p>
+                </div>
+              </>
+            )}
           </div>
           <div className="items-center grid grid-quiz-modal-descriptions">
             {/* <p className="font-medium text-indigo-600">Number of Questions:</p> */}
-            <Typography
+            {/* <Typography
               component="h2"
               sx={{
                 position: "relative",
@@ -115,8 +146,14 @@ export const QuizModalContents: React.FC<Props> = ({
               Jumlah Soal:
             </Typography>
             <span className="ml-4 text-white font-bold h-8 w-8 flex items-center justify-center bg-[#9FF1D2] rounded-full">
-              {questionsCount}20
-            </span>
+              {questionsCount}
+            </span> */}
+            <div className="mb-4 font-semibold">
+              Jumlah Soal
+              <p className=" px-3 py-0.5 text-xs w-fit rounded-md font-medium text-white bg-yellow-400">
+                {questionsCount} soal
+              </p>
+            </div>
           </div>
 
           <div className="flex mt-2 flex-wrap">
@@ -142,7 +179,7 @@ export const QuizModalContents: React.FC<Props> = ({
               Close
             </Button>
           </div>
-          <Button onClick={startQuiz} variant="contained" color="primary">
+          <Button onClick={startQuiz} variant="contained" color="secondary">
             {isLoading ? ( // Mengganti konten button saat loading
               <svg
                 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"

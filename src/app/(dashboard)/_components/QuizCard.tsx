@@ -20,16 +20,23 @@ export const QuizCard: React.FC<Props> = (props) => {
     id,
     title,
     description = "No description available.", // Default value if not provided
-    tags = ["skd","tpa"], // Default empty array if not provided
     onSelect,
     status,
-    score=10,
+    score,
     redirect,
     selected,
-    currTest,
+    attemptsCount,
+    questionsCount,
+    currTest='',
   } = props;
   // const isDashboardPage = useMatch("/dashboard");
   // const navigate = useNavigate();
+  let tags = ["SKD","TPA"]; // Default tags
+  if (currTest.toLowerCase() === "skd") {
+    tags = ["SKD"];
+  } else if (currTest.toLowerCase() === "tpa") {
+    tags = ["TPA"];
+  }
 
   const [quizModalActive, setQuizModalActive] = useState(false);
   const handleQuizModalActive = () => setQuizModalActive(true);
@@ -109,6 +116,8 @@ export const QuizCard: React.FC<Props> = (props) => {
           status={status}
           score={score}
           currTest={currTest}
+          attemptsCount={attemptsCount}
+          questionsCount={questionsCount}
         />
       </ModalSkeleton>
     </>
