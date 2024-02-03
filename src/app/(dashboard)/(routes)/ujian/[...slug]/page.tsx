@@ -9,13 +9,16 @@ import { ErrorMessage } from "../../../_components/ErrorMessage";
 import { ShowResponses } from "../../../_components/FinishQuiz";
 import { ModalSkeleton } from "../../../_components/Modal";
 import { Player } from "../../../_components/Player";
-import { Sidebar } from "../../../_components/Sidebar";
 import { Loader } from "../../../_components/Svgs";
 import { errorMessages } from "../../../shared/constants";
 import { IQuestion, IResponse } from "../../../shared/interfaces";
 import { useQuizQuestions } from "../../../shared/queries";
 import { useParams } from "next/navigation";
 import axios from "axios";
+import { Sidebarcopy } from "@/app/(dashboard)/_components/Sidebarcopy";
+import { Sidebar } from "@/app/(dashboard)/_components/Sidebar";
+import CountDown from "@/app/(dashboard)/_components/CountDown";
+import { BottomBar } from "@/app/(dashboard)/_components/BottomBar";
 
 interface IOption {
   value: string;
@@ -48,10 +51,11 @@ export default function PlayerScreen({
     parseInt(params.slug[1])
   );
   // console.log(params.slug[0]);
-    // console.log(data);
+  // console.log(data);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [response, setResponse] = useState<IResponse[]>(dummyResponses);
+  const [response, setResponse] = useState<IResponse[]>([dummyResponses]);
   const [quizEnd, setQuizEnd] = useState(false);
+  const [isSubmitConfirmed, setIsSubmitConfirmed] = useState(false);
   const [score, setScore] = useState(0);
   const [confirmSubmitModalActive, setConfirmSubmitModalActive] =
     useState(false);
@@ -63,7 +67,6 @@ export default function PlayerScreen({
   const onSubmit = () => {
     handleConfirmSubmitModalOpen();
   };
-
 
   // Fungsi dummy untuk menghitung skor
   const findScore = () => {
@@ -90,9 +93,9 @@ export default function PlayerScreen({
     }
   }, [data, packageId]);
 
-  // useEffect(() => {
-  //   console.log('Responses:', response);
-  // }, [response]);
+  useEffect(() => {
+    console.log("Responses:", data);
+  }, [data]);
 
   // Render error jika ada
   if (error) {
@@ -119,22 +122,27 @@ export default function PlayerScreen({
       <div className="flex flex-row flex-1 overflow-y-auto">
         {!quizEnd ? (
           <>
-            <Sidebar
+            {/* <Sidebar
               responses={response}
               questions={response}
               activeIndex={activeIndex}
               setActiveIndex={setActiveIndex}
-            />
+            /> */}
             <div className="flex-1 overflow-y-auto">
               <div className="min-h-[8%] border-b border-t border-gray-300 flex px-4 py-4 justify-between">
                 <p className="mt-auto hidden sm:block">
-                  Question {activeIndex + 1}
+                  Pertanyaan {activeIndex + 1}
+                  <CountDown
+                    startAt={data.createdAt}
+                    duration={data.duration}
+                    onTimeUp={onSubmit}
+                  />
                 </p>
                 {!quizEnd && (
                   <div className="flex items-center justify-center flex-col sm:flex-row mt-auto">
                     <p className="sm:mr-4 mb-3 sm:mb-0 text-sm md:text-base">
                       {response?.filter((resp) => resp.response !== "").length}/{" "}
-                      {data?.questions.length} Completed
+                      {data?.questions.length} Diisi
                     </p>
                     <div className="bg-gray-200 rounded-full h-1 w-28 md:w-48">
                       <div
@@ -162,6 +170,12 @@ export default function PlayerScreen({
                 activeIndex={activeIndex}
                 setActiveIndex={setActiveIndex}
               />
+              {/* <BottomBar
+                responses={response}
+                questions={response}
+                activeIndex={activeIndex}
+                setActiveIndex={setActiveIndex}
+              /> */}
               <ModalSkeleton
                 open={confirmSubmitModalActive}
                 onClose={handleConfirmSubmitModalClose}
@@ -169,6 +183,7 @@ export default function PlayerScreen({
                 <ConfirmSubmitModalContent
                   handleConfirmSubmitModalClose={handleConfirmSubmitModalClose}
                   responses={response}
+                  onConfirmSubmit={() => setIsSubmitConfirmed(true)}
                 />
               </ModalSkeleton>
             </div>

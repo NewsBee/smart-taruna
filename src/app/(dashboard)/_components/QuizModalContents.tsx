@@ -13,36 +13,21 @@ interface Props extends IQuiz {
   redirect?: string;
   selected?: boolean;
   onClose: () => void;
-  currTest: string;
+  currTest?: string;
+  duration?: number;
 }
 
-const CountBadge = styled(Box)(({ theme }) => ({
-  backgroundColor: "#00ADB5",
-  backgroundImage: "linear-gradient(45deg, #00ADB5 30%, #393E46 90%)",
-  color: "white",
-  borderRadius: "50%",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: theme.spacing(6), // equivalent to 48px
-  height: theme.spacing(6), // equivalent to 48px
-  fontWeight: "bold",
-  boxShadow: "0 3px 5px 2px rgba(0, 0, 0, .3)",
-  transition: "transform 0.3s ease-in-out",
-  "&:hover": {
-    transform: "scale(1.1)",
-  },
-}));
 
 export const QuizModalContents: React.FC<Props> = ({
   onClose,
   title,
   description,
-  tags,
+  tags = [],
   attemptsCount,
   questionsCount,
   _id,
   currTest,
+  duration,
 }) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -52,8 +37,9 @@ export const QuizModalContents: React.FC<Props> = ({
     try {
       const response = await axios.post(`/api/ujian/start/${_id}`);
       // Jika berhasil, navigasikan ke halaman quiz
-      // console.log(response);
+      console.log(response);
       router.push(`/ujian/${currTest}/${response.data.attemptId}`);
+      setIsLoading(false);
     } catch (error: any) {
       // Jika gagal, cek apakah pengguna sedang mengerjakan paket soal lain
       if (
@@ -67,37 +53,33 @@ export const QuizModalContents: React.FC<Props> = ({
         // Jika tidak ada data paket soal yang sedang dikerjakan, tampilkan pesan kesalahan
         console.error("Error starting quiz: ", error);
       }
-    } finally {
-      setIsLoading(false);
-    }
+    } 
   };
 
-  const handleBeginClick = async () => {
-    setIsLoading(true);
+  // const handleBeginClick = async () => {
+  //   setIsLoading(true);
 
-    try {
-      // Ganti dengan endpoint Anda untuk memeriksa status quiz pengguna
-      const res = await fetch(`/api/check-quiz-status`);
-      const data = await res.json();
+  //   try {
+  //     // Ganti dengan endpoint Anda untuk memeriksa status quiz pengguna
+  //     const res = await fetch(`/api/check-quiz-status`);
+  //     const data = await res.json();
 
-      if (data.isTakingQuiz && data.currentPackageId !== _id) {
-        // Pengguna sedang mengerjakan quiz lain
-        router.push(`/ujian/${data.currentTestName}/${data.currentPackageId}`);
-      } else {
-        // Pengguna tidak sedang mengerjakan quiz lain, atau quiz yang sama
-        router.push(`/ujian/${currTest}/${_id}`);
-      }
-    } catch (error) {
-      console.error("Error checking quiz status:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  //     if (data.isTakingQuiz && data.currentPackageId !== _id) {
+  //       // Pengguna sedang mengerjakan quiz lain
+  //       router.push(`/ujian/${data.currentTestName}/${data.currentPackageId}`);
+  //     } else {
+  //       // Pengguna tidak sedang mengerjakan quiz lain, atau quiz yang sama
+  //       router.push(`/ujian/${currTest}/${_id}`);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error checking quiz status:", error);
+  //   } 
+  // };
   return (
     <div className="p-5 md:p-10 overflow-hidden">
       <div style={{ maxHeight: "500px" }} className="overflow-auto">
         <div>
-          <p className="text-xl font-medium">Ujian {title}</p>
+          <p className="text-xl font-medium">Ujian {title} <span className="px-3 ml-2 py-0.5 text-xs w-fit rounded-md font-medium text-white bg-gray-700"> {duration} menit </span> </p>
           <p className="my-6">{description}</p>
           <div className="grid items-center mb-2 grid-quiz-modal-descriptions">
             {!attemptsCount ? (
@@ -132,22 +114,6 @@ export const QuizModalContents: React.FC<Props> = ({
             )}
           </div>
           <div className="items-center grid grid-quiz-modal-descriptions">
-            {/* <p className="font-medium text-indigo-600">Number of Questions:</p> */}
-            {/* <Typography
-              component="h2"
-              sx={{
-                position: "relative",
-                fontSize: { xs: 15, md: 20 },
-                letterSpacing: 1.5,
-                fontWeight: "bold",
-                lineHeight: 1.3,
-              }}
-            >
-              Jumlah Soal:
-            </Typography>
-            <span className="ml-4 text-white font-bold h-8 w-8 flex items-center justify-center bg-[#9FF1D2] rounded-full">
-              {questionsCount}
-            </span> */}
             <div className="mb-4 font-semibold">
               Jumlah Soal
               <p className=" px-3 py-0.5 text-xs w-fit rounded-md font-medium text-white bg-yellow-400">

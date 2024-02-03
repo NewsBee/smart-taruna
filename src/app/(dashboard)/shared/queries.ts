@@ -11,6 +11,18 @@ import {
 } from "react-query";
 import { getToken } from "next-auth/jwt";
 
+interface UpdateQuestionData {
+  content: string;
+  type: string;
+  explanation: string;
+  Choices: {
+    id: number;
+    content: string;
+    isCorrect: boolean;
+    scoreValue: number;
+  }[];
+}
+
 const secret = process.env.NEXTAUTH_SECRET;
 
 export const PublicQueryFactory = (
@@ -123,6 +135,19 @@ export const useQuizes = (url: string, queryKey: QueryKey) => {
   return QueryFactory(queryKey, url);
 };
 
+export const useQuiz = (testId: any) => {
+  return useQuery(["quiz", testId], async () => {
+    try {
+      const { data } = await axios.get(`/api/test/${testId}/quiz`);
+      // console.log(data); // Tambahkan ini
+      return data;
+    } catch (error) {
+      console.error(error);
+      throw new Error('Gagal mengambil data');
+    }
+  });
+};
+
 export const useMyAttemptById = (id:any, options = {}) => {
   return useQuery(["Attempts", id], async () => {
     const { data } = await axios.get(`/api/hasil/${id}`);
@@ -183,7 +208,7 @@ export const useDeleteQuiz = (options?: UseMutationOptions<any, AxiosError, { id
       },
       onError: (error: AxiosError) => {
         // Optionally, handle the error here
-        console.error('Error deleting quiz:', error.response?.data?.message || error.message);
+        // console.error('Error deleting quiz:', error.response?.data?.message || error.message);
       }
     }
   );
@@ -228,15 +253,37 @@ export const useCreateQuestion = (quizId: number) => {
   const queryClient = useQueryClient();
 
   return useMutation(
-    async (newQuestionData: { content: string; type: string; options: any[]; explanation?: string }) => {
+    async (newQuestionData: any) => {
       const response = await axios.post(`/api/test/${quizId}/questions`, newQuestionData);
       return response.data;
     },
     {
       onSuccess: () => {
         // Invalidate and refetch
-        queryClient.invalidateQueries(["quizQuestions", quizId]);
+        queryClient.invalidateQueries(["quizQuestions", quizId, 'quiz']);
+      },  
+      onError: (error) => {
+        // Handle error
+        console.error('Error updating question:', error);
+      }
+    }
+  );
+};
+
+export const useUpdateQuestion = (quizId:any) => {
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    (updatedData:any) => axios.put(`/api/test/${quizId}/quiz`, updatedData),
+    {
+      onSuccess: () => {
+        // Invalidate and refetch
+        queryClient.invalidateQueries(['quiz']);
       },
+      onError: (error) => {
+        // Handle error
+        console.error('Error updating question:', error);
+      }
     }
   );
 };

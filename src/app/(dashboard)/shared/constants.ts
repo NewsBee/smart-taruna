@@ -32,7 +32,7 @@ export const loadingMessages = {
 }
 
 export const emptyResponseMessages = {
-    attempt: ['You have not attempted any quizes yet.'],
+    attempt: ['Anda belum pernah mengerjakan soal ini.'],
     responses: ["You can only see responses to first attempt at any quiz."],
     dashboardQuizes: ['You have not created any quizes yet.'],
     quizQuestions: ['This quiz have no questions.'],
@@ -41,8 +41,8 @@ export const emptyResponseMessages = {
 }
 
 export const uiMessages = {
-    allowedMarkingACorrectOption: ['* Marking a correct option is only allowed after you have already written all options.'],
-    warnQuestionCreate: ['Note: Please be careful before creating a question because if you have to later edit it you will lose all responses to the question.', ' This is done so that we can provide you better and correct statistics.']
+    allowedMarkingACorrectOption: ['* Menandai opsi yang benar hanya diizinkan setelah Anda telah menuliskan semua opsi.'],
+    warnQuestionCreate: ['Catatan: Harap berhati-hati sebelum membuat/mengedit pertanyaan karena jika Anda harus mengeditnya nanti, Anda akan kehilangan semua respons terhadap pertanyaan tersebut. Hal ini dilakukan agar kami dapat memberikan Anda statistik yang lebih baik dan akurat.']
 }
 
 export const modalStyle = {

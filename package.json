@@ -18,6 +18,7 @@
     "@mui/icons-material": "^5.6.2",
     "@mui/material": "^5.6.2",
     "@mui/styled-engine-sc": "^6.0.0-alpha.9",
+    "@mui/styles": "^5.15.7",
     "@next-auth/prisma-adapter": "^1.0.7",
     "@prisma/client": "^5.7.1",
     "ag-grid-community": "^31.0.1",

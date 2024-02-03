@@ -98,6 +98,8 @@ export default function TestPage() {
                   redirect={"/ujian/" + test.name}
                   title={test.name}
                   status="aktif"
+                  description="No description available"
+                  tags={['tkp','skd']}
                 />
               </div>
             ))}

@@ -17,6 +17,20 @@ model User {
   password String
   role     String    @default("siswa")
   attempts Attempt[]
+   gender        String? // Jenis Kelamin
+  phoneNumber   String? // Nomor Telepon
+  education     String? // Pendidikan Terakhir
+  major         String? // Jurusan
+  institution   String? // Institusi / Kampus yang dituju
+  socialLinks   SocialLink[] // Relasi satu-ke-banyak dengan SocialLink
+}
+
+model SocialLink {
+  id        Int     @id @default(autoincrement())
+  userId    Int     // Foreign key ke tabel User
+  platform  String  // Platform media sosial (contoh: 'Twitter', 'Facebook', dll.)
+  link      String  // URL ke profil sosial media pengguna
+  User      User    @relation(fields: [userId], references: [id])
 }
 
 model Test {
@@ -37,6 +51,9 @@ model Package {
   attempts    Attempt[]
   description String? // Deskripsi opsional
   tags        Tag[] // Relasi many-to-many dengan Tag
+  duration    Int?       // Duration in minutes
+  isHidden     Boolean    @default(false) // Tandai apakah paket ini disembunyikan
+  isLocked     Boolean    @default(true)  // Tandai apakah paket ini terkunci
 }
 
 model Tag {

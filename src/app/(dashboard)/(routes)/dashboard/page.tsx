@@ -91,6 +91,7 @@ export default function DashboardPage() {
                   redirect={"/dashboard/" + test.name}
                   title={test.name}
                   status="aktif"
+                  description={test.name == 'SKD' ? "Tryout ujian SKD": "Tryout ujian TPA"}
                 />
               </div>
             ))}

@@ -57,7 +57,7 @@ export const SidebarQuestion: React.FC<SidebarProps> = ({
       variant: "info",
     });
     mutate(
-      { id: question._id },
+      { id: parseInt(question._id) },
       {
         onError: () => {
           enqueueSnackbar(errorMessages.default, { variant: "error" });

@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 
 interface Props {
   handleConfirmSubmitModalClose: () => void;
-  isQuizCorrectAnsLoading: boolean;
-  setFetchCorrectAns: React.Dispatch<React.SetStateAction<boolean>>;
+  isQuizCorrectAnsLoading?: boolean;
+  setFetchCorrectAns?: React.Dispatch<React.SetStateAction<boolean>>;
   responses: [] | IResponse[];
+  onConfirmSubmit?: () => void; // Tambahkan baris ini
 }
 
 export const ConfirmSubmitModalContent: React.FC<Props> = ({
@@ -16,6 +17,7 @@ export const ConfirmSubmitModalContent: React.FC<Props> = ({
   isQuizCorrectAnsLoading,
   setFetchCorrectAns,
   responses,
+  onConfirmSubmit, // Pastikan prop ini diterima
 }) => {
   const [marked, setMarked] = useState(0);
   const [unmarked, setUnmarked] = useState(0);

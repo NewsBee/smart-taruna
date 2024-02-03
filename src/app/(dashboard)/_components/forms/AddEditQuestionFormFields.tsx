@@ -1,9 +1,10 @@
-import { Button, MenuItem, TextField } from "@material-ui/core";
+import { Box, Button, MenuItem, TextField } from "@material-ui/core";
 import { FieldArray, useFormikContext } from "formik";
 import { uiMessages } from "../../shared/constants";
 import { IQuestionForm } from "../../shared/interfaces";
 import { FormikError } from "../../shared/utils";
 import { useRouter } from "next/navigation";
+import { StyledButton } from "@/components/styled-button";
 
 interface Props {
   isLoading: boolean;
@@ -20,10 +21,41 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({ isLoading }) => {
     setFieldValue,
   } = useFormikContext<IQuestionForm>();
   const router = useRouter();
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files ? event.target.files[0] : null;
+    if (file) {
+      setFieldValue("image", file);
+    }
+  };
+  const selectedFileName = values.image ? values.image.name : "";
 
   return (
     <form className="pb-2" onSubmit={handleSubmit}>
-      <div className="">
+      <div className="mt-4">
+        <Button
+          variant="contained"
+          component="label"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Upload Image
+          <input
+            type="file"
+            hidden
+            accept="image/*" // Accept only image files
+            onChange={handleFileChange}
+            onBlur={handleBlur}
+            name="image"
+          />
+        </Button>
+        {selectedFileName && (
+          <Box className="mt-2 text-sm text-gray-600">{selectedFileName}</Box>
+        )}
+        {touched.image && errors.image && (
+          <Box className="mt-1 text-sm text-red-500">{errors.image}</Box>
+        )}
+      </div>
+
+      <div className="mt-4">
         <TextField
           fullWidth
           value={values.title}
@@ -32,7 +64,7 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({ isLoading }) => {
           error={!!(touched.title && errors.title)}
           helperText={touched.title && errors.title}
           id="title"
-          label="Title"
+          label="Pertanyaan"
           variant="outlined"
         />
       </div>
@@ -46,7 +78,7 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({ isLoading }) => {
           onBlur={handleBlur}
           error={!!(touched.type && errors.type)}
           helperText={touched.type && errors.type}
-          label="Type"
+          label="Tipe soal"
           variant="outlined"
         >
           <MenuItem value="TIU">TIU</MenuItem>
@@ -54,6 +86,20 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({ isLoading }) => {
           <MenuItem value="TKP">TKP</MenuItem>
           <MenuItem value="TPA">TPA</MenuItem>
         </TextField>
+      </div>
+
+      <div className="mt-4">
+        <TextField
+          fullWidth
+          value={values.explanation}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          error={!!(touched.explanation && errors.explanation)}
+          helperText={touched.explanation && errors.explanation}
+          id="explanation"
+          label="Pemabahasan soal"
+          variant="outlined"
+        />
       </div>
       {/* Field untuk 'poin' */}
       {/* {values.type === "TPA" && (
@@ -84,8 +130,8 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({ isLoading }) => {
                     gridTemplateColumns: "1fr 100px",
                   }}
                 >
-                  <p>Options</p>
-                  <p className="justify-self-center">Correct</p>
+                  <p>Pilihan</p>
+                  <p className="justify-self-center">Benar</p>
                 </div>
                 {values.options.length > 0 &&
                   values.options.map((option, index) => (
@@ -105,7 +151,7 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({ isLoading }) => {
                         onChange={handleChange}
                         onBlur={handleBlur}
                         id={`options.${index}.value`}
-                        label={`Option ${index + 1}`}
+                        label={`Opsi ${index + 1}`}
                         variant="outlined"
                         error={
                           !!FormikError(
@@ -191,7 +237,7 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({ isLoading }) => {
       <div className="mb-10">
         <div className="flex justify-end mt-4">
           <div className="mr-4">
-            <Button onClick={() => router.push("/ujian")}>Cancel</Button>
+            <Button onClick={() => router.push("/dashboard")}>Cancel</Button>
           </div>
 
           <Button

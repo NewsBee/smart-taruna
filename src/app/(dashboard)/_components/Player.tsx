@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { IOption, IQuestion, IResponse } from "../shared/interfaces";
 import { Option } from "./Option";
 import { PaginationButton } from "./PaginationButton";
+import { BottomBar } from "./BottomBar";
 
 interface Props {
   questions: IQuestion[];
@@ -37,9 +38,12 @@ export const Player: React.FC<Props> = ({
   const onOptionClick = (option: string) => {
     // console.log(response)
     setSelectedOption(option);
-    setResponse((res) => res.map((r, index) => index === activeIndex ? { ...r, response: option } : r));
+    setResponse((res) =>
+      res.map((r, index) =>
+        index === activeIndex ? { ...r, response: option } : r
+      )
+    );
   };
-  
 
   // useEffect(() => {
   //   const currentQuestionResponse = response && response[activeIndex]?.response;
@@ -94,6 +98,12 @@ export const Player: React.FC<Props> = ({
           disabled={activeIndex === questions?.length - 1}
         />
       </div>
+      <BottomBar
+        questions={questions}
+        activeIndex={activeIndex}
+        setActiveIndex={setActiveIndex}
+        responses={response}
+      />
     </div>
   );
 };

@@ -9,9 +9,9 @@ export const GET = async (req: NextRequest, context: { params: { id: any } }) =>
     const testId = context.params.id;
     const session = await getServerSession(authOptions);
   
-    // if (!session) {
-    //   return NextResponse.json({message: "Unauthorized"}, {status:401}) 
-    // }
+    if (!session) {
+      return NextResponse.json({message: "Unauthorized"}, {status:401}) 
+    }
     // const attempt = await prismadb.attempt.findUnique({
     //   where: { id: parseInt(testId) },
     //   include: {
@@ -27,6 +27,11 @@ export const GET = async (req: NextRequest, context: { params: { id: any } }) =>
     const attempt = await prismadb.attempt.findUnique({
       where: { id: parseInt(testId) },
       include: {
+        Package: {
+          select: {
+            testName: true
+          }
+        },
         responses: {
           include: {
             Question: {

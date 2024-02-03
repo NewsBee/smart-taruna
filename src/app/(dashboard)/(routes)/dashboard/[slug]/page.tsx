@@ -6,7 +6,10 @@ import { RiFilterFill } from "react-icons/ri";
 import { useSession } from "next-auth/react";
 import { getAccessToken } from "@auth0/nextjs-auth0";
 import { TestCard } from "../../../_components/TestCard";
-import { useDeleteQuiz, usePackagesByTestName } from "@/app/(dashboard)/shared/queries";
+import {
+  useDeleteQuiz,
+  usePackagesByTestName,
+} from "@/app/(dashboard)/shared/queries";
 import { DeleteModal } from "@/app/(dashboard)/_components/DeleteModal";
 import { EmptyResponse } from "@/app/(dashboard)/_components/EmptyResponse";
 import { QuizCard } from "@/app/(dashboard)/_components/QuizCard";
@@ -14,6 +17,7 @@ import { Loader } from "@/app/(dashboard)/_components/Svgs";
 import { IQuiz } from "@/app/(dashboard)/shared/interfaces";
 import { useRouter } from "next/navigation";
 import { enqueueSnackbar } from "notistack";
+import LockUnlockButton from "@/app/(dashboard)/_components/LockUnlockButton";
 
 const globalColors = {
   brand: "#4f46e5",
@@ -33,6 +37,7 @@ interface Package {
   testName: string;
   title: string;
   questions: Question[];
+  isLocked: boolean; // Menambahkan properti isLocked
 }
 
 interface Question {
@@ -67,48 +72,44 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshData, setRefreshData] = useState(false);
-  const { data, isLoading, isError, error } = usePackagesByTestName(
-    params.slug,refreshData
+  const { data, isLoading, isError, error, refetch  } = usePackagesByTestName(
+    params.slug,
+    refreshData
   );
   const [selectedQuiz, setSelectedQuiz] = useState<Package | null>();
-  const [packageDetails, setPackageDetails] = useState<{ [key: number]: PackageDetail }>({});
+  const [packageDetails, setPackageDetails] = useState<{
+    [key: number]: PackageDetail;
+  }>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
   const [deleteModalActive, setDeleteModalActive] = useState(false);
   const handleDeleteModalOpen = () => setDeleteModalActive(true);
   const handleDeleteModalClose = () => setDeleteModalActive(false);
+  // console.log(selectedQuiz)
 
+  const {
+    mutateAsync: deleteQuiz,
+    isLoading: IsDeleteCampaignLoading,
+    reset,
+  } = useDeleteQuiz();
 
-
-  const { mutateAsync: deleteQuiz, isLoading: IsDeleteCampaignLoading, reset } = useDeleteQuiz();
-
-  // const handleDelete = async (id: number) => {
-  //   try {
-  //     await deleteQuiz({ id: selectedQuiz?.id || 0 });
-  //     enqueueSnackbar('Paket berhasil dihapus', { variant: 'success' });
-  //     handleDeleteModalClose();
-  //     setRefreshData(prev => !prev);
-  //   } catch (error) {
-  //     // console.log(error)
-  //     enqueueSnackbar('Gagal menghapus paket', { variant: 'error' });
-  //   }
-  // };
   const handleDelete = async (id: number) => {
     if (id !== undefined) {
       try {
         await deleteQuiz({ id });
-        enqueueSnackbar('Paket berhasil dihapus', { variant: 'success' });
-        setRefreshData(prev => !prev); // Toggle to trigger re-fetch
+        enqueueSnackbar("Paket berhasil dihapus", { variant: "success" });
+        setRefreshData((prev) => !prev); // Toggle to trigger re-fetch
       } catch (error) {
-        enqueueSnackbar('Gagal menghapus paket', { variant: 'error' });
+        enqueueSnackbar("Gagal menghapus paket", { variant: "error" });
       } finally {
         handleDeleteModalClose();
       }
     } else {
-      enqueueSnackbar('ID Paket tidak valid', { variant: 'error' });
+      enqueueSnackbar("ID Paket tidak valid", { variant: "error" });
     }
   };
+
 
 
   useEffect(() => {
@@ -155,12 +156,12 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
         </h4>
         <div className="flex items-center w-full sm:w-auto">
           <Button
-          onClick={() => router.push(`/dashboard/${params.slug}/create`)}
-          variant="outlined"
-          color="primary"
-        >
-          + Buat Paket
-        </Button>
+            onClick={() => router.push(`/dashboard/${params.slug}/create`)}
+            variant="outlined"
+            color="primary"
+          >
+            + Buat Paket
+          </Button>
 
           <div className="ml-4">
             <Button
@@ -175,20 +176,20 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
       </div>
       {data && (
         <div className="bg-gray-200 rounded px-8 py-6 transition-all flex flex-col lg:flex-row items-center justify-between mb-4">
-        <h2
-          style={{ maxWidth: 500 }}
-          className="text-regular text-lg font-medium text-default whitespace-nowrap overflow-hidden text-ellipsis	break-all"
-        >
-          {`${
-            selectedQuiz
-              ? `Peket yang dipilih : ${selectedQuiz.title}`
-              : "Pilih paket"
-          }`}
-        </h2>
-        <div className="mt-6 lg:mt-0">
-          {selectedQuiz && (
-            <div className="flex flex-wrap">
-              {/* <div className="mr-4">
+          <h2
+            style={{ maxWidth: 500 }}
+            className="text-regular text-lg font-medium text-default whitespace-nowrap overflow-hidden text-ellipsis	break-all"
+          >
+            {`${
+              selectedQuiz
+                ? `Peket yang dipilih : ${selectedQuiz.title}`
+                : "Pilih paket"
+            }`}
+          </h2>
+          <div className="mt-6 lg:mt-0">
+            {selectedQuiz && (
+              <div className="flex flex-wrap">
+                {/* <div className="mr-4">
                 <Button
                   onClick={() =>
                     router.push(`/statistics/quiz/${selectedQuiz._id}`)
@@ -198,50 +199,51 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
                   Statistics
                 </Button>
               </div> */}
-              <div className="mr-4">
-                <Button className="mr-6">
-                  Update
-                </Button>
-              </div>
-              <div className="mr-4">
-                <Button onClick={handleDeleteModalOpen} variant="text">
-                  Delete
-                </Button>
-              </div>
+                <div className="mr-4">
+                  <Button className="mr-6">Hide</Button>
+                </div>
+                <div className="mr-4">
+                  <Button className="mr-6">Lock</Button>
+                </div>
+                <div className="mr-4">
+                  <Button className="mr-6">Update</Button>
+                </div>
+                <div className="mr-4">
+                  <Button onClick={handleDeleteModalOpen} variant="text">
+                    Delete
+                  </Button>
+                </div>
 
-              <Button
-                variant="outlined"
-                color="info"
-                onClick={() =>
-                  router.push(`/dashboard/${params.slug}/${selectedQuiz.id}`)
-                }
-              >
-                + Add/Update Paket
-              </Button>
-            </div>
-          )}
+                <Button
+                  variant="outlined"
+                  color="info"
+                  onClick={() =>
+                    router.push(`/dashboard/${params.slug}/${selectedQuiz.id}`)
+                  }
+                >
+                  + Add/Update Paket
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
       )}
       {isLoading ? (
         <Loader halfScreen />
       ) : data ? (
         <div className="mt-10 pb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {packages.map((pkg:any) => {
+          {packages.map((pkg: any) => {
             // Access detail for each package
             const detail = packageDetails[pkg.id];
             return (
-              <div
-                className="p-4"
-                key={pkg.id}
-              >
+              <div className="p-4" key={pkg.id}>
                 {/* <p>{detail ? detail.totalQuestions : 'Loading...'}</p>
                 <p>{detail ? detail.highestScore : 'Loading...'}</p> */}
                 <QuizCard
-                status="active"
-                description="No desc available"
-                tags={['kedinasan']}
-                onSelect={() => setSelectedQuiz(pkg)}
+                  status="active"
+                  description="No desc available"
+                  tags={["kedinasan"]}
+                  onSelect={() => setSelectedQuiz(pkg)}
                   questionsCount={detail?.totalQuestions}
                   score={detail?.highestScore}
                   attemptsCount={detail?.attemptCount}
@@ -250,6 +252,14 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
                   currTest={params.slug}
                   selected={selectedQuiz?.id === pkg.id}
                 />
+                <div className="mt-2 ml-2">
+                  {/* <Button
+                    onClick={() => handleLockUnlock(pkg.id, pkg.isLocked)}
+                  >
+                    {pkg.isLocked ? "Buka Kunci" : "Kunci"}
+                  </Button> */}
+                  <LockUnlockButton packageId={pkg.id} isLocked={pkg.isLocked} />
+                </div>
               </div>
             );
           })}

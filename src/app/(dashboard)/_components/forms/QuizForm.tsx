@@ -107,7 +107,6 @@ export const QuizForm: React.FC<Props> = ({
                 color="primary"
                 disabled={isSubmitting}
                 type="submit"
-                className="bg-blue-500"
               >
                 Submit
               </Button>

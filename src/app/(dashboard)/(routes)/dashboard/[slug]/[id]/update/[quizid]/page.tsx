@@ -2,34 +2,67 @@
 
 import { UpdateQuestionForm } from "@/app/(dashboard)/_components/forms/UpdateQuestionForm";
 import { IQuestion } from "@/app/(dashboard)/shared/interfaces";
+import { useQuiz } from "@/app/(dashboard)/shared/queries";
+import { CircularProgress } from "@mui/material";
+import { useEffect, useState } from "react";
 
 interface Props {}
+
+interface Update {
+  id: string;
+  title: string;
+  correct: string;
+  options: { _id: number; value: string, poin: number }[];
+  type : string;
+  explanation : string;
+}
 
 export default function UpdateQuestion({
   params,
 }: {
-  params: { quizid: string };
+  params: { quizid: string, id: number, slug:string };
 }) {
   //   const { isLoading, data } = useQuizQuestion(quizId, questionId);
-  const dummyQuestionData = {
-    id: "1",
-    title: "Apa warna matahari",
-    correct: "Ciptaan allah",
-    options: [
-      { _id: "1", value: "Ciptaan allah" },
-      { _id: "2", value: "Kuning" },
-      { _id: "3", value: "Merah" },
-      { _id: "4", value: "Biru" }
-    ]
-  };
+  // console.log(params.id)
+  // console.log(params.slug)
+  const { data, isLoading, isFetching, error } = useQuiz(
+    parseInt(params.quizid)
+  );
+  const [questionData, setQuestionData] = useState<Update | null>(null);
+  // console.log(data)
+  // console.log(params.quizid)
+
+  useEffect(() => {
+    if (data) {
+      const formattedData = {
+        id: data.id.toString(),
+        title: data.content,
+        correct: data.Choices.find((choice: any) => choice.isCorrect).content,
+        options: data.Choices.map((choice: any) => ({
+          _id: choice.id,
+          value: choice.content,
+          poin : choice.scoreValue,
+        })),
+        type: data.type,
+        explanation: data.explanation,
+      };
+      setQuestionData(formattedData);
+    }
+  }, [data, params.quizid]);
 
   return (
     <div>
       <h3 className="text-xl font-semibold text-center mb-10">
-        Update Question
+        Update Pertanyaan
       </h3>
       <div className="mx-auto md:w-6/12">
-        <UpdateQuestionForm {...dummyQuestionData} />
+        {!questionData ? (
+          <CircularProgress />
+        ) : (
+          <>
+            <UpdateQuestionForm slug={params.slug} quizId={params.id} {...questionData} />
+          </>
+        )}
       </div>
     </div>
   );

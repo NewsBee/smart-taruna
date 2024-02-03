@@ -63,11 +63,11 @@ export default function AddQuestions({ params }: { params: { id: string } }) {
           <div className="min-h-[8%] border-b border-gray-200 flex pl-4 pr-4 md:pr-10 py-4 justify-between">
             <p className="mt-auto">Add Question</p>
             <div className="flex flex-col justify-center items-center">
-              <p className="mb-1">{totalQuestions} / 50 Added</p>
+              <p className="mb-1">{totalQuestions} / 110 Added</p>
               <div className="bg-gray-200 rounded-full h-1 w-28 md:w-48">
                 <div
                   className="bg-indigo-600 rounded-full h-1"
-                  style={{ width: `${(totalQuestions / 50) * 100}%` }}
+                  style={{ width: `${(totalQuestions / 110) * 100}%` }}
                 ></div>
               </div>
             </div>

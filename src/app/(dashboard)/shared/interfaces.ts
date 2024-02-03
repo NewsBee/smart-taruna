@@ -1,9 +1,13 @@
+import { IOptions } from "../_components/forms/UpdateQuestionForm";
+
 export interface IQuestionForm {
     title: string;
     correct: string;
-    options: IOption[];
-    poin : number;
-    type : string;
+    options: IOptions[];
+    poin ?: number;
+    type ?: string;
+    explanation ?: string;
+    image?: File | null; // This will hold the image file
 }
 export interface IQuestion {
     _id: string;
@@ -15,7 +19,7 @@ export interface IQuestion {
 export interface IOption {
     value: string;
     _id?: string;
-    poin : number;
+    poin?: number;
 }
 
 export interface IOptionWithFrequency extends IOption {
@@ -33,7 +37,7 @@ export interface IResponseWithCorrect extends IResponse {
 export interface IQuizForm {
     title: string;
     description: string;
-    tags: string[];
+    tags?: string[];
     status?: string;
 }
 

@@ -32,6 +32,8 @@ interface Package {
   testName: string;
   title: string;
   questions: Question[];
+  duration ?: number;
+  isLocked : boolean;
 }
 
 interface Question {
@@ -47,6 +49,7 @@ interface PackageDetail {
   totalQuestions: number;
   highestScore: number;
   attemptCount: number;
+  duration : number;
   // Include other relevant properties of package details
 }
 
@@ -66,7 +69,7 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(false);
   const { data, isLoading, isError, error } = usePackagesByTestName(
-    params.slug
+    params.slug, params.slug
   );
   const [selectedQuiz, setSelectedQuiz] = useState<IQuiz | null>();
   const [packageDetails, setPackageDetails] = useState<{ [key: number]: PackageDetail }>({});
@@ -137,6 +140,7 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
               color="primary"
             >
               History
+              {/* {console.log(packageDetails[1])} */}
             </Button>
           </div>
         </div>
@@ -159,7 +163,9 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
         <Loader halfScreen />
       ) : data ? (
         <div className="mt-10 pb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {packages.map((pkg) => {
+          {packages
+           .filter((pkg) => !pkg.isLocked)
+          .map((pkg) => {
             // Access detail for each package
             const detail = packageDetails[pkg.id];
             return (
@@ -179,6 +185,8 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
                   _id={pkg.id.toString()}
                   {...pkg}
                   currTest={params.slug}
+                  id={pkg.id.toString()} 
+                  duration={detail?.duration}
                 />
               </div>
             );

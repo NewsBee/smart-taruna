@@ -1,4 +1,5 @@
 import { IOption } from "../shared/interfaces";
+import CustomAccordion from "./CustomAccordion";
 import { EmptyResponse } from "./EmptyResponse";
 import { Option } from "./Option";
 interface Props {
@@ -7,6 +8,7 @@ interface Props {
   as: "AFTER_QUIZ_RESPONSE" | "AUTHOR_CHECK_RESPONSE" | "USER_CHECK_RESPONSE";
   quizDeleted?: boolean;
   ref?: string;
+  tipe?: string;
 }
 // {AUTHOR_CHECK_RESPONSE ? "his" : "your"}
 
@@ -16,18 +18,45 @@ export const ShowResponses: React.FC<Props> = ({
   as,
   quizDeleted,
   ref,
+  tipe,
 }) => {
   const AFTER_QUIZ_RESPONSE = as === "AFTER_QUIZ_RESPONSE";
   const AUTHOR_CHECK_RESPONSE = as === "AUTHOR_CHECK_RESPONSE";
+  const isTPA = tipe === "TPA";
   // const USER_CHECK_RESPONSE = as === "USER_CHECK_RESPONSE";
+  // console.log(responses);
 
   return (
     <>
       <div className="flex flex-col items-center mt-10 w-full">
         {AFTER_QUIZ_RESPONSE && (
-          <h1 className="text-xl md:text-3xl mb-5">
-            Terimakasih sudah menyelesaikan Test
-          </h1>
+          <div>
+            <h1 className="text-xl md:text-3xl mb-5 text-center">
+              Terimakasih sudah menyelesaikan Test
+            </h1>
+            <div className="flex flex-col md:flex-row items-center justify-center">
+              {!isTPA && (
+                <>
+                  <div className="w-full md:w-1/3 mx-2 mb-4 md:mb-0">
+                    <CustomAccordion tipeSoal="TIU" responses={responses} />
+                  </div>
+                  <div className="w-full md:w-1/3 mx-2 mb-4 md:mb-0">
+                    <CustomAccordion tipeSoal="TWK" responses={responses} />
+                  </div>
+                  <div className="w-full md:w-1/3 mx-2 mb-4 md:mb-0">
+                    <CustomAccordion tipeSoal="TKP" responses={responses} />
+                  </div>
+                </>
+              )}
+
+              {/* Accordion untuk TPA */}
+              {isTPA && (
+                <div className="w-full mx-2 mb-4 md:mb-0">
+                  <CustomAccordion tipeSoal="TPA" responses={responses} />
+                </div>
+              )}
+            </div>
+          </div>
         )}
         {quizDeleted && (
           <p className="text-xl mb-2 text-rose-600">Quiz ini sudah dihapus.</p>
@@ -91,10 +120,16 @@ export const ShowResponses: React.FC<Props> = ({
                       />
                     ))}
                   </div>
-                  <div className="bg-emerald-500 p-4 mt-2 rounded-md">
+                  {resp.response !== resp.correct && (
+                    <div className="bg-emerald-500 p-4 mt-2 rounded-md">
+                      <h2 className="text-white font-bold">Penjelasan</h2>
+                      <p className="text-white">{resp.explanation}</p>
+                    </div>
+                  )}
+                  {/* <div className="bg-emerald-500 p-4 mt-2 rounded-md">
                     <h2 className="text-white font-bold">Penjelasan</h2>
                     <p className="text-white">{resp.explanation}</p>
-                  </div>
+                  </div> */}
                 </div>
               ))}
             </div>
