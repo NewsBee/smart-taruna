@@ -7,9 +7,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const POST = async (req: NextRequest) => {
   const session: any = await getServerSession(authOptions);
-  // if (!session) {
-  //   return new NextResponse("Unauthorized", { status: 403 });
-  // }
+  if (!session) {
+    return new NextResponse("Unauthorized", { status: 403 });
+  }
   // const userId = session.user.id;
   const body = await req.json();
   const attemptId = body.attemptId;
@@ -18,11 +18,12 @@ export const POST = async (req: NextRequest) => {
   if (!attemptNumber || !Array.isArray(responses)) {
     return NextResponse.json({ message: "Invalid request" }, { status: 400 });
   }
+  
   try {
-    let score = 0;
+    let totalScore = 0;
 
     for (const response of responses) {
-      const questionId = parseInt(response._id , 10);
+      const questionId = parseInt(response._id, 10);
       if (isNaN(questionId)) continue;
 
       const question = await prismadb.question.findUnique({
@@ -30,23 +31,18 @@ export const POST = async (req: NextRequest) => {
         include: { Choices: true },
       });
 
-      if (!question) {
-        continue;
+      if (!question) continue;
+
+      let questionScore = 0;
+      if (question.type === "TPA" && response.response) {
+        const selectedChoice = question.Choices.find(choice => choice.content === response.response);
+        questionScore = selectedChoice ? selectedChoice.scoreValue : 0;
+      } else {
+        const isCorrectAnswer = question.Choices.some(choice => choice.isCorrect && choice.content === response.response);
+        questionScore = isCorrectAnswer ? 5 : 0;
       }
 
-      const correctChoice = question.Choices.find((choice) => choice.isCorrect);
-      const isCorrectAnswer =
-        correctChoice && correctChoice.content === response.response;
-
-      // Tetapkan nilai default untuk scoreValue jika undefined
-      const correctChoiceScoreValue = correctChoice?.scoreValue || 0;
-      const questionScore =
-        question.type === "TPA"
-          ? correctChoiceScoreValue
-          : isCorrectAnswer
-          ? 5
-          : 0;
-      score += questionScore;
+      totalScore += questionScore;
 
       await prismadb.response.create({
         data: {
@@ -58,30 +54,17 @@ export const POST = async (req: NextRequest) => {
       });
     }
 
-    const checkBeforeUpdate = await prismadb.attempt.findUnique({
-      where:{
-        id:attemptNumber
-      }
-    })
-    if(checkBeforeUpdate?.completedAt){
-      return NextResponse.json({ message:"Anda telah menyelesaikan ujian ini" }, { status: 400 });
-    }
-
-    // Update skor dan tandai Attempt sebagai selesai
     await prismadb.attempt.update({
       where: { id: attemptNumber },
       data: {
-        score: score,
+        score: totalScore,
         completedAt: new Date(),
       },
     });
 
-    return NextResponse.json({ score }, { status: 200 });
-  } catch (error) {
+    return NextResponse.json({ score: totalScore }, { status: 200 });
+  } catch (error:any) {
     console.error(error);
-    return NextResponse.json(
-      { message: "Internal server error" , eror: error},
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "Internal server error", error: error.message }, { status: 500 });
   }
 };

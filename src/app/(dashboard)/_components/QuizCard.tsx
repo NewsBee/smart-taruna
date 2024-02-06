@@ -3,6 +3,7 @@ import { IQuiz } from "../shared/interfaces";
 import { ModalSkeleton } from "./Modal";
 import { QuizModalContents } from "./QuizModalContents";
 import { usePathname, useRouter } from "next/navigation";
+import LockIcon from "@mui/icons-material/Lock";
 
 interface Props extends IQuiz {
   onSelect?: () => void;
@@ -11,6 +12,8 @@ interface Props extends IQuiz {
   redirect?: string;
   selected?: boolean;
   currTest?: string;
+  duration?: number;
+  disabled?: boolean;
 }
 
 export const QuizCard: React.FC<Props> = (props) => {
@@ -27,11 +30,13 @@ export const QuizCard: React.FC<Props> = (props) => {
     selected,
     attemptsCount,
     questionsCount,
-    currTest='',
+    currTest = "",
+    duration,
+    disabled,
   } = props;
   // const isDashboardPage = useMatch("/dashboard");
   // const navigate = useNavigate();
-  let tags = ["SKD","TPA"]; // Default tags
+  let tags = ["SKD", "TPA"]; // Default tags
   if (currTest.toLowerCase() === "skd") {
     tags = ["SKD"];
   } else if (currTest.toLowerCase() === "tpa") {
@@ -44,18 +49,23 @@ export const QuizCard: React.FC<Props> = (props) => {
     setQuizModalActive((p) => !p);
   };
 
+  // console.log(disabled)
+
   return (
     <>
       <div
-        onClick={
-          () =>
-            onSelect
-              ? onSelect()
-              : redirect
-              ? router.push(redirect)
-              : handleQuizModalActive()
-          // : navigate(`/quizes/${_id}`)
-        }
+        onClick={() => {
+          if (!disabled) {
+            // Hanya menjalankan jika tidak disabled
+            if (onSelect) {
+              onSelect();
+            } else if (redirect) {
+              router.push(redirect);
+            } else {
+              handleQuizModalActive();
+            }
+          }
+        }}
         className={`relative shadow-md px-10 py-8 rounded-md bg-white cursor-pointer ${
           selected ? " border-2 border-teal-500" : ""
         }`}
@@ -105,9 +115,16 @@ export const QuizCard: React.FC<Props> = (props) => {
             </p>
           ))}
         </div>
+        {disabled && (
+          <div className="absolute inset-0 flex justify-center items-center bg-white bg-opacity-75 hover:bg-opacity-90">
+            <div className="text-gray-500 hover:text-gray-700">
+              <LockIcon className="text-8xl" />
+            </div>
+          </div>
+        )}
       </div>
       <ModalSkeleton open={quizModalActive} onClose={handleQuizModalClose}>
-        <QuizModalContents 
+        <QuizModalContents
           onClose={handleQuizModalClose}
           _id={id}
           title={title}
@@ -118,6 +135,7 @@ export const QuizCard: React.FC<Props> = (props) => {
           currTest={currTest}
           attemptsCount={attemptsCount}
           questionsCount={questionsCount}
+          duration={duration}
         />
       </ModalSkeleton>
     </>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
+import { enqueueSnackbar } from "notistack";
 
 const RegistrationPage = () => {
   const [nama, setNama] = useState("");
@@ -14,32 +15,55 @@ const RegistrationPage = () => {
   const [msg, setMsg] = useState("");
   const [konfirmasiPassword, konfirmasi_password] = useState("");
 
-  const handleSubmit = async (event: any) => {
-    event.preventDefault();
+  const validateForm = () => {
+    // Contoh validasi sederhana, bisa ditambahkan lebih kompleks
+    if (!email || !password || !nama) {
+      setMsg("Semua field harus diisi.");
+      return false;
+    }
     if (password !== konfirmasiPassword) {
       setMsg("Password dan konfirmasi password tidak cocok.");
-      return;
+      return false;
     }
+    if (password.length < 8) {
+      setMsg("Password harus memiliki minimal 8 karakter.");
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async (event:any) => {
+    event.preventDefault();
+    if (!validateForm()) return;
     setLoading(true);
-    const res = await fetch("/api/user", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        username: nama,
-        email: email,
-        password: password,
-      }),
-    });
 
-    if (res.ok) {
-      router.push("/auth/sign-in");
-    } else {
-      console.error("Registration Failed");
+    try {
+      const res = await fetch("/api/user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: nama,
+          email: email,
+          password: password,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        // enqueueSnackbar("Pendaftaran berhasil! Silakan login.", { variant: 'success' });
+        router.push("/auth/sign-in");
+      } else {
+        // enqueueSnackbar(data.message || "Pendaftaran gagal. Silakan coba lagi.", { variant: 'error' });
+        throw new Error(data.message || "Terjadi kesalahan saat registrasi.");
+      }
+    } catch (error:any) {
+      setMsg(error.message);
+      // enqueueSnackbar("Terjadi kesalahan saat pendaftaran. Silakan coba lagi.", { variant: 'error' });
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -103,8 +127,7 @@ const RegistrationPage = () => {
           </h1>
           <p className="mt-3 text-base leading-6 text-gray-500">
             {" "}
-            Bergabunglah dengan kami untuk memperdalam pengetahuan bisnis umkm
-            anda!
+            Bergabunglah dengan kami untuk memperdalam pengetahuan anda!
           </p>
 
           {/* <!-- End Title --> */}

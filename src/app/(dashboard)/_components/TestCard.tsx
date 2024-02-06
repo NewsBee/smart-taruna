@@ -33,7 +33,7 @@ export const TestCard: React.FC<Props> = (props) => {
   if (title.toLowerCase() === "skd") {
     tags = ["TIU", "TWK", "TKP"];
   } else if (title.toLowerCase() === "tpa") {
-    tags = ["Test Potensi Akademik"];
+    tags = ["Test Potensi Akademik", "TBI"];
   }
 
   const [quizModalActive, setQuizModalActive] = useState(false);

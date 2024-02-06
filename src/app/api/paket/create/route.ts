@@ -3,13 +3,14 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { testName, title,description,tagNames } = body;
+  const { testName, title,description,tagNames,duration } = body;
   try {
     const newPackage = await prismadb.package.create({
       data: {
         testName,
         title,
         description,
+        duration : parseInt(duration,10),
         tags: {
           connectOrCreate: tagNames.map((name: string) => ({
             where: { name },

@@ -18,6 +18,7 @@ import { IQuiz } from "@/app/(dashboard)/shared/interfaces";
 import { useRouter } from "next/navigation";
 import { enqueueSnackbar } from "notistack";
 import LockUnlockButton from "@/app/(dashboard)/_components/LockUnlockButton";
+import HideUnhideButton from "@/app/(dashboard)/_components/HideButton";
 
 const globalColors = {
   brand: "#4f46e5",
@@ -109,6 +110,7 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
       enqueueSnackbar("ID Paket tidak valid", { variant: "error" });
     }
   };
+  console.log(packages)
 
 
 
@@ -199,15 +201,9 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
                   Statistics
                 </Button>
               </div> */}
-                <div className="mr-4">
-                  <Button className="mr-6">Hide</Button>
-                </div>
-                <div className="mr-4">
-                  <Button className="mr-6">Lock</Button>
-                </div>
-                <div className="mr-4">
+                {/* <div className="mr-4">
                   <Button className="mr-6">Update</Button>
-                </div>
+                </div> */}
                 <div className="mr-4">
                   <Button onClick={handleDeleteModalOpen} variant="text">
                     Delete
@@ -253,12 +249,8 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
                   selected={selectedQuiz?.id === pkg.id}
                 />
                 <div className="mt-2 ml-2">
-                  {/* <Button
-                    onClick={() => handleLockUnlock(pkg.id, pkg.isLocked)}
-                  >
-                    {pkg.isLocked ? "Buka Kunci" : "Kunci"}
-                  </Button> */}
-                  <LockUnlockButton packageId={pkg.id} isLocked={pkg.isLocked} />
+                  <LockUnlockButton testName={pkg.testName}  packageId={pkg.id} isLocked={pkg.isLocked} />
+                  <HideUnhideButton  packageId={pkg.id} isHidden={pkg.isHidden} testName={pkg.testName} />
                 </div>
               </div>
             );

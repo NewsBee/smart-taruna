@@ -16,11 +16,11 @@ export const GET = async (
 ) => {
   const packageId = context.params.id;
   const session = await getServerSession(authOptions);
-  
+
   if (!session) {
-    return NextResponse.json({message: "Unauthorized"}, {status:401}) 
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
-  const userId = parseInt(session.user.id, 10)
+  const userId = parseInt(session.user.id, 10);
   // const userIdNumber = parseInt(userId, 10);
   // const testWithQuestions = await prismadb.test.findUnique({
   //   where: {
@@ -51,7 +51,7 @@ export const GET = async (
           userId: userId, // Hanya mengambil attempt yang relevan dengan user
         },
         orderBy: {
-          createdAt: 'desc', // Mengambil attempt terbaru
+          createdAt: "desc", // Mengambil attempt terbaru
         },
         take: 1, // Hanya mengambil satu attempt teratas
       },
@@ -90,24 +90,73 @@ export const GET = async (
   }
 };
 
+// export async function POST(req: Request, context: { params: { id: any } }) {
+//   const packageId = context.params.id;
+//   const { content, type, explanation, Choices } = await req.json();
+//   const form = new formidable.IncomingForm();
+//   form.uploadDir = "./public/uploads"; // Tempat menyimpan file yang diunggah
+//   form.keepExtensions = true; // Menyimpan ekstensi file
+//   try {
+//     // Create a new question
+//     const newQuestion = await prismadb.question.create({
+//       data: {
+//         content,
+//         type,
+//         explanation,
+//         packageId : parseInt(packageId), // Ensure packageId is provided and valid
+//         Choices: {
+//           createMany: {
+//             data: Choices.map((choice: Option) => ({
+//               content: choice.content,
+//               isCorrect: choice.isCorrect,
+//               scoreValue: choice.scoreValue,
+//             })),
+//           },
+//         },
+//       },
+//     });
+
+//     return NextResponse.json({ newQuestion }, { status: 201 });
+//   } catch (error: any) {
+//     // console.error("Error creating package:", error);
+//     return NextResponse.json(
+//       { message: "Internal server error", error: error.message },
+//       { status: 500 }
+//     );
+//   }
+// }
+
 export async function POST(req: Request, context: { params: { id: any } }) {
   const packageId = context.params.id;
   const { content, type, explanation, Choices } = await req.json();
   try {
+    // Periksa apakah tipe soal adalah TPA dan sesuaikan nilai isCorrect jika benar
+    const modifiedChoices = Choices.map((choice: Option) => {
+      if (type === "TPA") {
+        // Untuk TPA, semua pilihan dianggap benar dan scoreValue mengikuti yang dikirim dari frontend
+        return {
+          ...choice,
+          isCorrect: true,
+          scoreValue: choice.scoreValue, // Gunakan scoreValue dari frontend
+        };
+      } else {
+        // Untuk tipe soal lain, set scoreValue menjadi 5 jika jawaban benar
+        return {
+          ...choice,
+          scoreValue: choice.isCorrect ? 5 : 0,
+        };
+      }
+    });
     // Create a new question
     const newQuestion = await prismadb.question.create({
       data: {
         content,
         type,
         explanation,
-        packageId : parseInt(packageId), // Ensure packageId is provided and valid
+        packageId: parseInt(packageId), // Pastikan packageId disediakan dan valid
         Choices: {
           createMany: {
-            data: Choices.map((choice: Option) => ({
-              content: choice.content,
-              isCorrect: choice.isCorrect,
-              scoreValue: choice.scoreValue,
-            })),
+            data: modifiedChoices,
           },
         },
       },

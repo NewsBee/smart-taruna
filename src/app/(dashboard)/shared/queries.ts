@@ -128,6 +128,9 @@ export const useQuizQuestions = (testId: any) => {
       console.error(error);
       throw new Error('Gagal mengambil data');
     }
+  }, {
+    // Jika Anda ingin memastikan data selalu fresh, Anda bisa menambahkan opsi refetchOnWindowFocus
+    refetchOnWindowFocus: true,
   });
 };
 
@@ -259,9 +262,9 @@ export const useCreateQuestion = (quizId: number) => {
     },
     {
       onSuccess: () => {
-        // Invalidate and refetch
-        queryClient.invalidateQueries(["quizQuestions", quizId, 'quiz']);
-      },  
+        // Invalidate dan refetch
+        queryClient.invalidateQueries(["quizQuestions", quizId.toString()]);
+      },
       onError: (error) => {
         // Handle error
         console.error('Error updating question:', error);

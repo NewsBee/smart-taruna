@@ -39,6 +39,7 @@ export interface IQuizForm {
     description: string;
     tags?: string[];
     status?: string;
+    duration ?: number;
 }
 
 export interface IQuiz extends IQuizForm {

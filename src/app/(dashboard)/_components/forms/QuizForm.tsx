@@ -44,6 +44,7 @@ export const QuizForm: React.FC<Props> = ({
         description: description || "",
         tags: tags || [],
         status: status || "",
+        duration: 0,
       }}
       validationSchema={AddEditQuizValidation}
       onSubmit={async (values, { setSubmitting, setFieldError }) => {
@@ -54,7 +55,9 @@ export const QuizForm: React.FC<Props> = ({
           title: values.title,
           description: values.description,
           tagNames : values.tags,
+          duration: values.duration,
         };
+        // console.log(values.duration)
         // if (!id) delete body.status;
         try {
           if (!!!values.title.trim()) {

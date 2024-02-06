@@ -8,9 +8,14 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 interface Props {
   tipeSoal: string;
   responses: any[];
+  passingGrade: number;
 }
 
-const CustomAccordion: React.FC<Props> = ({ tipeSoal, responses }) => {
+const CustomAccordion: React.FC<Props> = ({
+  tipeSoal,
+  responses,
+  passingGrade,
+}) => {
   const filteredResponses = responses.filter((resp) => resp.quiz === tipeSoal);
   // console.log(filteredResponses)
 
@@ -28,8 +33,10 @@ const CustomAccordion: React.FC<Props> = ({ tipeSoal, responses }) => {
     0
   );
 
+  const isPassingGradeAchieved = totalScore >= passingGrade;
+
   return (
-    <div className="my-3">
+    <div className="my-3 w-full">
       <Accordion defaultExpanded>
         <AccordionSummary
           expandIcon={<ExpandMoreIcon />}
@@ -75,17 +82,19 @@ const CustomAccordion: React.FC<Props> = ({ tipeSoal, responses }) => {
                     Jumlah Benar
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {correctAnswers}
+                    {tipeSoal === "TPA" ? incorrectAnswers : correctAnswers}
                   </td>
                 </tr>
-                <tr>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    Jumlah Salah
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {incorrectAnswers}
-                  </td>
-                </tr>
+                {tipeSoal !== "TPA" && (
+                  <tr>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      Jumlah Salah
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {incorrectAnswers}
+                    </td>
+                  </tr>
+                )}
                 <tr>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     Total Nilai
@@ -98,8 +107,13 @@ const CustomAccordion: React.FC<Props> = ({ tipeSoal, responses }) => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     Passing Grade
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    80 {/* Gantilah ini dengan perhitungan yang sesuai */}
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap text-sm ${
+                      isPassingGradeAchieved ? "text-green-500" : "text-red-500"
+                    }`}
+                  >
+                    {passingGrade}{" "}
+                    {isPassingGradeAchieved ? "(Tercapai)" : "(Tidak Tercapai)"}
                   </td>
                 </tr>
               </tbody>

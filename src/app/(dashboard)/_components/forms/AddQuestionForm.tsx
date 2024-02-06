@@ -47,6 +47,7 @@ export const AddQuestionForm: React.FC<Props> = ({ quizId }) => {
           { value: "", poin: 0 },
           { value: "", poin: 0 },
         ],
+        image: null,
       }}
       validationSchema={AddEditQuestionValidationNew}
       onSubmit={async (values, { setSubmitting, setFieldError, resetForm }) => {
@@ -58,9 +59,13 @@ export const AddQuestionForm: React.FC<Props> = ({ quizId }) => {
           Choices: values.options.map((option) => ({
             content: option.value,
             isCorrect: values.correct === option.value,
-            scoreValue: option.poin,
+            scoreValue:
+              values.type !== "TPA" && values.correct === option.value
+                ? 5
+                : option.poin,
           })),
         };
+
         // console.log(payload);
 
         try {
@@ -120,7 +125,7 @@ export const AddQuestionForm: React.FC<Props> = ({ quizId }) => {
 
           createQuestionMutate(payload, {
             onSuccess: () => {
-              queryClient.invalidateQueries(["Quiz Questions", quizId]);
+              queryClient.invalidateQueries(["quizQuestions", quizId]);
               enqueueSnackbar(
                 successMessages.actionSuccess("Membuat", "Question"),
                 { variant: "success" }

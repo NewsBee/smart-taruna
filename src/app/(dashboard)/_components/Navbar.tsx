@@ -7,6 +7,16 @@ import { StyledButton } from "@/components/styled-button";
 import { useRouter } from "next/navigation";
 import Box from "@mui/material/Box";
 import Image from "next/image";
+import {
+  Avatar,
+  Divider,
+  ListItemIcon,
+  Menu,
+  MenuItem,
+  Typography,
+} from "@mui/material";
+import React, { useEffect, useState } from "react"; // Jangan lupa untuk mengimpor React useState
+import { AccountCircle, ExitToApp } from "@mui/icons-material";
 
 interface Props {}
 
@@ -14,6 +24,43 @@ export const NavBar: React.FC<Props> = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
   // console.log(session)
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [avatar, setAvatar] = useState("");
+  const open = Boolean(anchorEl);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const response = await fetch("/api/profile");
+      if (response.ok) {
+        const data = await response.json();
+        // console.log(data.userProfile.avatar)
+        setAvatar(data.userProfile.avatar);
+      } else {
+        // Handle error atau setel state error jika perlu
+        console.error("Failed to fetch profile data");
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  // console.log(session)
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleProfile = () => {
+    router.push("/profile");
+    handleClose();
+  };
 
   const handleLogout = async () => {
     // Call the signOut method from next-auth to initiate the logout process
@@ -61,16 +108,59 @@ export const NavBar: React.FC<Props> = () => {
             Dashboard
           </p>
         </Link>
-        <Box sx={{ "& button:first-child": { mr: 2, fontWeight: 600 } }}>
+        <div className="px-3">
+          <Avatar
+            src={avatar}
+            alt="Profile"
+            onClick={handleMenu}
+            sx={{ cursor: "pointer", width: 40, height: 40 }}
+          />
+          <Menu
+            anchorEl={anchorEl}
+            keepMounted
+            open={Boolean(anchorEl)}
+            onClose={handleClose}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "right",
+            }}
+            transformOrigin={{
+              vertical: "top",
+              horizontal: "right",
+            }}
+            PaperProps={{
+              sx: {
+                width: 200, // Lebarkan kotak menu
+                padding: "10px 10px", // Tambahkan padding atas dan bawah
+              },
+            }}
+          >
+            <MenuItem onClick={handleProfile} sx={{ padding: "10px 16px" }}>
+              {" "}
+              {/* Tambahkan padding */}
+              <ListItemIcon>
+                <AccountCircle fontSize="small" />
+              </ListItemIcon>
+              <Typography variant="inherit">Profile</Typography>
+            </MenuItem>
+            <Divider />
+            <MenuItem onClick={handleLogout} sx={{ padding: "10px 16px" }}>
+              {" "}
+              {/* Tambahkan padding */}
+              <ListItemIcon>
+                <ExitToApp fontSize="small" />
+              </ListItemIcon>
+              <Typography variant="inherit">Sign out</Typography>
+            </MenuItem>
+          </Menu>
+        </div>
+        {/* <Box sx={{ "& button:first-child": { mr: 2, fontWeight: 600 } }}>
           {session && (
             <StyledButton onClick={handleLogout} disableHoverEffect={true}>
               Sign out
             </StyledButton>
           )}
-        </Box>
-        {/* <img src="" alt="" /> */}
-        {/* <UserButton afterSignOutAllUrl="/" afterSignOutOneUrl="/" /> */}
-        {/* </SignedIn> */}
+        </Box> */}
       </div>
     </div>
   );

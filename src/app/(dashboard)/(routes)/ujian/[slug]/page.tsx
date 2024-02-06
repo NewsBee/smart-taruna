@@ -32,8 +32,9 @@ interface Package {
   testName: string;
   title: string;
   questions: Question[];
-  duration ?: number;
-  isLocked : boolean;
+  duration?: number;
+  isLocked: boolean;
+  isHidden: boolean;
 }
 
 interface Question {
@@ -49,7 +50,7 @@ interface PackageDetail {
   totalQuestions: number;
   highestScore: number;
   attemptCount: number;
-  duration : number;
+  duration: number;
   // Include other relevant properties of package details
 }
 
@@ -69,11 +70,13 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(false);
   const { data, isLoading, isError, error } = usePackagesByTestName(
-    params.slug, params.slug
+    params.slug,
+    params.slug
   );
   const [selectedQuiz, setSelectedQuiz] = useState<IQuiz | null>();
-  const [packageDetails, setPackageDetails] = useState<{ [key: number]: PackageDetail }>({});
-
+  const [packageDetails, setPackageDetails] = useState<{
+    [key: number]: PackageDetail;
+  }>({});
 
   // useEffect(() => {
   //   if (data) {
@@ -164,33 +167,39 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
       ) : data ? (
         <div className="mt-10 pb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {packages
-           .filter((pkg) => !pkg.isLocked)
-          .map((pkg) => {
-            // Access detail for each package
-            const detail = packageDetails[pkg.id];
-            return (
-              <div
-                className="p-4"
-                key={pkg.id}
-              >
-                {/* <p>{detail ? detail.totalQuestions : 'Loading...'}</p>
+            .filter((pkg) => !pkg.isHidden) // Hanya menampilkan paket yang tidak disembunyikan
+            .map((pkg) => {
+              // Access detail for each package
+              const detail = packageDetails[pkg.id];
+
+              const cardClass = pkg.isLocked
+                ? "opacity-50 cursor-not-allowed"
+                : "cursor-pointer";
+
+              // console.log(pkg.isLocked)
+              // console.log(pkg.isHidden)
+
+              return (
+                <div className={`p-4 ${cardClass}`} key={pkg.id}>
+                  {/* <p>{detail ? detail.totalQuestions : 'Loading...'}</p>
                 <p>{detail ? detail.highestScore : 'Loading...'}</p> */}
-                <QuizCard
-                status="active"
-                description="No desc available"
-                tags={['kedinasan']}
-                  questionsCount={detail?.totalQuestions}
-                  score={detail?.highestScore}
-                  attemptsCount={detail?.attemptCount}
-                  _id={pkg.id.toString()}
-                  {...pkg}
-                  currTest={params.slug}
-                  id={pkg.id.toString()} 
-                  duration={detail?.duration}
-                />
-              </div>
-            );
-          })}
+                  <QuizCard
+                    status="active"
+                    description="No desc available"
+                    tags={["kedinasan"]}
+                    questionsCount={detail?.totalQuestions}
+                    score={detail?.highestScore}
+                    attemptsCount={detail?.attemptCount}
+                    _id={pkg.id.toString()}
+                    {...pkg}
+                    currTest={params.slug}
+                    id={pkg.id.toString()}
+                    disabled={pkg.isLocked}
+                    // duration={detail?.duration}
+                  />
+                </div>
+              );
+            })}
         </div>
       ) : (
         <EmptyResponse resource="Dashboard Quizes" />

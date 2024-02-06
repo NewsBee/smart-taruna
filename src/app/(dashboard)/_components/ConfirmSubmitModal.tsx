@@ -9,6 +9,7 @@ interface Props {
   isQuizCorrectAnsLoading?: boolean;
   setFetchCorrectAns?: React.Dispatch<React.SetStateAction<boolean>>;
   responses: [] | IResponse[];
+  attemptId: number;
   onConfirmSubmit?: () => void; // Tambahkan baris ini
 }
 
@@ -17,11 +18,12 @@ export const ConfirmSubmitModalContent: React.FC<Props> = ({
   isQuizCorrectAnsLoading,
   setFetchCorrectAns,
   responses,
+  attemptId,
   onConfirmSubmit, // Pastikan prop ini diterima
 }) => {
   const [marked, setMarked] = useState(0);
   const [unmarked, setUnmarked] = useState(0);
-  const [attemptId, setAttemptId] = useState(null);
+  // const [attemptId, setAttemptId] = useState(null);
   const router = useRouter()
   // console.log(responses)
 
@@ -39,19 +41,22 @@ export const ConfirmSubmitModalContent: React.FC<Props> = ({
     }
   };
 
-  useEffect(() => {
-    const fetchAttemptId = async () => {
-      try {
-        const response = await axios.get('/api/ujian/check');
-        setAttemptId(response.data.attemptId);
-      } catch (error) {
-        console.error('Error fetching current attempt:', error);
-        // Handle error (misalnya menampilkan pesan error)
-      }
-    };
+  // useEffect(() => {
+  //   const fetchAttemptId = async () => {
+  //     try {
+  //       const response = await axios.get('/api/ujian/check');
+  //       setAttemptId(response.data.attemptId);
+  //     } catch (error) {
+  //       console.error('Error fetching current attempt:', error);
+  //       // Handle error (misalnya menampilkan pesan error)
+  //     }
+  //   };
 
-    fetchAttemptId();
-  }, []);
+  //   fetchAttemptId();
+  // }, []);
+
+  // console.log(attemptId)
+  // console.log(attempt)
 
   useEffect(() => {
     let markedCount = 0;

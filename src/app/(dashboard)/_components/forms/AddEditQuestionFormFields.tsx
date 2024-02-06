@@ -85,6 +85,7 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({ isLoading }) => {
           <MenuItem value="TWK">TWK</MenuItem>
           <MenuItem value="TKP">TKP</MenuItem>
           <MenuItem value="TPA">TPA</MenuItem>
+          {/* <MenuItem value="TBI">TBI</MenuItem> */}
         </TextField>
       </div>
 
@@ -179,38 +180,50 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({ isLoading }) => {
                         />
                       )}
 
-                      <div className="grid items-center justify-center">
-                        <div
-                          onClick={() => {
-                            if (values.type !== "TPA") {
-                              setFieldValue(
-                                "correct",
-                                values.options[index].value
-                              );
-                            }
-                          }}
-                          className={`cursor-pointer flex items-center justify-center border-2 w-6 h-6 rounded-full ${
-                            values.type === "TPA" ||
-                            values.correct === option.value
-                              ? "border-indigo-600 bg-indigo-600"
-                              : "border-gray-300"
-                          }`}
-                        >
-                          {/* {!values.options.find((val) => val.value === "") &&
+                      {values.type !== "TPA" && (
+                        <div className="grid items-center justify-center">
+                          <div
+                            onClick={() => {
+                              if (values.type !== "TPA") {
+                                setFieldValue(
+                                  "correct",
+                                  values.options[index].value
+                                );
+        
+                                // Check if the answer is correct
+                                const isCorrect =
+                                  values.options[index].value === values.correct;
+        
+                                // Set poin to 5 if it's correct and not TPA
+                                setFieldValue(
+                                  `options.${index}.poin`,
+                                  isCorrect ? 5 : 0
+                                );
+                              }
+                            }}
+                            className={`cursor-pointer flex items-center justify-center border-2 w-6 h-6 rounded-full ${
+                              values.type === "TPA" ||
+                              values.correct === option.value
+                                ? "border-indigo-600 bg-indigo-600"
+                                : "border-gray-300"
+                            }`}
+                          >
+                            {/* {!values.options.find((val) => val.value === "") &&
                             values.correct === option.value && (
                               <div className="bg-indigo-600 w-4 h-4 rounded-full">
                                 &nbsp;
                               </div>
                             )} */}
-                          {values.type === "TPA" && (
-                            <div className="w-4 h-4 rounded-full bg-white"></div>
-                          )}
-                          {values.type !== "TPA" &&
-                            values.correct === option.value && (
+                            {values.type === "TPA" && (
                               <div className="w-4 h-4 rounded-full bg-white"></div>
                             )}
+                            {values.type !== "TPA" &&
+                              values.correct === option.value && (
+                                <div className="w-4 h-4 rounded-full bg-white"></div>
+                              )}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   ))}
               </>

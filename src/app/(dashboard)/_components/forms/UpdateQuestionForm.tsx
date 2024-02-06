@@ -66,6 +66,7 @@ export const UpdateQuestionForm: React.FC<Props> = ({
           { value: "", poin: 0 },
           { value: "", poin: 0 },
           { value: "", poin: 0 },
+          { value: "", poin: 0 },
         ],
       }}
       validationSchema={AddEditQuestionValidation}

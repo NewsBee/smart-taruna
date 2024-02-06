@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@material-ui/core";
-import { useSnackbar } from "notistack";
+import { Box, Button, CircularProgress } from "@material-ui/core";
+import { enqueueSnackbar, useSnackbar } from "notistack";
 import { useEffect, useState } from "react";
 import { ConfirmSubmitModalContent } from "../../../_components/ConfirmSubmitModal";
 import { EmptyResponse } from "../../../_components/EmptyResponse";
@@ -19,6 +19,7 @@ import { Sidebarcopy } from "@/app/(dashboard)/_components/Sidebarcopy";
 import { Sidebar } from "@/app/(dashboard)/_components/Sidebar";
 import CountDown from "@/app/(dashboard)/_components/CountDown";
 import { BottomBar } from "@/app/(dashboard)/_components/BottomBar";
+import { useRouter } from "next/navigation";
 
 interface IOption {
   value: string;
@@ -53,10 +54,11 @@ export default function PlayerScreen({
   // console.log(params.slug[0]);
   // console.log(data);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [response, setResponse] = useState<IResponse[]>([dummyResponses]);
+  const [response, setResponse] = useState<IResponse[]>([]);
   const [quizEnd, setQuizEnd] = useState(false);
   const [isSubmitConfirmed, setIsSubmitConfirmed] = useState(false);
   const [score, setScore] = useState(0);
+  const [attemptId, setAttemptId] = useState(null);
   const [confirmSubmitModalActive, setConfirmSubmitModalActive] =
     useState(false);
 
@@ -68,13 +70,43 @@ export default function PlayerScreen({
     handleConfirmSubmitModalOpen();
   };
 
-  // Fungsi dummy untuk menghitung skor
-  const findScore = () => {
-    setQuizEnd(true);
-    // Logic penghitungan skor dummy
-    let dummyScore = 10; // Ganti dengan logika penghitungan skor Anda
-    setScore(dummyScore);
+  const router = useRouter();
+
+  const onSubmitTimeUp = async () => {
+    try {
+      // Replace '/api/path-to-submit-quiz' dengan endpoint API Anda yang sebenarnya
+      const res = await axios.post("/api/ujian/submit", {
+        attemptId,
+        responses: response,
+      });
+      // console.log(res.data);
+
+      // Redirect atau menampilkan pesan sukses
+      enqueueSnackbar("Jawaban berhasil dikirim !", {
+        variant: "success",
+      });
+      router.push(`/hasil/${attemptId}`); // Sesuaikan path navigasi sesuai kebutuhan
+    } catch (error) {
+      console.error("Error submitting quiz:", error);
+      enqueueSnackbar("Gagal mengirim jawaban.", { variant: "error" });
+    }
   };
+
+  useEffect(() => {
+    const fetchAttemptId = async () => {
+      try {
+        const response = await axios.get("/api/ujian/check");
+        setAttemptId(response.data.attemptId);
+      } catch (error) {
+        console.error("Error fetching current attempt:", error);
+        // Handle error (misalnya menampilkan pesan error)
+      }
+    };
+
+    fetchAttemptId();
+  }, []);
+
+  console.log(response)
 
   useEffect(() => {
     if (data && data.questions) {
@@ -94,8 +126,39 @@ export default function PlayerScreen({
   }, [data, packageId]);
 
   useEffect(() => {
-    console.log("Responses:", data);
-  }, [data]);
+    const handleBeforeUnload = (e:any) => {
+      const message = "Apakah Anda yakin ingin meninggalkan halaman ini?";
+      e.preventDefault();
+      e.returnValue = message; // Standar untuk kebanyakan browser
+      return message; // Untuk beberapa versi browser yang lebih tua
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // Cleanup function
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
+
+  // useEffect(() => {
+  //   console.log("Responses:", data);
+  // }, [data]);
+
+  // console.log(attemptId)
+
+  if (!attemptId) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   // Render error jika ada
   if (error) {
@@ -135,7 +198,7 @@ export default function PlayerScreen({
                   <CountDown
                     startAt={data.createdAt}
                     duration={data.duration}
-                    onTimeUp={onSubmit}
+                    onTimeUp={onSubmitTimeUp}
                   />
                 </p>
                 {!quizEnd && (
@@ -184,6 +247,7 @@ export default function PlayerScreen({
                   handleConfirmSubmitModalClose={handleConfirmSubmitModalClose}
                   responses={response}
                   onConfirmSubmit={() => setIsSubmitConfirmed(true)}
+                  attemptId={attemptId}
                 />
               </ModalSkeleton>
             </div>

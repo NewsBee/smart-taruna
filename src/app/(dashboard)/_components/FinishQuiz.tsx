@@ -1,7 +1,11 @@
+import { Card, CardContent, LinearProgress } from "@material-ui/core";
 import { IOption } from "../shared/interfaces";
 import CustomAccordion from "./CustomAccordion";
 import { EmptyResponse } from "./EmptyResponse";
 import { Option } from "./Option";
+import { OptionHasil } from "./OptionHasil";
+import { Paper, Typography, Box } from "@mui/material";
+
 interface Props {
   responses: any;
   score: number;
@@ -25,6 +29,7 @@ export const ShowResponses: React.FC<Props> = ({
   const isTPA = tipe === "TPA";
   // const USER_CHECK_RESPONSE = as === "USER_CHECK_RESPONSE";
   // console.log(responses);
+  console.log(tipe);
 
   return (
     <>
@@ -38,22 +43,47 @@ export const ShowResponses: React.FC<Props> = ({
               {!isTPA && (
                 <>
                   <div className="w-full md:w-1/3 mx-2 mb-4 md:mb-0">
-                    <CustomAccordion tipeSoal="TIU" responses={responses} />
+                    <CustomAccordion
+                      passingGrade={80}
+                      tipeSoal="TIU"
+                      responses={responses}
+                    />
                   </div>
                   <div className="w-full md:w-1/3 mx-2 mb-4 md:mb-0">
-                    <CustomAccordion tipeSoal="TWK" responses={responses} />
+                    <CustomAccordion
+                      passingGrade={65}
+                      tipeSoal="TWK"
+                      responses={responses}
+                    />
                   </div>
                   <div className="w-full md:w-1/3 mx-2 mb-4 md:mb-0">
-                    <CustomAccordion tipeSoal="TKP" responses={responses} />
+                    <CustomAccordion
+                      passingGrade={166}
+                      tipeSoal="TKP"
+                      responses={responses}
+                    />
                   </div>
                 </>
               )}
 
               {/* Accordion untuk TPA */}
               {isTPA && (
-                <div className="w-full mx-2 mb-4 md:mb-0">
-                  <CustomAccordion tipeSoal="TPA" responses={responses} />
-                </div>
+                <>
+                  <div className="w-full mx-2 mb-4 md:mb-0">
+                    <CustomAccordion
+                      passingGrade={80}
+                      tipeSoal="TPA"
+                      responses={responses}
+                    />
+                  </div>
+                  {/* <div className="w-full mx-2 mb-4 md:mb-0">
+                    <CustomAccordion
+                      passingGrade={80}
+                      tipeSoal="TBI"
+                      responses={responses}
+                    />
+                  </div> */}
+                </>
               )}
             </div>
           </div>
@@ -61,7 +91,60 @@ export const ShowResponses: React.FC<Props> = ({
         {quizDeleted && (
           <p className="text-xl mb-2 text-rose-600">Quiz ini sudah dihapus.</p>
         )}
-        <p className="text-xl">Nilai anda adalah: {score}</p>
+        {/* <div className="mt-10">
+          <div className="bg-blue-100 p-5 rounded-lg shadow-lg mx-5 md:mx-auto md:w-8/12">
+            <p className="text-xl text-center text-blue-900 font-semibold">
+              Nilai Anda adalah: {score}
+            </p>
+          </div>
+        </div> */}
+        <Box sx={{ maxWidth: 600, mt: 8, mx: "auto", textAlign: "center" }}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" color="textSecondary" gutterBottom>
+                Nilai Anda
+              </Typography>
+              <Typography variant="h4" sx={{ mb: 2, fontWeight: "bold" }}>
+                {score}/550
+              </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  mb: 2,
+                }}
+              >
+                <Box sx={{ width: "100%", mr: 1 }}>
+                  <LinearProgress
+                    variant="determinate"
+                    value={(score / 550) * 100}
+                  />
+                </Box>
+                <Box sx={{ minWidth: 35 }}>
+                  <Typography
+                    variant="body2"
+                    color="textSecondary"
+                  >{`${Math.round((score / 550) * 100)}%`}</Typography>
+                </Box>
+              </Box>
+              {/* Optional: Add more details or feedback based on the score */}
+              {score >= 380 ? (
+                <Typography variant="body1" sx={{ color: "success.main" }}>
+                  Selamat! Anda telah mencapai skor yang sangat baik.
+                </Typography>
+              ) : score >= 250 ? (
+                <Typography variant="body1" sx={{ color: "warning.main" }}>
+                  Bagus! Namun masih ada ruang untuk peningkatan.
+                </Typography>
+              ) : (
+                <Typography variant="body1" sx={{ color: "error.main" }}>
+                  Tetap semangat! Perlu lebih banyak belajar lagi.
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
+        </Box>
 
         <div className="mt-4 mx-5 /12 md:mx-0 md:w-8/12 ">
           <p className="mb-2 text-xl font-bold">Perhatian!</p>
@@ -70,30 +153,29 @@ export const ShowResponses: React.FC<Props> = ({
             {responses.length > 0 && (
               <>
                 <div>
-                  <p>Jawaban benar</p>
-                  <Option
-                    selectedOption={""}
+                  <p>Jawaban Benar</p>
+                  <OptionHasil
+                    selectedOption={""} // Tidak ada jawaban yang dipilih
                     correctAns={"Opsi 1"}
                     option={{ value: "Opsi 1" }}
                     disabled
                   />
                 </div>
                 <div>
-                  <p>Jawaban Anda</p>
-                  <Option
-                    selectedOption={"Opsi 2"}
-                    correctAns={"Opsi 2"}
-                    option={{ value: "Opsi 2" }}
+                  <p>Jawaban salah</p>
+                  <OptionHasil
+                    selectedOption={"Opsi 1"} // Pengguna memilih "Opsi 1"
+                    correctAns={"Opsi 2"} // Jawaban yang benar adalah "Opsi 2"
+                    option={{ value: "Opsi 1" }} // Tampilkan "Opsi 1" sebagai jawaban pengguna
                     disabled
                   />
                 </div>
                 <div>
                   <p>Anda memilih jawaban benar</p>
-
-                  <Option
-                    selectedOption={"Opsi 3"}
-                    correctAns={"Opsi 3"}
-                    option={{ value: "Opsi 3" }}
+                  <OptionHasil
+                    selectedOption={"Opsi 3"} // Pengguna memilih "Opsi 3"
+                    correctAns={"Opsi 3"} // Jawaban yang benar adalah "Opsi 3"
+                    option={{ value: "Opsi 3" }} // Tampilkan "Opsi 3" sebagai jawaban yang benar dan dipilih
                     disabled
                   />
                 </div>
@@ -111,12 +193,13 @@ export const ShowResponses: React.FC<Props> = ({
                   </p>
                   <div className="flex flex-col items-start">
                     {resp.options.map((option: IOption, i: number) => (
-                      <Option
+                      <OptionHasil
                         key={i}
                         selectedOption={resp.response}
                         correctAns={resp.correct}
                         option={option}
                         disabled
+                        tipeSoal={tipe}
                       />
                     ))}
                   </div>

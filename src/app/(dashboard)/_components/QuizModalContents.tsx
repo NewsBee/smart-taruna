@@ -37,7 +37,7 @@ export const QuizModalContents: React.FC<Props> = ({
     try {
       const response = await axios.post(`/api/ujian/start/${_id}`);
       // Jika berhasil, navigasikan ke halaman quiz
-      console.log(response);
+      // console.log(response);
       router.push(`/ujian/${currTest}/${response.data.attemptId}`);
       setIsLoading(false);
     } catch (error: any) {

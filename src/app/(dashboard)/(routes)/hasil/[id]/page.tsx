@@ -35,7 +35,7 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
       try {
         setLoading(true);
         const response = await axios.get(`/api/hasil/${attemptId}`);
-        console.log(response)
+        // console.log(response)
         setAttemptData(response.data.attempt);
       } catch (err) {
         const error = err as AxiosError; // Menggunakan type assertion
@@ -80,6 +80,7 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
     })),
   }));
 
+  // console.log(attemptData.score)
   return (
     <>
       {transformedResponses.length > 0 ? (

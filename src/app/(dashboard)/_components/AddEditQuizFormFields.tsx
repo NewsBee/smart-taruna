@@ -24,7 +24,7 @@ export const AddEditQuizFormFields = ({ id }: { id?: string }) => {
           error={!!(touched.title && errors.title)}
           helperText={touched.title && errors.title}
           id="title"
-          label="Title"
+          label="Nama tes"
           variant="outlined"
         />
       </div>
@@ -39,7 +39,22 @@ export const AddEditQuizFormFields = ({ id }: { id?: string }) => {
           error={!!(touched.description && errors.description)}
           helperText={touched.description && errors.description}
           id="description"
-          label="Description"
+          label="Deskripsi tes"
+          variant="outlined"
+        />
+      </div>
+
+      <div className="mt-6">
+        <TextField
+          multiline
+          fullWidth
+          value={values.duration}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          error={!!(touched.duration && errors.duration)}
+          helperText={touched.duration && errors.duration}
+          id="duration"
+          label="Durasi tes (Menit)"
           variant="outlined"
         />
       </div>

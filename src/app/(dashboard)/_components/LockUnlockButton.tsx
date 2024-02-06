@@ -3,6 +3,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { useSnackbar } from "notistack";
 import axios from "axios";
+import { useQueryClient } from "react-query";
 
 interface Package {
   id: number;
@@ -24,15 +25,18 @@ interface Question {
 interface Props {
   packageId: number;
   isLocked: boolean;
-  setPackages: React.Dispatch<React.SetStateAction<Package[]>>;
+  testName?: string;
+  setPackages?: React.Dispatch<React.SetStateAction<Package[]>>;
 }
 
 const LockUnlockButton: React.FC<Props> = ({
   packageId,
   isLocked,
+  testName,
 }) => {
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
+  const queryClient = useQueryClient();
 
   const handleLockUnlock = async () => {
     try {
@@ -48,7 +52,7 @@ const LockUnlockButton: React.FC<Props> = ({
           { variant: "success" }
         );
         // Redirect ke halaman yang sama setelah berhasil
-        router.refresh();
+        queryClient.invalidateQueries(["Packages", testName]);
       } else {
         throw new Error("Failed to lock/unlock package");
       }
