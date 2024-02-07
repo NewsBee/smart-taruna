@@ -11,7 +11,7 @@ import { ModalSkeleton } from "../../../_components/Modal";
 import { Player } from "../../../_components/Player";
 import { Loader } from "../../../_components/Svgs";
 import { errorMessages } from "../../../shared/constants";
-import { IQuestion, IResponse } from "../../../shared/interfaces";
+import { IOption, IQuestion, IResponse } from "../../../shared/interfaces";
 import { useQuizQuestions } from "../../../shared/queries";
 import { useParams } from "next/navigation";
 import axios from "axios";
@@ -21,24 +21,47 @@ import CountDown from "@/app/(dashboard)/_components/CountDown";
 import { BottomBar } from "@/app/(dashboard)/_components/BottomBar";
 import { useRouter } from "next/navigation";
 
-interface IOption {
-  value: string;
-  label: string;
-}
+// interface IOption {
+//   value: string;
+//   label: string;
+// }
 
-// Data dummy untuk questions dan responses
-const dummyQuestions = [
-  { _id: "1", title: "Pertanyaan 1", quiz: "Quiz 1", options: ["A", "B", "C"] },
-  { _id: "2", title: "Pertanyaan 2", quiz: "Quiz 2", options: ["D", "E", "F"] },
+
+const options1: IOption[] = [
+  { value: "A", _id: "opt1" },
+  { value: "B", _id: "opt2" },
+  { value: "C", _id: "opt3" },
 ];
 
-const dummyResponses: IResponse[] = dummyQuestions.map((q) => ({
-  _id: q._id,
-  title: q.title,
-  quiz: q.quiz,
-  response: "",
-  options: q.options.map((option) => ({ value: option, label: option })), // Adjust this line
+const options2: IOption[] = [
+  { value: "D", _id: "opt4" },
+  { value: "E", _id: "opt5" },
+  { value: "F", _id: "opt6" },
+];
+
+const dummyQuestions: IQuestion[] = [
+  { _id: "1", title: "Pertanyaan 1", quiz: "Quiz 1", options: options1 },
+  { _id: "2", title: "Pertanyaan 2", quiz: "Quiz 2", options: options2 },
+];
+
+const dummyResponses: IResponse[] = dummyQuestions.map((question) => ({
+  ...question,
+  response: "", // Atau isi dengan nilai default jika diperlukan
 }));
+
+// Data dummy untuk questions dan responses
+// const dummyQuestions = [
+//   { _id: "1", title: "Pertanyaan 1", quiz: "Quiz 1", options: ["A", "B", "C"] },
+//   { _id: "2", title: "Pertanyaan 2", quiz: "Quiz 2", options: ["D", "E", "F"] },
+// ];
+
+// const dummyResponses: IResponse[] = dummyQuestions.map((q) => ({
+//   _id: q._id,
+//   title: q.title,
+//   quiz: q.quiz,
+//   response: "",
+//   options: q.options.map((option) => ({ value: option, label: option })), // Adjust this line
+// }));
 
 export default function PlayerScreen({
   params,
@@ -54,7 +77,7 @@ export default function PlayerScreen({
   // console.log(params.slug[0]);
   // console.log(data);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [response, setResponse] = useState<IResponse[]>([]);
+  const [response, setResponse] = useState<IResponse[]>(dummyResponses);
   const [quizEnd, setQuizEnd] = useState(false);
   const [isSubmitConfirmed, setIsSubmitConfirmed] = useState(false);
   const [score, setScore] = useState(0);
@@ -106,7 +129,7 @@ export default function PlayerScreen({
     fetchAttemptId();
   }, []);
 
-  console.log(response)
+  // console.log(response)
 
   useEffect(() => {
     if (data && data.questions) {
@@ -126,7 +149,7 @@ export default function PlayerScreen({
   }, [data, packageId]);
 
   useEffect(() => {
-    const handleBeforeUnload = (e:any) => {
+    const handleBeforeUnload = (e: any) => {
       const message = "Apakah Anda yakin ingin meninggalkan halaman ini?";
       e.preventDefault();
       e.returnValue = message; // Standar untuk kebanyakan browser
@@ -226,13 +249,16 @@ export default function PlayerScreen({
                   Submit
                 </Button>
               </div>
-              <Player
-                questions={response}
-                response={response}
-                setResponse={setResponse}
-                activeIndex={activeIndex}
-                setActiveIndex={setActiveIndex}
-              />
+              {response && (
+                <Player
+                  questions={response}
+                  response={response}
+                  setResponse={setResponse}
+                  activeIndex={activeIndex}
+                  setActiveIndex={setActiveIndex}
+                />
+              )}
+
               {/* <BottomBar
                 responses={response}
                 questions={response}
