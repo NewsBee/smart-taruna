@@ -53,11 +53,11 @@ export default function TestPage() {
   return (
     <div className="pb-10 px-10">
       <h3 className="text-2xl font-semibold text-center my-3">Dashboard</h3>
-      <div className="flex justify-between mb-4 flex-wrap">
-        <h4 className="text-xl font-medium text-left mb-3 items-center">
+      <div className="flex flex-wrap justify-center sm:justify-between text-center sm:text-left mb-4">
+        <h4 className="w-full sm:w-auto text-xl font-medium mb-3">
           Tryout saya
         </h4>
-        <div className="flex items-center w-full sm:w-auto">
+        <div className="flex justify-center sm:justify-start w-full sm:w-auto">
           {/* <Button variant="outlined" color="primary">
             + Create Quiz
           </Button> */}
@@ -98,8 +98,8 @@ export default function TestPage() {
                   redirect={"/ujian/" + test.name}
                   title={test.name}
                   status="aktif"
-                  description="No description available"
-                  tags={['tkp','skd']}
+                  description={test.name == 'SKD' ? "Tryout ujian SKD": "Tryout ujian TPA"}
+                  tags={["tkp", "skd"]}
                 />
               </div>
             ))}

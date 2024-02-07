@@ -110,7 +110,7 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
       enqueueSnackbar("ID Paket tidak valid", { variant: "error" });
     }
   };
-  console.log(packages)
+  // console.log(packages)
 
 
 
@@ -248,7 +248,7 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
                   currTest={params.slug}
                   selected={selectedQuiz?.id === pkg.id}
                 />
-                <div className="mt-2 ml-2">
+                <div className="mt-2 ml-2 flex gap-5 w-full">
                   <LockUnlockButton testName={pkg.testName}  packageId={pkg.id} isLocked={pkg.isLocked} />
                   <HideUnhideButton  packageId={pkg.id} isHidden={pkg.isHidden} testName={pkg.testName} />
                 </div>

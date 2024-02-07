@@ -140,6 +140,16 @@ const UserProfile = () => {
     const file = event.target.files[0];
     if (!file) return;
 
+    // Validasi ukuran file (contoh: max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setSnackbar({
+        open: true,
+        message: "Ukuran file terlalu besar. Maksimum adalah 5MB.",
+        severity: "error",
+      });
+      return;
+    }
+
     const formData = new FormData();
     formData.append("image", file);
 
@@ -148,6 +158,14 @@ const UserProfile = () => {
         method: "POST",
         body: formData,
       });
+
+      console.log(response)
+
+      if (!response.ok) {
+        // Jika status response bukan OK, langsung tolak dengan status dan statusText
+        throw new Error(`Error: ${response.status} ${response.statusText}`);
+      }
+
       const data = await response.json();
       if (response.ok) {
         // Update state profil dengan URL gambar baru atau lakukan fetch profil terbaru
