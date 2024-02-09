@@ -7,6 +7,7 @@ import { SidebarQuestion } from "./SidebarQuestion";
 interface Props {
   questions: IQuestion[];
   id?: number;
+  testName ?: string;
 }
 
 export const AddQuestionsSidebar: React.FC<Props> = ({ questions, id }) => {
@@ -60,6 +61,7 @@ export const AddQuestionsSidebar: React.FC<Props> = ({ questions, id }) => {
               index={index}
               expanded={expanded}
               showQuestions={showQuestions}
+              testname={question.quiz}
             />
           ))
         ) : (

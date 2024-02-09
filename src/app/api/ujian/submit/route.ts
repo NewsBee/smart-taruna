@@ -34,7 +34,7 @@ export const POST = async (req: NextRequest) => {
       if (!question) continue;
 
       let questionScore = 0;
-      if (question.type === "TPA" && response.response) {
+      if (question.type === "TKP" && response.response) {
         const selectedChoice = question.Choices.find(choice => choice.content === response.response);
         questionScore = selectedChoice ? selectedChoice.scoreValue : 0;
       } else {

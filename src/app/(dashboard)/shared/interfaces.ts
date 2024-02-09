@@ -7,13 +7,15 @@ export interface IQuestionForm {
     poin ?: number;
     type ?: string;
     explanation ?: string;
-    image?: File | null; // This will hold the image file
+    image: string; // URL gambar yang diupload
+    imageName: string; // Nama file gambars will hold the image file
 }
 export interface IQuestion {
     _id: string;
     quiz: string; // unpopulated
     title: string;
     options: IOption[];
+    image ?: string;
 }
 
 export interface IOption {

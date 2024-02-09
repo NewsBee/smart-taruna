@@ -5,12 +5,18 @@ import { IQuestionForm } from "../../shared/interfaces";
 import { FormikError } from "../../shared/utils";
 import { useRouter } from "next/navigation";
 import { StyledButton } from "@/components/styled-button";
+import { warn } from "console";
+import axios from "axios";
 
 interface Props {
   isLoading: boolean;
+  quizId?: number;
 }
 
-export const AddEditQuestionFormFields: React.FC<Props> = ({ isLoading }) => {
+export const AddEditQuestionFormFields: React.FC<Props> = ({
+  isLoading,
+  quizId,
+}) => {
   const {
     touched,
     errors,
@@ -20,14 +26,49 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({ isLoading }) => {
     handleSubmit,
     setFieldValue,
   } = useFormikContext<IQuestionForm>();
+  // console.log(quizId)
   const router = useRouter();
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files ? event.target.files[0] : null;
-    if (file) {
-      setFieldValue("image", file);
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      confirm("Ukuran file terlalu besar");
+      return;
+    }
+
+    const formData = new FormData();
+
+    formData.append("image", file);
+
+    try {
+      const response = await axios.post(
+        `/api/pertanyaan/create/uploadimg/${quizId}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      // console.log(response.data)
+      // Jika upload berhasil, simpan URL file yang dikembalikan API ke dalam form
+      if (response.data && response.data.path) {
+        // Menggunakan setFieldValue dari useFormikContext untuk mengatur nilai field
+        setFieldValue("image", response.data.path); // Mengatur URL gambar yang diupload
+        setFieldValue("imageName", file.name); // Menyimpan nama file yang diupload
+      } else {
+        alert("Gagal mengupload file");
+      }
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      alert("Gagal mengupload file");
     }
   };
-  const selectedFileName = values.image ? values.image.name : "";
+
+  // const selectedFileName = values.image ? values.image.name : "";
 
   return (
     <form className="pb-2" onSubmit={handleSubmit}>
@@ -47,8 +88,8 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({ isLoading }) => {
             name="image"
           />
         </Button>
-        {selectedFileName && (
-          <Box className="mt-2 text-sm text-gray-600">{selectedFileName}</Box>
+        {values.imageName && (
+          <Box className="mt-2 text-sm text-gray-600">{values.imageName}</Box>
         )}
         {touched.image && errors.image && (
           <Box className="mt-1 text-sm text-red-500">{errors.image}</Box>
@@ -143,7 +184,7 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({ isLoading }) => {
                         display: "grid",
                         // gridTemplateColumns: "1fr 100px",
                         gridTemplateColumns:
-                          values.type === "TPA" ? "1fr 50px 50px" : "1fr 50px",
+                          values.type === "TKP" ? "1fr 50px 50px" : "1fr 50px",
                       }}
                     >
                       <TextField
@@ -167,33 +208,49 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({ isLoading }) => {
                           `options.${index}.value`
                         )}
                       />
-                      {values.type === "TPA" && (
+                      {values.type === "TKP" && (
                         <TextField
                           fullWidth
                           type="number"
                           name={`options.${index}.poin`}
                           value={option.poin}
-                          onChange={handleChange}
+                          onChange={(e) => {
+                            const poinValue = parseInt(e.target.value, 10);
+                            // Periksa apakah poinValue kurang dari atau sama dengan 5
+                            if (poinValue <= 5) {
+                              handleChange(e);
+                            } else {
+                              // Opsi: tampilkan pesan error atau set nilai maksimal menjadi 5
+                              // contoh: setFieldValue(`options.${index}.poin`, 5);
+                              // atau tampilkan pesan kesalahan
+                              alert(
+                                "Poin harus kurang dari atau sama dengan 5"
+                              );
+                            }
+                          }}
+                          // onChange={handleChange}
                           onBlur={handleBlur}
                           label="Poin"
                           variant="outlined"
+                          InputProps={{ inputProps: { min: 1, max: 5 } }}
                         />
                       )}
 
-                      {values.type !== "TPA" && (
+                      {values.type !== "TKP" && (
                         <div className="grid items-center justify-center">
                           <div
                             onClick={() => {
-                              if (values.type !== "TPA") {
+                              if (values.type !== "TKP") {
                                 setFieldValue(
                                   "correct",
                                   values.options[index].value
                                 );
-        
+
                                 // Check if the answer is correct
                                 const isCorrect =
-                                  values.options[index].value === values.correct;
-        
+                                  values.options[index].value ===
+                                  values.correct;
+
                                 // Set poin to 5 if it's correct and not TPA
                                 setFieldValue(
                                   `options.${index}.poin`,
@@ -202,7 +259,7 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({ isLoading }) => {
                               }
                             }}
                             className={`cursor-pointer flex items-center justify-center border-2 w-6 h-6 rounded-full ${
-                              values.type === "TPA" ||
+                              values.type === "TKP" ||
                               values.correct === option.value
                                 ? "border-indigo-600 bg-indigo-600"
                                 : "border-gray-300"
@@ -214,10 +271,10 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({ isLoading }) => {
                                 &nbsp;
                               </div>
                             )} */}
-                            {values.type === "TPA" && (
+                            {values.type === "TKP" && (
                               <div className="w-4 h-4 rounded-full bg-white"></div>
                             )}
-                            {values.type !== "TPA" &&
+                            {values.type !== "TKP" &&
                               values.correct === option.value && (
                                 <div className="w-4 h-4 rounded-full bg-white"></div>
                               )}

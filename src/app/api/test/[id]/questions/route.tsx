@@ -128,11 +128,11 @@ export const GET = async (
 
 export async function POST(req: Request, context: { params: { id: any } }) {
   const packageId = context.params.id;
-  const { content, type, explanation, Choices } = await req.json();
+  const { content, type, explanation, Choices, image } = await req.json();
   try {
-    // Periksa apakah tipe soal adalah TPA dan sesuaikan nilai isCorrect jika benar
+    // Periksa apakah tipe soal adalah TKP dan sesuaikan nilai isCorrect jika benar
     const modifiedChoices = Choices.map((choice: Option) => {
-      if (type === "TPA") {
+      if (type === "TKP") {
         // Untuk TPA, semua pilihan dianggap benar dan scoreValue mengikuti yang dikirim dari frontend
         return {
           ...choice,
@@ -153,6 +153,7 @@ export async function POST(req: Request, context: { params: { id: any } }) {
         content,
         type,
         explanation,
+        image,
         packageId: parseInt(packageId), // Pastikan packageId disediakan dan valid
         Choices: {
           createMany: {

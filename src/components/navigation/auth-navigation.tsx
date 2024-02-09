@@ -9,7 +9,7 @@ import { useSession } from 'next-auth/react'
 const AuthNavigation: FC = () => {
   const router = useRouter()
   const { data: session, status  } = useSession(); 
-  console.log(session)
+  // console.log(session)
 
   const [showButtons, setShowButtons] = useState(false); // State to control visibility of buttons
 

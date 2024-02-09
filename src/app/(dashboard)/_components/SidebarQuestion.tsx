@@ -21,6 +21,7 @@ interface SidebarProps {
   setExpandQuestion: React.Dispatch<React.SetStateAction<string>>;
   setExpanded: React.Dispatch<React.SetStateAction<boolean>>;
   id?: number;
+  testname : string;
 }
 
 export const SidebarQuestion: React.FC<SidebarProps> = ({
@@ -32,6 +33,7 @@ export const SidebarQuestion: React.FC<SidebarProps> = ({
   expandQuestion,
   setExpanded,
   id,
+  testname,
 }) => {
   if (typeof id === 'undefined') {
     throw new Error("id is undefined");
@@ -148,7 +150,7 @@ export const SidebarQuestion: React.FC<SidebarProps> = ({
             />
             <div
               onClick={() =>
-                router.push(`/dashboard/SKD/${id}/update/${question._id}`)
+                router.push(`/dashboard/${testname}/${id}/update/${question._id}`)
               }
               className="p-2 bg-indigo-600 rounded-full mr-4 cursor-pointer"
             >

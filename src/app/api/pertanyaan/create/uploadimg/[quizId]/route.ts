@@ -47,9 +47,10 @@ async function uploadImageToS3(
   return fileUrl;
 }
 
-export async function POST(req: NextRequest, context: { params: { quizId: number } }) {
+export async function POST(req: NextRequest, context: { params: { quizId: string } }) {
   try {
-    const quizId = context.params.quizId;
+    const quizId =  parseInt(context.params.quizId, 10);
+    // console.log(quizId)
     const data = await req.formData();
     const imageFile = data.get("image") as Blob | null;
     const session = await getServerSession(authOptions);
@@ -73,17 +74,10 @@ export async function POST(req: NextRequest, context: { params: { quizId: number
     const fileUrl = await uploadImageToS3(fileStream, fileName);
     // console.log(fileUrl)
     if (fileUrl) {
-      const updatedQuestion = await prismadb.question.update({
-        where: { id: quizId }, // Ganti dengan ID pertanyaan yang sebenarnya
-        data: { image: fileUrl }, // Update URL gambar
-      });
-      if (updatedQuestion) {
-        return new Response(JSON.stringify({
-          message: "Image uploaded successfully",
-          path: fileUrl,
-          question: updatedQuestion,
-        }), { status: 200 });
-      }
+      return new Response(JSON.stringify({
+        message: "Image uploaded successfully",
+        path: fileUrl,
+      }), { status: 200 });
     }
 
     // const fileUrl = await uploadImageToS3(buffer, fileName);

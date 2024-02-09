@@ -68,6 +68,8 @@ export const UpdateQuestionForm: React.FC<Props> = ({
           { value: "", poin: 0 },
           { value: "", poin: 0 },
         ],
+        image:'',
+        imageName:'',
       }}
       validationSchema={AddEditQuestionValidation}
       onSubmit={async (values, { setSubmitting }) => {
@@ -79,6 +81,7 @@ export const UpdateQuestionForm: React.FC<Props> = ({
           content: values.title,
           type: values.type,
           explanation: values.explanation,
+          image: values.image,
           Choices: values.options.map(option => ({
             id: option._id,
             content: option.value,
@@ -86,7 +89,7 @@ export const UpdateQuestionForm: React.FC<Props> = ({
             scoreValue: option.poin, 
           })),
         };
-        console.log(payload)
+        // console.log(payload)
         // console.log(id)
         
         updateQuestionMutate(payload, {

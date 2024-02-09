@@ -33,12 +33,19 @@ interface Test {
   // Tambahkan properti lain sesuai dengan struktur data test Anda
 }
 
+interface Tag {
+  id: number;
+  name: string;
+  // Tambahkan properti lain dari model Tag jika ada
+}
+
 interface Package {
   id: number;
   testName: string;
   title: string;
   questions: Question[];
   isLocked: boolean; // Menambahkan properti isLocked
+  tags: Tag[]; // Menambahkan array Tag ke interface Package
 }
 
 interface Question {
@@ -140,6 +147,8 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
     loadPackageDetails();
   }, [data, params.slug, refreshData]);
 
+  // console.log(packages)
+
   return (
     <div className="pb-10 px-10">
       {/* <h3 className="text-2xl font-semibold text-center my-3">
@@ -231,6 +240,9 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
           {packages.map((pkg: any) => {
             // Access detail for each package
             const detail = packageDetails[pkg.id];
+
+            const tags = pkg.tags && pkg.tags.length > 0 ? pkg.tags.map((tag: { name: string }) => tag.name) : [params.slug.toUpperCase()];
+            // console.log(tags)
             return (
               <div className="p-4" key={pkg.id}>
                 {/* <p>{detail ? detail.totalQuestions : 'Loading...'}</p>
@@ -238,7 +250,7 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
                 <QuizCard
                   status="active"
                   description="No desc available"
-                  tags={["kedinasan"]}
+                  tags={tags}
                   onSelect={() => setSelectedQuiz(pkg)}
                   questionsCount={detail?.totalQuestions}
                   score={detail?.highestScore}

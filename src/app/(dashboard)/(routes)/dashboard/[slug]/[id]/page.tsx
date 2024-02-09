@@ -13,8 +13,10 @@ import { ErrorMessage } from "@/app/(dashboard)/_components/ErrorMessage";
 
 interface Props {}
 
-export default function AddQuestions({ params }: { params: { id: string } }) {
+export default function AddQuestions({ params }: { params: { id: string, slug:string } }) {
   const id = parseInt(params.id);
+  // console.log(params.slug)
+  const totalSoal = params.slug === 'SKD' ? 110 : 50;
   //   const { isLoading, data } = useQuizQuestions(id);
   const queryClient = useQueryClient();
   const { data, isLoading, isFetching, error } = useQuizQuestions(
@@ -63,11 +65,11 @@ export default function AddQuestions({ params }: { params: { id: string } }) {
           <div className="min-h-[8%] border-b border-gray-200 flex pl-4 pr-4 md:pr-10 py-4 justify-between">
             <p className="mt-auto">Add Question</p>
             <div className="flex flex-col justify-center items-center">
-              <p className="mb-1">{totalQuestions} / 110 Added</p>
+              <p className="mb-1">{totalQuestions} / {totalSoal} Added</p>
               <div className="bg-gray-200 rounded-full h-1 w-28 md:w-48">
                 <div
                   className="bg-indigo-600 rounded-full h-1"
-                  style={{ width: `${(totalQuestions / 110) * 100}%` }}
+                  style={{ width: `${(totalQuestions / totalSoal) * 100}%` }}
                 ></div>
               </div>
             </div>

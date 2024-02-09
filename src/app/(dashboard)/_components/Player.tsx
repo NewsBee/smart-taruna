@@ -57,12 +57,22 @@ export const Player: React.FC<Props> = ({
   useEffect(() => {
     setSelectedOption(response[activeIndex]?.response || "");
   }, [activeIndex, response]);
+  // console.log(questions)
 
   return (
     <div className="flex-1 flex-grow px-4 py-5 min-h-[86%] flex flex-col text-sm md:text-base">
+      {questions && questions[activeIndex].image && (
+        <div className="my-4 flex justify-start">
+          <img
+            src={questions[activeIndex].image}
+            alt="Question Image"
+            className="max-w-md max-h-[300px] object-contain cursor-zoom-in"
+            // onClick={() => window.open(questions[activeIndex].image, '_blank')} // Membuka gambar di tab baru ketika diklik
+          />
+        </div>
+      )}
       <p className="break-words">{questions && questions[activeIndex].title}</p>
       <div className="flex flex-col items-start">
-        
         {/* {questions &&
           questions[activeIndex].options.map((option: IOption, i: number) => (
             <Option

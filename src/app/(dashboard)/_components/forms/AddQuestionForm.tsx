@@ -47,20 +47,25 @@ export const AddQuestionForm: React.FC<Props> = ({ quizId }) => {
           { value: "", poin: 0 },
           { value: "", poin: 0 },
         ],
-        image: null,
+        image:'',
+        imageName:'',
+
       }}
+      
       validationSchema={AddEditQuestionValidationNew}
       onSubmit={async (values, { setSubmitting, setFieldError, resetForm }) => {
+        // console.log(values.image)
         const payload = {
           content: values.title,
           type: values.type,
           explanation: values.explanation,
+          image: values.image,
           // packageId:  quizId,
           Choices: values.options.map((option) => ({
             content: option.value,
             isCorrect: values.correct === option.value,
             scoreValue:
-              values.type !== "TPA" && values.correct === option.value
+              values.type !== "TKP" && values.correct === option.value
                 ? 5
                 : option.poin,
           })),
@@ -152,7 +157,7 @@ export const AddQuestionForm: React.FC<Props> = ({ quizId }) => {
         }
       }}
     >
-      <AddEditQuestionFormFields isLoading={isLoading} />
+      <AddEditQuestionFormFields quizId={quizId} isLoading={isLoading} />
     </Formik>
   );
 };

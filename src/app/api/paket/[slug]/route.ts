@@ -12,6 +12,7 @@ export const GET = async(req: NextRequest, context: { params: { slug: any } } ) 
         },
         include: {
           questions: true, // Opsional, jika Anda ingin memasukkan pertanyaan dari masing-masing paket
+          tags: true,
         },
       });
     // const { accessToken } = await getAccessToken();

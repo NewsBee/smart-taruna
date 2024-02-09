@@ -137,6 +137,7 @@ export default function PlayerScreen({
       const newResponses = data.questions.map((q: any) => ({
         _id: q.id.toString(),
         title: q.content,
+        image: q.image,
         quiz: data.testName, // Nama tes, misalnya 'SKD'
         response: "",
         options: q.choices.map((choice: any) => ({

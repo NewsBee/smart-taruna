@@ -29,7 +29,7 @@ export const ShowResponses: React.FC<Props> = ({
   const isTPA = tipe === "TPA";
   // const USER_CHECK_RESPONSE = as === "USER_CHECK_RESPONSE";
   // console.log(responses);
-  console.log(tipe);
+  // console.log(tipe);
 
   return (
     <>
@@ -203,7 +203,7 @@ export const ShowResponses: React.FC<Props> = ({
                       />
                     ))}
                   </div>
-                  {resp.response !== resp.correct && (
+                  {(resp.quiz === 'TKP' || resp.response !== resp.correct) && (
                     <div className="bg-emerald-500 p-4 mt-2 rounded-md">
                       <h2 className="text-white font-bold">Penjelasan</h2>
                       <p className="text-white">{resp.explanation}</p>
