@@ -24,10 +24,16 @@ const CustomAccordion: React.FC<Props> = ({
   const answeredQuestions = filteredResponses.filter(
     (resp) => resp.response !== ""
   ).length;
-  const correctAnswers = filteredResponses.filter(
-    (resp) => resp.response === resp.correct
-  ).length;
-  const incorrectAnswers = answeredQuestions - correctAnswers;
+  const correctAnswers = tipeSoal === "TKP" 
+  ? answeredQuestions // Semua jawaban dianggap benar untuk TKP
+  : filteredResponses.filter((resp) => resp.response === resp.correct).length;
+  // const correctAnswers = filteredResponses.filter(
+  //   (resp) => resp.response === resp.correct
+  // ).length;
+  // const incorrectAnswers = answeredQuestions - correctAnswers;
+  const incorrectAnswers = tipeSoal === "TKP" 
+    ? 0 // Tidak ada jawaban salah untuk TKP
+    : answeredQuestions - correctAnswers;
   const totalScore = filteredResponses.reduce(
     (acc, resp) => acc + resp.score,
     0
@@ -82,7 +88,7 @@ const CustomAccordion: React.FC<Props> = ({
                     Jumlah Benar
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {tipeSoal === "TPA" ? incorrectAnswers : correctAnswers}
+                    {tipeSoal === "TKP" ? incorrectAnswers : correctAnswers}
                   </td>
                 </tr>
                 {tipeSoal !== "TPA" && (

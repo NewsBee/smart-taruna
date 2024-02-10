@@ -77,6 +77,8 @@ export const UpdateQuestionForm: React.FC<Props> = ({
         enqueueSnackbar(loadingMessages.actionLoading("Updating", "Question"), {
           variant: "info",
         });
+        console.log(values.image)
+        console.log(values.imageName)
         const payload = {
           content: values.title,
           type: values.type,

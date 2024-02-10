@@ -66,9 +66,9 @@ export const QuizCard: React.FC<Props> = (props) => {
             }
           }
         }}
-        className={`relative shadow-md px-10 py-8 rounded-md bg-white cursor-pointer ${
+        className={`relative shadow-md px-10 py-8 rounded-md bg-[white] cursor-pointer ${
           selected ? " border-2 border-teal-500" : ""
-        }`}
+        } ${pathname === '/ujian/'+ currTest ? "border-2 border-teal-500" : ""}`}
         style={{ boxShadow: "15px 15px 54px -10px #0000001f" }}
       >
         {pathname == "/dashboard" && (

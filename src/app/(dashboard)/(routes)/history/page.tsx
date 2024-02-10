@@ -48,7 +48,7 @@ const StatisticsByQuiz: React.FC = () => {
   };
 
   const handleViewAttempt = (attemptId: number) => {
-    console.log("View Attempt", attemptId);
+    // console.log("View Attempt", attemptId);
     router.push(`/hasil/${attemptId}`);
     // Implement view attempt logic
   };

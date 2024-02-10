@@ -18,32 +18,32 @@ interface Data {
 export const data: Data[] = [
   {
     title: 'Perangkingan Nasional ',
-    description: 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore',
+    description: 'Ukur kemampuanmu di tingkat nasional dan lihat dimana kamu berdiri di antara ribuan peserta.',
     icon: <MilitaryTechIcon />,
   },
   {
     title: 'Pembahasan Soal',
-    description: 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore',
+    description: 'Pahami konsep di balik soal dengan pembahasan mendetail untuk setiap latihan.',
     icon: <ForumIcon />,
   },
   {
     title: 'Manajemen Waktu',
-    description: 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore',
+    description: 'Optimalkan waktu tes dengan latihan simulasi yang realistis.',
     icon: <LocalLibraryIcon />,
   },
   {
     title: 'Sistem CAT',
-    description: 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore',
+    description: 'Bersiaplah untuk SKD CPNS dengan simulasi sistem CAT yang otentik.',
     icon: <LaptopIcon />,
   },
   {
     title: 'Akses Belajar Fleksibel',
-    description: 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore',
+    description: 'Belajar tanpa batas, akses materi di mana saja melalui aplikasi atau web.',
     icon: <TimelineIcon />,
   },
   {
     title: 'Soal Berstandar HOTS',
-    description: 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore',
+    description: 'Tingkatkan analisis dan pemecahan masalah dengan latihan soal HOTS.',
     icon: <QuizIcon />,
   },
 ]

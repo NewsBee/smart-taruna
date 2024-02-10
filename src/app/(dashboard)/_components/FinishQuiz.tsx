@@ -28,7 +28,7 @@ export const ShowResponses: React.FC<Props> = ({
   const AUTHOR_CHECK_RESPONSE = as === "AUTHOR_CHECK_RESPONSE";
   const isTPA = tipe === "TPA";
   // const USER_CHECK_RESPONSE = as === "USER_CHECK_RESPONSE";
-  // console.log(responses);
+  console.log(responses);
   // console.log(tipe);
 
   return (
@@ -105,7 +105,7 @@ export const ShowResponses: React.FC<Props> = ({
                 Nilai Anda
               </Typography>
               <Typography variant="h4" sx={{ mb: 2, fontWeight: "bold" }}>
-                {score}/550
+                {score}/{tipe === "TPA" ? 500 : 550}
               </Typography>
               <Box
                 sx={{
@@ -118,14 +118,17 @@ export const ShowResponses: React.FC<Props> = ({
                 <Box sx={{ width: "100%", mr: 1 }}>
                   <LinearProgress
                     variant="determinate"
-                    value={(score / 550) * 100}
+                    value={(score / (tipe === "TPA" ? 500 : 550)) * 100}
+                    // value={(score / {tipe === "TPA" ? 500 : 550}) * 100}
                   />
                 </Box>
                 <Box sx={{ minWidth: 35 }}>
                   <Typography
                     variant="body2"
                     color="textSecondary"
-                  >{`${Math.round((score / 550) * 100)}%`}</Typography>
+                  >{`${Math.round(
+                    (score / (tipe === "TPA" ? 500 : 550)) * 100
+                  )}%`}</Typography>
                 </Box>
               </Box>
               {/* Optional: Add more details or feedback based on the score */}
@@ -187,8 +190,26 @@ export const ShowResponses: React.FC<Props> = ({
               <p className="mb-2 text-xl font-bold">Jawaban</p>
               {responses.map((resp: any, i: number) => (
                 <div className="mb-20 shadow-sm" key={i}>
+                  {resp.image && (
+                    <div
+                      style={{
+                        width: "100%",
+                        overflow: "hidden",
+                        borderRadius: "8px",
+                        maxHeight: "300px",
+                      }}
+                    >
+                      {" "}
+                      {/* Set a maximum height */}
+                      <img
+                        src={resp.image}
+                        alt="Gambar Soal"
+                        style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+
+                      />
+                    </div>
+                  )}
                   <p>
-                    {" "}
                     <span className="text-lg">{i + 1}.</span> {resp.title}
                   </p>
                   <div className="flex flex-col items-start">
@@ -203,7 +224,7 @@ export const ShowResponses: React.FC<Props> = ({
                       />
                     ))}
                   </div>
-                  {(resp.quiz === 'TKP' || resp.response !== resp.correct) && (
+                  {(resp.quiz === "TKP" || resp.response !== resp.correct) && (
                     <div className="bg-emerald-500 p-4 mt-2 rounded-md">
                       <h2 className="text-white font-bold">Penjelasan</h2>
                       <p className="text-white">{resp.explanation}</p>

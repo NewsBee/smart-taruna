@@ -11,6 +11,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Smarttaruna",
   description: "Aplikasi Tryout Tes Kedinasan ",
+  icons:{
+    icon: "/images/logo.png",
+  }
 };
 
 export default function RootLayout({

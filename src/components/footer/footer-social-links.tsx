@@ -6,7 +6,7 @@ import { SocialLink } from '@/interfaces/social-link'
 export const socialLinks: SocialLink[] = [
   {
     name: 'Instagram',
-    link: '#',
+    link: 'https://www.instagram.com/smarttarunaeducation/',
     icon: '/images/icons/instagram.svg',
   },
   {
@@ -24,11 +24,11 @@ export const socialLinks: SocialLink[] = [
   //   link: 'https://dribbble.com/shots/18114471-Coursespace-Online-Course-Landing-Page',
   //   icon: '/images/icons/dribbble.svg',
   // },
-  {
-    name: 'Github',
-    link: 'https://github.com/newsbee/',
-    icon: '/images/icons/github.svg',
-  },
+  // {
+  //   name: 'Github',
+  //   link: 'https://github.com/newsbee/',
+  //   icon: '/images/icons/github.svg',
+  // },
 ]
 
 interface SocialLinkItemProps {

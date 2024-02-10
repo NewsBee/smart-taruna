@@ -16,7 +16,7 @@ interface Props {}
 export default function AddQuestions({ params }: { params: { id: string, slug:string } }) {
   const id = parseInt(params.id);
   // console.log(params.slug)
-  const totalSoal = params.slug === 'SKD' ? 110 : 50;
+  const totalSoal = params.slug === 'SKD' ? 110 : 100;
   //   const { isLoading, data } = useQuizQuestions(id);
   const queryClient = useQueryClient();
   const { data, isLoading, isFetching, error } = useQuizQuestions(

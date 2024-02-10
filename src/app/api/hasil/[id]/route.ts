@@ -42,8 +42,15 @@ export const GET = async (req: NextRequest, context: { params: { id: any } }) =>
           },
         },
         // Include other related data if needed
+        User: true, // Asumsi Anda memiliki relasi ke tabel User
       },
     });
+
+
+    if (!attempt || attempt.userId !== Number(session.user.id)) { // Sesuaikan `attempt.userId` dengan struktur data Anda
+      return NextResponse.json({message: "Anda tidak memiliki akses"}, {status: 403});
+    }
+
     if (attempt) {
       return NextResponse.json({attempt})
     } else {

@@ -52,6 +52,7 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
     fetchAttemptData();
   }, [attemptId]);
   // console.log(attemptData?.Package.testName)
+  console.log(attemptData)
 
   if (loading) {
     return <Loader halfScreen />;
@@ -69,6 +70,7 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
     _id: resp.Question.id.toString(),
     title: resp.Question.content,
     score: resp.score,
+    image: resp.Question.image,
     quiz: resp.Question.type,
     response: resp.content,
     correct: resp.Question.Choices.find((choice: IChoice) => choice.isCorrect)

@@ -44,7 +44,7 @@ export const PUT = async (
   context: { params: { id: any } }
 ) => {
   const questionId = context.params.id;
-  const { content, type, explanation, Choices } = await req.json();
+  const { content, type, explanation, Choices, image } = await req.json();
 
   try {
     const updateManyChoices = Choices.map((choice: Choice) => {
@@ -58,7 +58,7 @@ export const PUT = async (
         data: {
           content: choice.content,
           isCorrect: isCorrect,
-          scoreValue: scoreValue,
+          scoreValue: scoreValue
         },
       };
     });
@@ -72,6 +72,7 @@ export const PUT = async (
         Choices: {
           updateMany: updateManyChoices,
         },
+        image
       },
     });
     
