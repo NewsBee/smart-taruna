@@ -9,12 +9,10 @@ import {
 } from "../../shared/constants";
 import { IQuestionForm } from "../../shared/interfaces";
 import {
-  AddEditQuestionValidation,
   AddEditQuestionValidationNew,
 } from "../../shared/validationSchema";
 import { AddEditQuestionFormFields } from "./AddEditQuestionFormFields";
 import { useCreateQuestion } from "../../shared/queries";
-import { useEffect } from "react";
 
 interface Props {
   quizId: number;
@@ -41,37 +39,32 @@ export const AddQuestionForm: React.FC<Props> = ({ quizId }) => {
         type: "",
         explanation: "",
         options: [
-          { value: "", poin: 0 },
-          { value: "", poin: 0 },
-          { value: "", poin: 0 },
-          { value: "", poin: 0 },
-          { value: "", poin: 0 },
+          { value: "", poin: 0, image: "" },
+          { value: "", poin: 0, image: "" },
+          { value: "", poin: 0, image: "" },
+          { value: "", poin: 0, image: "" },
+          { value: "", poin: 0, image: "" },
         ],
-        image:'',
-        imageName:'',
-
+        image: "",
+        imageName: "",
       }}
-      
       validationSchema={AddEditQuestionValidationNew}
       onSubmit={async (values, { setSubmitting, setFieldError, resetForm }) => {
-        // console.log(values.image)
         const payload = {
           content: values.title,
           type: values.type,
           explanation: values.explanation,
           image: values.image,
-          // packageId:  quizId,
           Choices: values.options.map((option) => ({
             content: option.value,
-            isCorrect: values.correct === option.value,
+            isCorrect: values.correct === option.value || values.correct === option.image,
             scoreValue:
-              values.type !== "TKP" && values.correct === option.value
+              values.type !== "TKP" && (values.correct === option.value || values.correct === option.image)
                 ? 5
                 : option.poin,
+            image: option.image,
           })),
         };
-
-        // console.log(payload);
 
         try {
           setSubmitting(true);
@@ -81,10 +74,10 @@ export const AddQuestionForm: React.FC<Props> = ({ quizId }) => {
           }
 
           values.options.forEach((option, index) => {
-            if (!!!option.value.trim()) {
+            if (!option.value.trim() && !option.image) {
               setFieldError(
                 `options.${index}.value`,
-                "Only Spaces not allowed."
+                "Value or Image is required."
               );
               throw Error("Form Error");
             }
@@ -93,18 +86,17 @@ export const AddQuestionForm: React.FC<Props> = ({ quizId }) => {
           const maping: { [key: string]: number[] } = {};
 
           values.options.forEach((option1, i1) => {
-            if (option1.value) {
-              // Ensure option1.value is defined
+            if (option1.value || option1.image) {
               let flag = 0;
               const option1Indices: number[] = [];
               values.options.forEach((option2, i2) => {
-                if (option1.value === option2.value) {
+                if ((option1.value && option1.value === option2.value) || (option1.image && option1.image === option2.image)) {
                   flag++;
                   option1Indices.push(i2);
                 }
               });
               if (flag > 1) {
-                maping[option1.value] = option1Indices;
+                maping[option1.value || option1.image || ""] = option1Indices;
               }
             }
           });

@@ -6,28 +6,29 @@ import {
   loadingMessages,
   successMessages,
 } from "../../shared/constants";
-import { IOption, IQuestionForm } from "../../shared/interfaces";
-// import { useUpdateQuestion } from "../../shared/queries";
-import { AddEditQuestionValidation } from "../../shared/validationSchema";
+import { IQuestionForm } from "../../shared/interfaces";
+import { AddEditQuestionValidation, AddEditQuestionValidationNew } from "../../shared/validationSchema";
 import { AddEditQuestionFormFields } from "./AddEditQuestionFormFields";
 import { useUpdateQuestion } from "../../shared/queries";
 import { useRouter } from "next/navigation";
+
+export interface IOptions {
+  value: string;
+  _id?: number; // ubah dari string ke number
+  poin?: number;
+  image?: string;
+}
 
 interface Props {
   id: string;
   title: string;
   correct: string;
   options: IOptions[];
-  type : string,
-  explanation : string,
-  slug : string;
-  quizId : number;
-}
-
-export interface IOptions {
-  value : string;
-  _id?: number;
-  poin ?: number;
+  type: string;
+  explanation: string;
+  slug: string;
+  quizId: number;
+  image: string;
 }
 
 export const UpdateQuestionForm: React.FC<Props> = ({
@@ -39,19 +40,11 @@ export const UpdateQuestionForm: React.FC<Props> = ({
   explanation,
   slug,
   quizId,
+  image,
 }) => {
-
-  // console.log(slug)
-  // console.log(quizId)
-
   const { mutate: updateQuestionMutate, isLoading, reset: updateQuestionReset } = useUpdateQuestion(id);
-  const router = useRouter()
-
+  const router = useRouter();
   const queryClient = useQueryClient();
-  // const navigate = useNavigate();
-
-  
-
   const { enqueueSnackbar } = useSnackbar();
 
   return (
@@ -62,23 +55,22 @@ export const UpdateQuestionForm: React.FC<Props> = ({
         type: type,
         explanation: explanation,
         options: options.length > 0 ? options : [
-          { value: "", poin: 0 },
-          { value: "", poin: 0 },
-          { value: "", poin: 0 },
-          { value: "", poin: 0 },
-          { value: "", poin: 0 },
+          { value: "", poin: 0, image: "" },
+          { value: "", poin: 0, image: "" },
+          { value: "", poin: 0, image: "" },
+          { value: "", poin: 0, image: "" },
+          { value: "", poin: 0, image: "" },
         ],
-        image:'',
-        imageName:'',
+        image: image || '',
+        imageName: '',
       }}
-      validationSchema={AddEditQuestionValidation}
+      validationSchema={AddEditQuestionValidationNew}
       onSubmit={async (values, { setSubmitting }) => {
         setSubmitting(true);
         enqueueSnackbar(loadingMessages.actionLoading("Updating", "Question"), {
           variant: "info",
         });
-        console.log(values.image)
-        console.log(values.imageName)
+
         const payload = {
           content: values.title,
           type: values.type,
@@ -87,13 +79,15 @@ export const UpdateQuestionForm: React.FC<Props> = ({
           Choices: values.options.map(option => ({
             id: option._id,
             content: option.value,
-            isCorrect: values.correct === option.value,
-            scoreValue: option.poin, 
+            isCorrect: values.correct === option.value || values.correct === option.image,
+            scoreValue:
+              values.type !== "TKP" && (values.correct === option.value || values.correct === option.image)
+                ? 5
+                : option.poin,
+            image: option.image,
           })),
         };
-        // console.log(payload)
-        // console.log(id)
-        
+
         updateQuestionMutate(payload, {
           onSuccess: () => {
             enqueueSnackbar(
@@ -101,11 +95,10 @@ export const UpdateQuestionForm: React.FC<Props> = ({
               { variant: "success" }
             );
             router.push(`/dashboard/${slug}/${quizId}`);
-            queryClient.invalidateQueries(["Quiz Questions",'quiz']);
+            queryClient.invalidateQueries(["Quiz Questions", 'quiz']);
             queryClient.invalidateQueries(["Quiz Question"]);
           },
           onError: (error) => {
-            // console.log(error)
             enqueueSnackbar(errorMessages.default, { variant: "error" });
           },
           onSettled: () => {
@@ -115,7 +108,7 @@ export const UpdateQuestionForm: React.FC<Props> = ({
         });
       }}
     >
-      <AddEditQuestionFormFields isLoading={false} />
+      <AddEditQuestionFormFields isLoading={isLoading} />
     </Formik>
   );
 };

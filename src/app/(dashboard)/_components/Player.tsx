@@ -45,6 +45,33 @@ export const Player: React.FC<Props> = ({
     );
   };
 
+  const openLightbox = (imageSrc: string) => {
+    const lightbox = document.createElement("div");
+    lightbox.id = "lightbox";
+    lightbox.className =
+      "fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center";
+    lightbox.onclick = () => {
+      document.body.removeChild(lightbox);
+    };
+
+    const closeBtn = document.createElement("span");
+    closeBtn.className =
+      "absolute top-4 right-4 text-white text-4xl cursor-pointer";
+    closeBtn.innerHTML = "&times;";
+    closeBtn.onclick = () => {
+      document.body.removeChild(lightbox);
+    };
+
+    const img = document.createElement("img");
+    img.src = imageSrc;
+    img.alt = "Full size preview";
+    img.className = "max-w-full h-auto max-h-[80vh] mx-auto";
+
+    lightbox.appendChild(closeBtn);
+    lightbox.appendChild(img);
+    document.body.appendChild(lightbox);
+  };
+
   // useEffect(() => {
   //   const currentQuestionResponse = response && response[activeIndex]?.response;
   //   if (currentQuestionResponse) {
@@ -57,21 +84,34 @@ export const Player: React.FC<Props> = ({
   useEffect(() => {
     setSelectedOption(response[activeIndex]?.response || "");
   }, [activeIndex, response]);
+  // console.log(response)
   // console.log(questions)
 
   return (
     <div className="flex-1 flex-grow px-4 py-5 min-h-[86%] flex flex-col text-sm md:text-base">
       {questions && questions[activeIndex].image && (
-        <div className="my-4 flex justify-start">
+        <div className="my-4 sm:my-0 sm:mr-4 flex-shrink-0">
           <img
             src={questions[activeIndex].image}
             alt="Question Image"
-            className="max-w-md max-h-[300px] object-contain cursor-zoom-in"
-            // onClick={() => window.open(questions[activeIndex].image, '_blank')} // Membuka gambar di tab baru ketika diklik
+            className="w-full max-w-md h-auto object-contain cursor-pointer"
+            onClick={() => openLightbox(questions[activeIndex].image || "")} 
           />
         </div>
+        // <div className="my-4 flex justify-center">
+        //   {/* <img
+        //     src={questions[activeIndex].image}
+        //     alt="Question Image"
+        //     className="max-w-md max-h-[300px] object-contain cursor-zoom-in"
+        //     // onClick={() => window.open(questions[activeIndex].image, '_blank')} // Membuka gambar di tab baru ketika diklik
+        //   /> */}
+        // </div>
       )}
-      <p className="break-words">{questions && questions[activeIndex].title}</p>
+      <p className="break-words whitespace-pre-wrap mb-4">
+        {questions && questions[activeIndex].title}
+      </p>
+
+      {/* <p className="break-words">{questions && questions[activeIndex].title}</p> */}
       <div className="flex flex-col items-start">
         {/* {questions &&
           questions[activeIndex].options.map((option: IOption, i: number) => (

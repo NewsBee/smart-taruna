@@ -1,7 +1,13 @@
 import React from 'react';
 
+interface Option {
+  content: string;
+  image?: string;
+  percentage?: number;
+}
+
 interface Props {
-  option: { value: string };
+  option: Option;
   selectedOption?: string;
   onClick?: () => void;
   disabled?: boolean;
@@ -17,60 +23,82 @@ export const OptionHasil: React.FC<Props> = ({
   correctAns,
   tipeSoal,
 }) => {
-//   // Cek apakah jawaban yang dipilih pengguna itu benar
-//   const userSelectedCorrectOption = selectedOption === correctAns && selectedOption === option.value;
-
-//   // Cek apakah opsi ini adalah jawaban yang benar
-//   const isCorrectOption = correctAns === option.value;
-
-  // Cek apakah jawaban yang dipilih pengguna itu benar atau semua jawaban dianggap benar untuk TPA
-  const userSelectedCorrectOption = tipeSoal === "TKP" || (selectedOption === correctAns && selectedOption === option.value);
-
-  // Cek apakah opsi ini adalah jawaban yang benar atau semua jawaban dianggap benar untuk TKP
-  const isCorrectOption = tipeSoal === "TKP" || correctAns === option.value;
-
-  // Cek apakah opsi ini adalah yang dipilih oleh pengguna
-  const isUserSelectedOption = selectedOption === option.value;
+  const userSelectedCorrectOption = tipeSoal === "TKP" || (selectedOption === correctAns && selectedOption === option.content);
+  const isCorrectOption = tipeSoal === "TKP" || correctAns === option.content;
+  const isUserSelectedOption = selectedOption === option.content;
 
   const getClasses = () => {
-    let baseClasses = `grid grid-cols-auto-1fr items-center px-4 py-2 border w-full text-left mt-4 rounded-md disabled:opacity-80 transition-all duration-300 cursor-pointer`;
+    let baseClasses = `flex items-center px-4 py-2 border w-full text-left mt-4 rounded-md disabled:opacity-80 transition-all duration-300 cursor-pointer`;
 
     if (tipeSoal === "TKP") {
-      // Untuk TKP, semua opsi dianggap benar
       return `${baseClasses} bg-green-500 border-green-500 text-white`;
     } else if (userSelectedCorrectOption) {
-      // User memilih jawaban yang benar
       return `${baseClasses} bg-green-700 border-green-700 text-white`;
     } else if (isCorrectOption) {
-      // Opsi ini adalah jawaban yang benar tetapi tidak dipilih oleh pengguna
       return `${baseClasses} bg-green-500 border-green-500 text-white`;
     } else if (isUserSelectedOption) {
-      // User memilih opsi ini tetapi tidak benar
       return `${baseClasses} bg-red-500 border-red-500 text-white`;
     }
-    // if (userSelectedCorrectOption) {
-    //   // User memilih jawaban yang benar
-    //   return `${baseClasses} bg-green-700 border-green-700 text-white`;
-    // } else if (isCorrectOption) {
-    //   // Opsi ini adalah jawaban yang benar tetapi tidak dipilih oleh pengguna
-    //   return `${baseClasses} bg-green-500 border-green-500 text-white`;
-    // } else if (isUserSelectedOption) {
-    //   // User memilih opsi ini tetapi tidak benar
-    //   return `${baseClasses} bg-red-500 border-red-500 text-white`;
-    // }
 
-    // Default style untuk opsi lainnya
     return `${baseClasses} border-gray-300`;
   };
 
   const classes = getClasses();
 
+  const openLightbox = (imageSrc: string) => {
+    const lightbox = document.createElement("div");
+    lightbox.id = "lightbox";
+    lightbox.className =
+      "fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center";
+    lightbox.onclick = () => {
+      document.body.removeChild(lightbox);
+    };
+
+    const closeBtn = document.createElement("span");
+    closeBtn.className =
+      "absolute top-4 right-4 text-white text-4xl cursor-pointer";
+    closeBtn.innerHTML = "&times;";
+    closeBtn.onclick = () => {
+      document.body.removeChild(lightbox);
+    };
+
+    const img = document.createElement("img");
+    img.src = imageSrc;
+    img.alt = "Full size preview";
+    img.className = "max-w-full h-auto max-h-[80vh] mx-auto";
+
+    lightbox.appendChild(closeBtn);
+    lightbox.appendChild(img);
+    document.body.appendChild(lightbox);
+  };
+
   return (
     <button disabled={disabled} onClick={onClick} className={classes}>
-      <p style={{ wordBreak: 'break-word' }} className="text-sm md:text-base">
-        {option.value}
-      </p>
+      <div className="flex items-start w-full">
+        {option.image && (
+          <img
+            src={option.image || ""}
+            alt={`Option ${option.content} Image`}
+            className="w-24 h-24 object-contain mb-2 rounded-md border cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              openLightbox(option.image || "");
+            }}
+          />
+        )}
+        <div className="flex-1 ml-4">
+          <p style={{ wordBreak: 'break-word' }} className="text-sm md:text-base font-semibold">
+            {option.content}
+          </p>
+          <div className="relative w-full mt-2 bg-gray-200 rounded-full h-2.5">
+            <div
+              className="absolute top-0 left-0 h-2.5 bg-blue-500 rounded-full"
+              style={{ width: `${option.percentage ?? 0}%` }}
+            ></div>
+          </div>
+          <p className="text-xs text-gray-600 mt-1">{(option.percentage ?? 0).toFixed(2)}% memilih ini</p>
+        </div>
+      </div>
     </button>
   );
 };
-

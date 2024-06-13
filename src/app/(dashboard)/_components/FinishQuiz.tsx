@@ -1,10 +1,9 @@
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, LinearProgress } from "@material-ui/core";
-import { IOption } from "../shared/interfaces";
 import CustomAccordion from "./CustomAccordion";
 import { EmptyResponse } from "./EmptyResponse";
-import { Option } from "./Option";
 import { OptionHasil } from "./OptionHasil";
-import { Paper, Typography, Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 
 interface Props {
   responses: any;
@@ -13,8 +12,26 @@ interface Props {
   quizDeleted?: boolean;
   ref?: string;
   tipe?: string;
+  image?: string;
+  packageId?: number;
 }
-// {AUTHOR_CHECK_RESPONSE ? "his" : "your"}
+
+interface IOption {
+  content: string;
+  label?: string;
+  value?: string;
+  image?: string;
+  percentage?: number;
+  questionId: number;
+}
+
+interface IResponse {
+  id: number;
+  content: string;
+  questionId: number;
+  attemptId: number;
+  score: number;
+}
 
 export const ShowResponses: React.FC<Props> = ({
   responses,
@@ -23,23 +40,101 @@ export const ShowResponses: React.FC<Props> = ({
   quizDeleted,
   ref,
   tipe,
+  image,
+  packageId,
 }) => {
+  const [responseData, setResponseData] = useState<IResponse[]>([]);
+  const [choicesData, setChoicesData] = useState<IOption[]>([]);
+
+  useEffect(() => {
+    const fetchResponses = async () => {
+      try {
+        const res = await fetch(`/api/hasil/${packageId}/respon`);
+        const data = await res.json();
+        console.log("Fetched data:", data); // Log the fetched data
+        setResponseData(data.responses);
+        setChoicesData(data.choices);
+      } catch (error) {
+        console.error("Error fetching responses:", error);
+      }
+    };
+
+    fetchResponses();
+  }, [packageId]);
+
+  console.log(responseData)
+  console.log(choicesData)
+  console.log(responses)
+
   const AFTER_QUIZ_RESPONSE = as === "AFTER_QUIZ_RESPONSE";
   const AUTHOR_CHECK_RESPONSE = as === "AUTHOR_CHECK_RESPONSE";
   const isTPA = tipe === "TPA";
-  // const USER_CHECK_RESPONSE = as === "USER_CHECK_RESPONSE";
-  console.log(responses);
-  // console.log(tipe);
+
+  const openLightbox = (imageSrc: string) => {
+    const lightbox = document.createElement("div");
+    lightbox.id = "lightbox";
+    lightbox.className =
+      "fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center";
+    lightbox.onclick = () => {
+      document.body.removeChild(lightbox);
+    };
+
+    const closeBtn = document.createElement("span");
+    closeBtn.className =
+      "absolute top-4 right-4 text-white text-4xl cursor-pointer";
+    closeBtn.innerHTML = "&times;";
+    closeBtn.onclick = () => {
+      document.body.removeChild(lightbox);
+    };
+
+    const img = document.createElement("img");
+    img.src = imageSrc;
+    img.alt = "Full size preview";
+    img.className = "max-w-full h-auto max-h-[80vh] mx-auto";
+
+    lightbox.appendChild(closeBtn);
+    lightbox.appendChild(img);
+    document.body.appendChild(lightbox);
+  };
+
+  const calculatePercentages = (questionId: number) => {
+    const questionResponses = responseData.filter(
+      (response) => response.questionId === questionId
+    );
+    const totalResponses = questionResponses.length;
+    const questionChoices = choicesData.filter(
+      (choice) => (choice as any).questionId === questionId
+    );
+  
+    console.log('questionResponses:', questionResponses);
+    console.log('totalResponses:', totalResponses);
+    console.log('questionChoices:', questionChoices);
+  
+    return questionChoices.map((choice) => {
+      const matchCount = questionResponses.filter(
+        (response) => response.content === choice.content
+      ).length;
+  
+      console.log(`Choice content: ${choice.content}, Match count: ${matchCount}`);
+  
+      return {
+        ...choice,
+        percentage: totalResponses ? (matchCount / totalResponses) * 100 : 0,
+      };
+    });
+  };
+  
+  
 
   return (
     <>
       <div className="flex flex-col items-center mt-10 w-full">
         {AFTER_QUIZ_RESPONSE && (
-          <div>
-            <h1 className="text-xl md:text-3xl mb-5 text-center">
+          <div className="text-center mb-10">
+            <h1 className="text-2xl md:text-4xl font-semibold">
               Terimakasih sudah menyelesaikan Test
             </h1>
-            <div className="flex flex-col md:flex-row items-center justify-center">
+            <div className="flex flex-col md:flex-row items-center justify-center mt-8">
               {!isTPA && (
                 <>
                   <div className="w-full md:w-1/3 mx-2 mb-4 md:mb-0">
@@ -66,24 +161,14 @@ export const ShowResponses: React.FC<Props> = ({
                 </>
               )}
 
-              {/* Accordion untuk TPA */}
               {isTPA && (
-                <>
-                  <div className="w-full mx-2 mb-4 md:mb-0">
-                    <CustomAccordion
-                      passingGrade={80}
-                      tipeSoal="TPA"
-                      responses={responses}
-                    />
-                  </div>
-                  {/* <div className="w-full mx-2 mb-4 md:mb-0">
-                    <CustomAccordion
-                      passingGrade={80}
-                      tipeSoal="TBI"
-                      responses={responses}
-                    />
-                  </div> */}
-                </>
+                <div className="w-full mx-2 mb-4 md:mb-0">
+                  <CustomAccordion
+                    passingGrade={80}
+                    tipeSoal="TPA"
+                    responses={responses}
+                  />
+                </div>
               )}
             </div>
           </div>
@@ -91,13 +176,7 @@ export const ShowResponses: React.FC<Props> = ({
         {quizDeleted && (
           <p className="text-xl mb-2 text-rose-600">Quiz ini sudah dihapus.</p>
         )}
-        {/* <div className="mt-10">
-          <div className="bg-blue-100 p-5 rounded-lg shadow-lg mx-5 md:mx-auto md:w-8/12">
-            <p className="text-xl text-center text-blue-900 font-semibold">
-              Nilai Anda adalah: {score}
-            </p>
-          </div>
-        </div> */}
+
         <Box sx={{ maxWidth: 600, mt: 8, mx: "auto", textAlign: "center" }}>
           <Card>
             <CardContent>
@@ -119,7 +198,6 @@ export const ShowResponses: React.FC<Props> = ({
                   <LinearProgress
                     variant="determinate"
                     value={(score / (tipe === "TPA" ? 500 : 550)) * 100}
-                    // value={(score / {tipe === "TPA" ? 500 : 550}) * 100}
                   />
                 </Box>
                 <Box sx={{ minWidth: 35 }}>
@@ -131,7 +209,6 @@ export const ShowResponses: React.FC<Props> = ({
                   )}%`}</Typography>
                 </Box>
               </Box>
-              {/* Optional: Add more details or feedback based on the score */}
               {score >= 380 ? (
                 <Typography variant="body1" sx={{ color: "success.main" }}>
                   Selamat! Anda telah mencapai skor yang sangat baik.
@@ -149,98 +226,71 @@ export const ShowResponses: React.FC<Props> = ({
           </Card>
         </Box>
 
-        <div className="mt-4 mx-5 /12 md:mx-0 md:w-8/12 ">
-          <p className="mb-2 text-xl font-bold">Perhatian!</p>
-          <br />
-          <div className="grid-responses-options-show grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {responses.length > 0 && (
-              <>
-                <div>
-                  <p>Jawaban Benar</p>
-                  <OptionHasil
-                    selectedOption={""} // Tidak ada jawaban yang dipilih
-                    correctAns={"Opsi 1"}
-                    option={{ value: "Opsi 1" }}
-                    disabled
-                  />
-                </div>
-                <div>
-                  <p>Jawaban salah</p>
-                  <OptionHasil
-                    selectedOption={"Opsi 1"} // Pengguna memilih "Opsi 1"
-                    correctAns={"Opsi 2"} // Jawaban yang benar adalah "Opsi 2"
-                    option={{ value: "Opsi 1" }} // Tampilkan "Opsi 1" sebagai jawaban pengguna
-                    disabled
-                  />
-                </div>
-                <div>
-                  <p>Anda memilih jawaban benar</p>
-                  <OptionHasil
-                    selectedOption={"Opsi 3"} // Pengguna memilih "Opsi 3"
-                    correctAns={"Opsi 3"} // Jawaban yang benar adalah "Opsi 3"
-                    option={{ value: "Opsi 3" }} // Tampilkan "Opsi 3" sebagai jawaban yang benar dan dipilih
-                    disabled
-                  />
-                </div>
-              </>
-            )}
-          </div>
+        <div className="mt-10 mx-5 md:mx-auto md:w-10/12">
+          <p className="text-xl font-bold mb-5">Jawaban</p>
           {responses.length > 0 ? (
-            <div className="mt-10">
-              <p className="mb-2 text-xl font-bold">Jawaban</p>
-              {responses.map((resp: any, i: number) => (
-                <div className="mb-20 shadow-sm" key={i}>
-                  {resp.image && (
-                    <div
-                      style={{
-                        width: "100%",
-                        overflow: "hidden",
-                        borderRadius: "8px",
-                        maxHeight: "300px",
-                      }}
-                    >
-                      {" "}
-                      {/* Set a maximum height */}
-                      <img
-                        src={resp.image}
-                        alt="Gambar Soal"
-                        style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+            responses.map((resp: any, i: number) => {
+              console.log("Processing response:", resp);
+              // console.log("Processing response:", resp._id);
+              const optionsWithPercentages = calculatePercentages(parseInt(resp._id, 10));
+              console.log("optionsWithPercentages:", optionsWithPercentages);
+              return (
+                <div
+                  className="mb-8 shadow-lg rounded-lg overflow-hidden"
+                  key={i}
+                >
+                  <div className="bg-white p-6">
+                    <p className="whitespace-pre-wrap mb-4">
+                      <span className="text-lg font-semibold">{i + 1}.</span>{" "}
+                      {resp.title}
+                    </p>
+                    {resp.image && (
+                      <div className="flex-shrink-0 mb-4 overflow-hidden rounded-lg mr-4">
+                        <img
+                          src={resp.image}
+                          alt="Gambar Soal"
+                          className="w-full max-w-xs h-auto object-contain cursor-pointer max-h-60"
+                          onClick={() => openLightbox(resp.image)}
+                        />
+                        <p className="text-left text-xs text-gray-500 mt-2">
+                          Klik gambar untuk memperbesar
+                        </p>
+                      </div>
+                    )}
+                    <div className="flex flex-col items-start mb-4">
+                      {resp.options &&
+                        resp.options.map((option: IOption, index: number) => {
+                          const optionWithPercentage =
+                            optionsWithPercentages.find(
+                              (o) => o.content === option.value 
+                            ) || option;
 
-                      />
+                            console.log(optionWithPercentage)
+
+                          return (
+                            <OptionHasil
+                              key={index}
+                              selectedOption={resp.response}
+                              correctAns={resp.correct}
+                              option={optionWithPercentage}
+                              disabled
+                              tipeSoal={tipe}
+                            />
+                          );
+                        })}
                     </div>
-                  )}
-                  <p>
-                    <span className="text-lg">{i + 1}.</span> {resp.title}
-                  </p>
-                  <div className="flex flex-col items-start">
-                    {resp.options.map((option: IOption, i: number) => (
-                      <OptionHasil
-                        key={i}
-                        selectedOption={resp.response}
-                        correctAns={resp.correct}
-                        option={option}
-                        disabled
-                        tipeSoal={tipe}
-                      />
-                    ))}
+                    {(resp.quiz === "TKP" || resp.response !== resp.correct) && (
+                      <div className="bg-green-500 p-4 rounded-md">
+                        <h2 className="text-white font-bold">Penjelasan</h2>
+                        <p className="text-white">{resp.explanation}</p>
+                      </div>
+                    )}
                   </div>
-                  {(resp.quiz === "TKP" || resp.response !== resp.correct) && (
-                    <div className="bg-emerald-500 p-4 mt-2 rounded-md">
-                      <h2 className="text-white font-bold">Penjelasan</h2>
-                      <p className="text-white">{resp.explanation}</p>
-                    </div>
-                  )}
-                  {/* <div className="bg-emerald-500 p-4 mt-2 rounded-md">
-                    <h2 className="text-white font-bold">Penjelasan</h2>
-                    <p className="text-white">{resp.explanation}</p>
-                  </div> */}
                 </div>
-              ))}
-            </div>
+              );
+            })
           ) : (
-            <>
-              <EmptyResponse resource="Responses" />
-            </>
+            <EmptyResponse resource="Responses" />
           )}
         </div>
       </div>

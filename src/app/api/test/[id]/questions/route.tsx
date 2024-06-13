@@ -8,6 +8,7 @@ interface Option {
   content: string;
   isCorrect: boolean;
   scoreValue: number;
+  image: string;
 }
 
 export const GET = async (
@@ -77,6 +78,7 @@ export const GET = async (
           id: choice.id,
           content: choice.content,
           isCorrect: choice.isCorrect,
+          image: choice.image,
         })),
       })),
     };
@@ -147,6 +149,17 @@ export async function POST(req: Request, context: { params: { id: any } }) {
         };
       }
     });
+
+    // Tambahkan pengecekan untuk memastikan ada pilihan yang benar untuk tipe soal selain TKP
+    const hasCorrectChoice = modifiedChoices.some((choice: Option) => choice.isCorrect);
+    if (type !== "TKP" && !hasCorrectChoice) {
+      // Jika tidak ada pilihan yang benar, kirim respons kesalahan
+      return NextResponse.json(
+        { message: "Error: No correct choice provided for the question." },
+        { status: 400 } // Bad Request
+      );
+    }
+
     // Create a new question
     const newQuestion = await prismadb.question.create({
       data: {

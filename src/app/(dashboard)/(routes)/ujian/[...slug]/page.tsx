@@ -143,11 +143,13 @@ export default function PlayerScreen({
         options: q.choices.map((choice: any) => ({
           value: choice.content,
           label: choice.content,
+          image: choice.image || "",
         })),
       }));
       setResponse(newResponses);
     }
   }, [data, packageId]);
+  // console.log(response)
 
   useEffect(() => {
     const handleBeforeUnload = (e: any) => {

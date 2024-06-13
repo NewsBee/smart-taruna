@@ -12,6 +12,7 @@ import CustomAccordion from "@/app/(dashboard)/_components/CustomAccordion";
 
 interface AttemptData {
   score: number;
+  packageId?:number;
   responses: any[]; // Sesuaikan dengan struktur data yang sebenarnya
   Package: {
     testName: string;
@@ -22,6 +23,7 @@ interface IChoice {
   content: string;
   isCorrect: boolean;
   scoreValue?: number;
+  image?: string;
 }
 
 export default function QuizResponse({ params }: { params: { id: any } }) {
@@ -52,7 +54,7 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
     fetchAttemptData();
   }, [attemptId]);
   // console.log(attemptData?.Package.testName)
-  console.log(attemptData)
+  console.log(attemptData?.packageId)
 
   if (loading) {
     return <Loader halfScreen />;
@@ -79,10 +81,10 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
     options: resp.Question.Choices.map((choice: IChoice) => ({
       value: choice.content,
       label: choice.content,
+      image: choice.image,
     })),
   }));
 
-  // console.log(attemptData.score)
   return (
     <>
       {transformedResponses.length > 0 ? (
@@ -95,6 +97,7 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
               score={attemptData.score}
               as="AFTER_QUIZ_RESPONSE"
               tipe={attemptData.Package.testName}
+              packageId={attemptData?.packageId}
             />
           </div>
           <div>

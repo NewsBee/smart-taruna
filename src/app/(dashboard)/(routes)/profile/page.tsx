@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Card,
   CardContent,
   Typography,
   Avatar,
-  Link,
   Grid,
   Button,
   Modal,
@@ -16,21 +15,23 @@ import {
   TableBody,
   TableCell,
   TableContainer,
-  TableHead,
   TableRow,
   CircularProgress,
   Snackbar,
   Alert,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  TableHead,
+  AppBar,
+  Tabs,
+  Tab,
 } from "@mui/material";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { useSession } from "next-auth/react";
+import { format, subDays } from "date-fns";
+import { makeStyles } from "@mui/styles";
 
 interface ProfileType {
   avatar: string;
@@ -44,10 +45,37 @@ interface ProfileType {
   socialLinks: Array<{ platform: string; link: string }>;
   tryOutStatsSKD: Array<{ name: string; value: number }>;
   tryOutStatsTPA: Array<{ name: string; value: number }>;
-  [key: string]: any; // Untuk properti dinamis lainnya
+  role: string;
+  [key: string]: any;
 }
 
+interface UserResult {
+  id: number;
+  name: string;
+  score: number;
+}
+
+const useStyles = makeStyles({
+  appBar: {
+    alignItems: 'center',
+  },
+  tabs: {
+    justifyContent: 'center',
+  },
+  tab: {
+    color: '#fff',
+    '&.Mui-selected': {
+      color: '#ff9800',
+      backgroundColor: '#333',
+      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+      borderRadius: '4px',
+    },
+  },
+});
+
 const UserProfile = () => {
+  const classes = useStyles();
+  const { data: session, status } = useSession();
   const [profile, setProfile] = useState<ProfileType | null>(null);
   const [editedProfile, setEditedProfile] = useState<ProfileType | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -56,8 +84,17 @@ const UserProfile = () => {
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
-    severity: "success", // atau 'error', bergantung pada situasi
+    severity: "success",
   });
+  const [packages, setPackages] = useState<{ id: number; title: string; description: string; type: string }[]>([]);
+  const [type, setType] = useState("SKD");
+  const [selectedPackage, setSelectedPackage] = useState<string>("");
+  const [dateRange, setDateRange] = useState({
+    startDate: format(subDays(new Date(), 7), "yyyy-MM-dd"),
+    endDate: format(new Date(), "yyyy-MM-dd"),
+  });
+  const [userResults, setUserResults] = useState<UserResult[]>([]);
+  const [value, setValue] = useState(0);
 
   const toggleHover = (value: any) => () => {
     setIsHovered(value);
@@ -71,7 +108,6 @@ const UserProfile = () => {
         setProfile(data.userProfile);
         setEditedProfile(data.userProfile);
       } else {
-        // Handle error atau setel state error jika perlu
         console.error("Failed to fetch profile data");
       }
     };
@@ -79,17 +115,34 @@ const UserProfile = () => {
     fetchProfile();
   }, []);
 
-  // Fungsi untuk membuka modal pengeditan
+  useEffect(() => {
+    if (profile && profile.role === "admin") {
+      // Dummy data for packages
+      const dummyPackages = [
+        { id: 1, title: "Paket 1", description: "Deskripsi Paket 1", type: "SKD" },
+        { id: 2, title: "Paket 2", description: "Deskripsi Paket 2", type: "SKD" },
+        { id: 3, title: "Paket 3", description: "Deskripsi Paket 3", type: "TPA" },
+      ];
+      setPackages(dummyPackages);
+
+      // Dummy data for user results
+      const dummyResults = [
+        { id: 1, name: "User 1", score: 85 },
+        { id: 2, name: "User 2", score: 90 },
+        { id: 3, name: "User 3", score: 75 },
+      ];
+      setUserResults(dummyResults);
+    }
+  }, [profile]);
+
   const handleEditClick = () => {
     setIsEditModalOpen(true);
   };
 
-  // Fungsi untuk menutup modal pengeditan
   const handleModalClose = () => {
     setIsEditModalOpen(false);
   };
 
-  // Fungsi untuk menyimpan perubahan data
   const handleSaveChanges = async () => {
     if (!editedProfile) return;
 
@@ -104,18 +157,15 @@ const UserProfile = () => {
 
       if (!response.ok) throw new Error(await response.text());
 
-      const data = await response.json();
-      setProfile(editedProfile); // Update state dengan data profil terbaru
-      setIsEditModalOpen(false); // Tutup modal
+      setProfile(editedProfile);
+      setIsEditModalOpen(false);
 
-      // Tampilkan notifikasi sukses
       setSnackbar({
         open: true,
         message: "Profil berhasil diperbarui!",
         severity: "success",
       });
     } catch (error: any) {
-      // Tampilkan notifikasi error
       setSnackbar({
         open: true,
         message: error.message || "Gagal memperbarui profil.",
@@ -124,11 +174,9 @@ const UserProfile = () => {
     }
   };
 
-  // Fungsi untuk mengupdate data yang diubah dalam modal
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     if (editedProfile) {
-      // Pastikan editedProfile tidak null
       setEditedProfile({
         ...editedProfile,
         [name]: value,
@@ -140,7 +188,6 @@ const UserProfile = () => {
     const file = event.target.files[0];
     if (!file) return;
 
-    // Validasi ukuran file (contoh: max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       setSnackbar({
         open: true,
@@ -159,21 +206,16 @@ const UserProfile = () => {
         body: formData,
       });
 
-      console.log(response)
-
       if (!response.ok) {
-        // Jika status response bukan OK, langsung tolak dengan status dan statusText
         throw new Error(`Error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
       if (response.ok) {
-        // Update state profil dengan URL gambar baru atau lakukan fetch profil terbaru
         setProfile((prevProfile: any) => ({
           ...prevProfile,
-          avatar: data.path, // Perbarui path avatar di state profile
+          avatar: data.path,
         }));
-        // console.log("Foto profil berhasil diperbarui", data);
         setSnackbar({
           open: true,
           message: "Foto profil berhasil diperbarui!",
@@ -202,40 +244,47 @@ const UserProfile = () => {
 
   const handleAvatarClick = () => {
     if (fileInputRef.current) {
-      // Pengecekan eksplisit
       fileInputRef.current.click();
     }
   };
 
-  const tryOutStats = [
-    { name: "TO 1", highestSKD: 320, averageSKD: 280 },
-    { name: "TO 2", highestSKD: 340, averageSKD: 300 },
-    { name: "TO 3", highestSKD: 350, averageSKD: 310 },
-    { name: "TO 4", highestSKD: 360, averageSKD: 320 },
-  ];
+  const handleChange = (event: React.ChangeEvent<{}>, newValue: number) => {
+    setValue(newValue);
+  };
+
+  const TabPanel = (props: { children?: React.ReactNode, index: number, value: number }) => {
+    const { children, value, index, ...other } = props;
+    return (
+      <div
+        role="tabpanel"
+        hidden={value !== index}
+        id={`simple-tabpanel-${index}`}
+        aria-labelledby={`simple-tab-${index}`}
+        {...other}
+      >
+        {value === index && (
+          <Box p={3}>
+            {children}
+          </Box>
+        )}
+      </div>
+    );
+  };
 
   if (!profile) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="100vh"
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
         <CircularProgress />
       </Box>
     );
   }
-  // console.log(profile.profileImage);
 
   return (
     <div className="container mx-auto p-4">
       <Grid container spacing={2}>
-        {/* Informasi Pengguna */}
         <Grid item xs={12} md={6}>
-          <Card className="mb-4 shadow-lg">
+          <Card className="mb-4 shadow-lg" style={{ height: '100%' }}>
             <CardContent>
-              {/* Foto Profil */}
               <Box
                 onMouseEnter={toggleHover(true)}
                 onMouseLeave={toggleHover(false)}
@@ -254,7 +303,7 @@ const UserProfile = () => {
                   src={profile.avatar}
                   alt={profile.username}
                   className="w-24 h-24 mx-auto mb-4"
-                  style={{ width: 96, height: 96 }} // Sesuaikan ukuran sesuai kebutuhan
+                  style={{ width: 96, height: 96 }}
                 />
                 {isHovered && (
                   <Box
@@ -275,7 +324,6 @@ const UserProfile = () => {
                   </Box>
                 )}
               </Box>
-              {/* Data diri dalam tabel */}
               <TableContainer>
                 <Table>
                   <TableBody>
@@ -315,11 +363,9 @@ const UserProfile = () => {
                       </TableCell>
                       <TableCell>{profile.destinationInstitution}</TableCell>
                     </TableRow>
-                    {/* Tambahkan baris untuk data diri tambahan */}
                   </TableBody>
                 </Table>
               </TableContainer>
-              {/* Tombol Edit Profil */}
               <div className="mt-4">
                 <Button variant="text" onClick={handleEditClick}>
                   Edit Profil
@@ -329,14 +375,13 @@ const UserProfile = () => {
           </Card>
         </Grid>
 
-        {/* Statistik Try Out */}
-        <Grid item xs={12} md={6}>
-          <Card className="shadow-lg">
+        <Grid item xs={12} md={6} style={{ display: 'flex', flexDirection: 'column' }}>
+          <Card className="shadow-lg mb-4" style={{ flex: 1 }}>
             <CardContent
               style={{
                 display: "flex",
                 flexDirection: "column",
-                justifyItems: "center",
+                justifyContent: "center",
                 alignItems: "center",
                 height: "100%",
               }}
@@ -370,12 +415,12 @@ const UserProfile = () => {
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg">
+          <Card className="shadow-lg" style={{ flex: 1 }}>
             <CardContent
               style={{
                 display: "flex",
                 flexDirection: "column",
-                justifyItems: "center",
+                justifyContent: "center",
                 alignItems: "center",
                 height: "100%",
               }}
@@ -387,7 +432,6 @@ const UserProfile = () => {
                 Data yang ditampilkan adalah nilai tertinggi dan rata-rata tes
                 TPA dari 4 tes terakhir.
               </Typography>
-              <br />
               <LineChart width={400} height={300} data={profile.tryOutStatsTPA}>
                 <XAxis dataKey="name" />
                 <YAxis />
@@ -412,7 +456,155 @@ const UserProfile = () => {
         </Grid>
       </Grid>
 
-      {/* Modal Pengeditan Profil */}
+      {session?.user.role === "admin" && (
+        <Grid container spacing={2} className="mt-4">
+          <Grid item xs={12}>
+            <Card className="shadow-lg">
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Admin Panel
+                </Typography>
+                <FormControl fullWidth className="mb-4">
+                  <InputLabel>Type</InputLabel>
+                  <Select value={type} onChange={(e) => setType(e.target.value)}>
+                    <MenuItem value="SKD">SKD</MenuItem>
+                    <MenuItem value="TPA">TPA</MenuItem>
+                  </Select>
+                </FormControl>
+                <FormControl fullWidth className="mb-4" disabled={!type}>
+                  <InputLabel>Pilih Paket</InputLabel>
+                  <Select value={selectedPackage} onChange={(e) => setSelectedPackage(e.target.value)}>
+                    {packages
+                      .filter((pkg) => pkg.type === type)
+                      .map((pkg) => (
+                        <MenuItem key={pkg.id} value={pkg.id}>{pkg.title}</MenuItem>
+                      ))}
+                  </Select>
+                </FormControl>
+                <TextField
+                  label="Start Date"
+                  type="date"
+                  fullWidth
+                  className="mb-4"
+                  InputLabelProps={{ shrink: true }}
+                  value={dateRange.startDate}
+                  onChange={(e) =>
+                    setDateRange((prev) => ({ ...prev, startDate: e.target.value }))
+                  }
+                />
+                <TextField
+                  label="End Date"
+                  type="date"
+                  fullWidth
+                  className="mb-4"
+                  InputLabelProps={{ shrink: true }}
+                  value={dateRange.endDate}
+                  onChange={(e) =>
+                    setDateRange((prev) => ({ ...prev, endDate: e.target.value }))
+                  }
+                />
+                <AppBar position="static" className={classes.appBar}>
+                  <Tabs
+                    value={value}
+                    onChange={handleChange}
+                    aria-label="simple tabs example"
+                    centered
+                    className={classes.tabs}
+                  >
+                    <Tab label="Statistik" className={classes.tab} />
+                    <Tab label="Hasil" className={classes.tab} />
+                  </Tabs>
+                </AppBar>
+                <TabPanel value={value} index={0}>
+                  <Typography variant="h6" className="font-bold mb-2" style={{ color: "#000" }}>
+                    Statistik
+                  </Typography>
+                  <Typography variant="body2" style={{ marginBottom: 16, color: "#000" }}>
+                    Data yang ditampilkan adalah statistik dari paket yang dipilih.
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={4}>
+                      <Card className="shadow-lg">
+                        <CardContent>
+                          <Typography variant="h6">Rata-rata</Typography>
+                          <Typography variant="body2">46,77 / 100 poin</Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                    <Grid item xs={4}>
+                      <Card className="shadow-lg">
+                        <CardContent>
+                          <Typography variant="h6">Median</Typography>
+                          <Typography variant="body2">46 / 100 poin</Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                    <Grid item xs={4}>
+                      <Card className="shadow-lg">
+                        <CardContent>
+                          <Typography variant="h6">Rentang</Typography>
+                          <Typography variant="body2">18 - 98 poin</Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  </Grid>
+                  <Typography variant="h6" className="font-bold mb-2 mt-4" style={{ color: "#000" }}>
+                    Distribusi poin total
+                  </Typography>
+                  <LineChart width={600} height={300} data={[
+                    { name: '0-10', uv: 4 },
+                    { name: '10-20', uv: 2 },
+                    { name: '20-30', uv: 6 },
+                    { name: '30-40', uv: 3 },
+                    { name: '40-50', uv: 8 },
+                    { name: '50-60', uv: 5 },
+                    { name: '60-70', uv: 1 },
+                    { name: '70-80', uv: 2 },
+                    { name: '80-90', uv: 1 },
+                    { name: '90-100', uv: 0 },
+                  ]}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="uv" stroke="#8884d8" />
+                  </LineChart>
+                </TabPanel>
+                <TabPanel value={value} index={1}>
+                  <Typography variant="h6" className="font-bold mb-2" style={{ color: "#000" }}>
+                    Hasil
+                  </Typography>
+                  <Typography variant="body2" style={{ marginBottom: 16, color: "#000" }}>
+                    Data yang ditampilkan adalah hasil dari user yang mengerjakan paket yang dipilih.
+                  </Typography>
+                  <TableContainer>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>ID</TableCell>
+                          <TableCell>Nama</TableCell>
+                          <TableCell>Skor</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {userResults.map((user) => (
+                          <TableRow key={user.id}>
+                            <TableCell>{user.id}</TableCell>
+                            <TableCell>{user.name}</TableCell>
+                            <TableCell>{user.score}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </TabPanel>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
+
       <Modal open={isEditModalOpen} onClose={handleModalClose}>
         <Box
           sx={{
@@ -479,19 +671,13 @@ const UserProfile = () => {
               value={editedProfile ? editedProfile.destinationInstitution : ""}
               onChange={handleInputChange}
             />
-            {/* Tambahkan input lain sesuai kebutuhan */}
             <Button onClick={handleSaveChanges} variant="outlined">
               Simpan Perubahan
             </Button>
           </form>
         </Box>
       </Modal>
-      {/* <Snackbar
-        open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={handleCloseSnackbar}
-        message={snackbar.message}
-      /> */}
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}

@@ -6,6 +6,7 @@ interface Choice {
   content: string;
   isCorrect: boolean;
   scoreValue: number;
+  image : string;
 }
 
 interface Option {
@@ -47,21 +48,21 @@ export const PUT = async (
   const { content, type, explanation, Choices, image } = await req.json();
 
   try {
-    const updateManyChoices = Choices.map((choice: Choice) => {
-      // Logika untuk menentukan isCorrect dan scoreValue berdasarkan tipe soal
-      const isCorrect = type === "TKP" ? true : choice.isCorrect; // Semua choice dianggap benar untuk TKP
-      const scoreValue =
-        type === "TKP" ? choice.scoreValue : choice.isCorrect ? 5 : 0; // Gunakan scoreValue dari frontend untuk TKP, atau tetapkan 5 jika benar dan 0 jika salah untuk tipe lain
+    // Memperbarui setiap pilihan secara individual
+    await Promise.all(Choices.map(async (choice: Choice) => {
+      const isCorrect = type === "TKP" ? true : choice.isCorrect;
+      const scoreValue = type === "TKP" ? choice.scoreValue : choice.isCorrect ? 5 : 0;
 
-      return {
+      await prismadb.choice.update({
         where: { id: choice.id },
         data: {
           content: choice.content,
           isCorrect: isCorrect,
-          scoreValue: scoreValue
+          scoreValue: scoreValue,
+          image: choice.image === "" ? null : choice.image, // Mengatur gambar menjadi null jika dihapus
         },
-      };
-    });
+      });
+    }));
 
     const updatedQuestion = await prismadb.question.update({
       where: { id: parseInt(questionId) },
@@ -69,13 +70,10 @@ export const PUT = async (
         content,
         type,
         explanation,
-        Choices: {
-          updateMany: updateManyChoices,
-        },
-        image
+        image: image === "" ? null : image, // Mengatur gambar menjadi null jika dihapus
       },
     });
-    
+
     return NextResponse.json({ updatedQuestion }, { status: 200 });
   } catch (error) {
     console.log(error);
@@ -84,15 +82,4 @@ export const PUT = async (
       { status: 500 }
     );
   }
-
-  //   const updatedQuestion = await prismadb.question.findByIdAndUpdate(
-  //     id,
-  //     { title, correct, options },
-  //     { new: true }
-  //   );
-  //   if (updatedQuestion) {
-  //     return NextResponse.json({ updatedQuestion }, { status: 200 });
-  //   } else {
-  //     return NextResponse.json({ message:"Internal Server Error" }, { status: 500 });
-  //   }
 };

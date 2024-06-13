@@ -12,9 +12,10 @@ interface Update {
   id: string;
   title: string;
   correct: string;
-  options: { _id: number; value: string, poin: number }[];
-  type : string;
-  explanation : string;
+  options: { _id: number; value: string, poin: number, image: string }[];
+  type: string;
+  explanation: string;
+  image: string;
 }
 
 export default function UpdateQuestion({
@@ -22,28 +23,30 @@ export default function UpdateQuestion({
 }: {
   params: { quizid: string, id: number, slug:string };
 }) {
-  //   const { isLoading, data } = useQuizQuestion(quizId, questionId);
-  // console.log(params.id)
-  // console.log(params.slug)
   const { data, isLoading, isFetching, error } = useQuiz(
     parseInt(params.quizid)
   );
   const [questionData, setQuestionData] = useState<Update | null>(null);
-  // console.log(data)
-  // console.log(params.quizid)
 
   useEffect(() => {
     if (data) {
+      // Temukan pilihan yang benar berdasarkan content atau image
+      const correctChoice = data.Choices.find((choice: any) => choice.isCorrect);
+      // Tentukan correct berdasarkan content atau image
+      const correct = correctChoice ? (correctChoice.content || correctChoice.image) : "";
+
       const formattedData = {
         id: data.id.toString(),
         title: data.content,
-        correct: data.Choices.find((choice: any) => choice.isCorrect).content,
+        correct: correct,
         options: data.Choices.map((choice: any) => ({
           _id: choice.id,
           value: choice.content,
-          poin : choice.scoreValue,
+          poin: choice.scoreValue,
+          image: choice.image || "",
         })),
         type: data.type,
+        image: data.image || "",
         explanation: data.explanation,
       };
       setQuestionData(formattedData);
