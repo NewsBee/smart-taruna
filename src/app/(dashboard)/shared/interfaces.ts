@@ -20,7 +20,7 @@ export interface IQuestion {
 
 export interface IOption {
     value: string;
-    _id?: string;
+    _id: string;
     poin?: number;
     image?: string;
     percentage?:number;

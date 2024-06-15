@@ -10,7 +10,7 @@ export const POST = async (req: NextRequest) => {
   if (!session) {
     return new NextResponse("Unauthorized", { status: 403 });
   }
-  // const userId = session.user.id;
+
   const body = await req.json();
   const attemptId = body.attemptId;
   const responses = body.responses;
@@ -18,7 +18,7 @@ export const POST = async (req: NextRequest) => {
   if (!attemptNumber || !Array.isArray(responses)) {
     return NextResponse.json({ message: "Invalid request" }, { status: 400 });
   }
-  
+
   try {
     let totalScore = 0;
 
@@ -35,10 +35,10 @@ export const POST = async (req: NextRequest) => {
 
       let questionScore = 0;
       if (question.type === "TKP" && response.response) {
-        const selectedChoice = question.Choices.find(choice => choice.content === response.response);
+        const selectedChoice = question.Choices.find(choice => choice.id === parseInt(response.response, 10));
         questionScore = selectedChoice ? selectedChoice.scoreValue : 0;
       } else {
-        const isCorrectAnswer = question.Choices.some(choice => choice.isCorrect && choice.content === response.response);
+        const isCorrectAnswer = question.Choices.some(choice => choice.isCorrect && choice.id === parseInt(response.response, 10));
         questionScore = isCorrectAnswer ? 5 : 0;
       }
 
@@ -63,7 +63,7 @@ export const POST = async (req: NextRequest) => {
     });
 
     return NextResponse.json({ score: totalScore }, { status: 200 });
-  } catch (error:any) {
+  } catch (error: any) {
     console.error(error);
     return NextResponse.json({ message: "Internal server error", error: error.message }, { status: 500 });
   }

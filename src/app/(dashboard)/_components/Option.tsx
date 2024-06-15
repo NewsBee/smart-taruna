@@ -1,31 +1,26 @@
 import React from "react";
 
 interface Props {
-  option: { value: string; image?: string };
-  selectedOption?: string;
-  onClick?: () => void;
+  option: { _id: string; value: string; image?: string };
+  selectedOptionId?: string;
+  onClick: () => void;
   disabled?: boolean;
   correctAns?: string;
 }
 
 export const Option: React.FC<Props> = ({
   option,
-  selectedOption,
+  selectedOptionId,
   onClick,
   disabled,
   correctAns,
 }) => {
-  const userSelectedCorrectOption =
-    selectedOption === option.value && option.value === correctAns;
+  const isSelected = selectedOptionId === option._id;
 
   const getClasses = () => {
     return `flex items-center px-4 py-2 border w-full text-left mt-4 rounded-md disabled:opacity-80 transition-all duration-300${
-      !userSelectedCorrectOption && selectedOption === option.value
-        ? " border-indigo-600"
-        : " border-gray-300"
-    }${correctAns === option.value ? " bg-indigo-600 text-white" : ""}${
-      userSelectedCorrectOption ? " bg-blue-600 text-white" : ""
-    }`;
+      isSelected ? " border-indigo-600 bg-indigo-100" : " border-gray-300"
+    }${correctAns === option.value ? " bg-indigo-600 text-white" : ""}`;
   };
 
   const classes = getClasses();
@@ -58,16 +53,18 @@ export const Option: React.FC<Props> = ({
   };
 
   return (
-    <button disabled={disabled} onClick={onClick} className={classes}>
+    <button
+      disabled={disabled}
+      onClick={() => onClick()}
+      className={classes}
+    >
       <div className="flex items-center">
         <div
           className={`flex items-center justify-center border-2 w-6 h-6 rounded-full mr-4${
-            !userSelectedCorrectOption && selectedOption === option.value
-              ? " border-indigo-600"
-              : " border-gray-300"
+            isSelected ? " border-indigo-600" : " border-gray-300"
           }`}
         >
-          {!userSelectedCorrectOption && selectedOption === option.value && (
+          {isSelected && (
             <div className="bg-indigo-600 w-3 h-3 rounded-full"></div>
           )}
         </div>

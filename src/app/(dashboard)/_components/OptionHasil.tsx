@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { CheckCircleIcon } from '@heroicons/react/24/solid'; // Make sure you have Heroicons installed
 
 interface Option {
+  id: string;
   content: string;
   image?: string;
   percentage?: number;
@@ -8,24 +10,26 @@ interface Option {
 
 interface Props {
   option: Option;
-  selectedOption?: string;
+  selectedOptionId?: string;
   onClick?: () => void;
   disabled?: boolean;
-  correctAns?: string;
+  correctOptionId?: string;
   tipeSoal?: string;
 }
 
 export const OptionHasil: React.FC<Props> = ({
   option,
-  selectedOption,
+  selectedOptionId,
   onClick,
   disabled,
-  correctAns,
+  correctOptionId,
   tipeSoal,
 }) => {
-  const userSelectedCorrectOption = tipeSoal === "TKP" || (selectedOption === correctAns && selectedOption === option.content);
-  const isCorrectOption = tipeSoal === "TKP" || correctAns === option.content;
-  const isUserSelectedOption = selectedOption === option.content;
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  const userSelectedCorrectOption = tipeSoal === "TKP" || (selectedOptionId === correctOptionId && selectedOptionId === option.id);
+  const isCorrectOption = tipeSoal === "TKP" || correctOptionId === option.id;
+  const isUserSelectedOption = selectedOptionId === option.id;
 
   const getClasses = () => {
     let baseClasses = `flex items-center px-4 py-2 border w-full text-left mt-4 rounded-md disabled:opacity-80 transition-all duration-300 cursor-pointer`;
@@ -46,11 +50,13 @@ export const OptionHasil: React.FC<Props> = ({
   const classes = getClasses();
 
   const openLightbox = (imageSrc: string) => {
+    setIsLightboxOpen(true);
     const lightbox = document.createElement("div");
     lightbox.id = "lightbox";
     lightbox.className =
       "fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center";
     lightbox.onclick = () => {
+      setIsLightboxOpen(false);
       document.body.removeChild(lightbox);
     };
 
@@ -58,7 +64,9 @@ export const OptionHasil: React.FC<Props> = ({
     closeBtn.className =
       "absolute top-4 right-4 text-white text-4xl cursor-pointer";
     closeBtn.innerHTML = "&times;";
-    closeBtn.onclick = () => {
+    closeBtn.onclick = (e) => {
+      e.stopPropagation();
+      setIsLightboxOpen(false);
       document.body.removeChild(lightbox);
     };
 
@@ -73,32 +81,44 @@ export const OptionHasil: React.FC<Props> = ({
   };
 
   return (
-    <button disabled={disabled} onClick={onClick} className={classes}>
-      <div className="flex items-start w-full">
-        {option.image && (
-          <img
-            src={option.image || ""}
-            alt={`Option ${option.content} Image`}
-            className="w-24 h-24 object-contain mb-2 rounded-md border cursor-pointer"
-            onClick={(e) => {
-              e.stopPropagation();
-              openLightbox(option.image || "");
-            }}
-          />
-        )}
-        <div className="flex-1 ml-4">
-          <p style={{ wordBreak: 'break-word' }} className="text-sm md:text-base font-semibold">
-            {option.content}
-          </p>
-          <div className="relative w-full mt-2 bg-gray-200 rounded-full h-2.5">
-            <div
-              className="absolute top-0 left-0 h-2.5 bg-blue-500 rounded-full"
-              style={{ width: `${option.percentage ?? 0}%` }}
-            ></div>
+    <div className="w-full">
+      <button onClick={onClick} className={classes}>
+        <div className="flex items-start w-full">
+          {option.image && (
+            <img
+              src={option.image || ""}
+              alt={`Option ${option.content} Image`}
+              className="w-24 h-24 object-contain mb-2 rounded-md border cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                openLightbox(option.image || "");
+              }}
+            />
+          )}
+          <div className="flex-1 ml-4">
+            <div className="flex items-center">
+              {isCorrectOption && (
+                <CheckCircleIcon className="h-5 w-5 text-white mr-2" />
+              )}
+              {option.content && (
+                <p style={{ wordBreak: 'break-word' }} className="text-sm md:text-base font-semibold">
+                  {option.content}
+                </p>
+              )}
+            </div>
+            <div className="relative w-full mt-2 bg-gray-200 rounded-full h-2.5">
+              <div
+                className="absolute top-0 left-0 h-2.5 bg-blue-500 rounded-full"
+                style={{ width: `${option.percentage ?? 0}%` }}
+              ></div>
+            </div>
+            <p className={`text-xs mt-1 ${isUserSelectedOption && isCorrectOption ? 'text-yellow-500' : 'text-gray-600'}`}>
+              {(option.percentage ?? 0).toFixed(2)}% memilih ini
+            </p>
           </div>
-          <p className="text-xs text-gray-600 mt-1">{(option.percentage ?? 0).toFixed(2)}% memilih ini</p>
         </div>
-      </div>
-    </button>
+      </button>
+      
+    </div>
   );
 };

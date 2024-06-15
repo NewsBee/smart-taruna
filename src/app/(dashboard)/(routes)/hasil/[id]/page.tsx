@@ -20,6 +20,7 @@ interface AttemptData {
 }
 
 interface IChoice {
+  id : string;
   content: string;
   isCorrect: boolean;
   scoreValue?: number;
@@ -76,14 +77,16 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
     quiz: resp.Question.type,
     response: resp.content,
     correct: resp.Question.Choices.find((choice: IChoice) => choice.isCorrect)
-      ?.content,
+      ?.id.toString(), // Change this to use the id instead of content
     explanation: resp.Question.explanation,
     options: resp.Question.Choices.map((choice: IChoice) => ({
+      id: choice.id.toString(), // Ensure id is a string
       value: choice.content,
       label: choice.content,
       image: choice.image,
     })),
   }));
+  
 
   return (
     <>

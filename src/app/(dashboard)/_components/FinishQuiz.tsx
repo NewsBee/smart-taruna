@@ -4,6 +4,7 @@ import CustomAccordion from "./CustomAccordion";
 import { EmptyResponse } from "./EmptyResponse";
 import { OptionHasil } from "./OptionHasil";
 import { Box, Typography } from "@mui/material";
+import { CheckCircleIcon, LockClosedIcon } from "@heroicons/react/24/solid";
 
 interface Props {
   responses: any;
@@ -17,6 +18,7 @@ interface Props {
 }
 
 interface IOption {
+  id: string; // Ensure id is a string
   content: string;
   label?: string;
   value?: string;
@@ -53,7 +55,10 @@ export const ShowResponses: React.FC<Props> = ({
         const data = await res.json();
         console.log("Fetched data:", data); // Log the fetched data
         setResponseData(data.responses);
-        setChoicesData(data.choices);
+        setChoicesData(data.choices.map((choice: any) => ({
+          ...choice,
+          id: String(choice.id) // Ensure id is a string
+        })));
       } catch (error) {
         console.error("Error fetching responses:", error);
       }
@@ -112,7 +117,7 @@ export const ShowResponses: React.FC<Props> = ({
   
     return questionChoices.map((choice) => {
       const matchCount = questionResponses.filter(
-        (response) => response.content === choice.content
+        (response) => response.content === String(choice.id)
       ).length;
   
       console.log(`Choice content: ${choice.content}, Match count: ${matchCount}`);
@@ -123,8 +128,6 @@ export const ShowResponses: React.FC<Props> = ({
       };
     });
   };
-  
-  
 
   return (
     <>
@@ -227,11 +230,40 @@ export const ShowResponses: React.FC<Props> = ({
         </Box>
 
         <div className="mt-10 mx-5 md:mx-auto md:w-10/12">
+          <p className="text-xl font-bold mb-5">Keterangan Warna</p>
+          <div className="mb-4">
+            <div className="flex items-center mb-2">
+              <div className="w-8 h-8 bg-green-500 rounded-full mr-2"></div>
+              <p>Hijau Terang: Jawaban Benar yang Dipilih</p>
+            </div>
+            <div className="flex items-center mb-2">
+              <div className="w-8 h-8 bg-green-700 rounded-full mr-2"></div>
+              <p>Hijau Gelap: Jawaban Benar</p>
+            </div>
+            <div className="flex items-center mb-2">
+              <div className="w-8 h-8 bg-red-500 rounded-full mr-2"></div>
+              <p>Merah: Jawaban Salah yang Dipilih</p>
+            </div>
+            <div className="flex items-center mb-2">
+              <div className="w-8 h-8 bg-gray-300 rounded-full mr-2"></div>
+              <p>Abu-abu: Opsi yang Tidak Dipilih</p>
+            </div>
+            {/* <div className="flex items-center mb-2">
+              <CheckCircleIcon className="text-green-500 mr-2" />
+              <p>Ikon Hijau: Jawaban Benar yang Dipilih</p>
+            </div>
+            <div className="flex items-center mb-2">
+              <LockClosedIcon className="text-red-500 mr-2" />
+              <p>Ikon Merah: Jawaban Salah yang Dipilih</p>
+            </div> */}
+          </div>
+        </div>
+
+        <div className="mt-10 mx-5 md:mx-auto md:w-10/12">
           <p className="text-xl font-bold mb-5">Jawaban</p>
           {responses.length > 0 ? (
             responses.map((resp: any, i: number) => {
               console.log("Processing response:", resp);
-              // console.log("Processing response:", resp._id);
               const optionsWithPercentages = calculatePercentages(parseInt(resp._id, 10));
               console.log("optionsWithPercentages:", optionsWithPercentages);
               return (
@@ -262,16 +294,16 @@ export const ShowResponses: React.FC<Props> = ({
                         resp.options.map((option: IOption, index: number) => {
                           const optionWithPercentage =
                             optionsWithPercentages.find(
-                              (o) => o.content === option.value 
+                              (o) => o.id.toString() === option.id.toString()
                             ) || option;
 
-                            console.log(optionWithPercentage)
+                          console.log(optionWithPercentage)
 
                           return (
                             <OptionHasil
                               key={index}
-                              selectedOption={resp.response}
-                              correctAns={resp.correct}
+                              selectedOptionId={resp.response}
+                              correctOptionId={resp.correct}
                               option={optionWithPercentage}
                               disabled
                               tipeSoal={tipe}

@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { IOption, IQuestion, IResponse } from "../shared/interfaces";
 import { Option } from "./Option";
 import { PaginationButton } from "./PaginationButton";
 import { BottomBar } from "./BottomBar";
+
+
 
 interface Props {
   questions: IQuestion[];
@@ -19,28 +21,14 @@ export const Player: React.FC<Props> = ({
   response,
   setResponse,
 }) => {
-  const [selectedOption, setSelectedOption] = useState<string>("");
+  const [selectedOptionId, setSelectedOptionId] = useState<string>("");
 
-  // const onOptionClick = (option: string) => {
-  //   setSelectedOption(option);
-  //   setResponse((res) => {
-  //     const newRes: IResponse[] = [];
-  //     res.forEach((resp) => {
-  //       newRes.push({
-  //         ...resp,
-  //         response:
-  //           resp._id === questions[activeIndex]._id ? option : resp.response,
-  //       });
-  //     });
-  //     return newRes;
-  //   });
-  // };
-  const onOptionClick = (option: string) => {
-    // console.log(response)
-    setSelectedOption(option);
+  const onOptionClick = (optionId: string) => {
+    console.log("Selected option:", optionId);
+    setSelectedOptionId(optionId);
     setResponse((res) =>
       res.map((r, index) =>
-        index === activeIndex ? { ...r, response: option } : r
+        index === activeIndex ? { ...r, response: optionId } : r
       )
     );
   };
@@ -72,20 +60,10 @@ export const Player: React.FC<Props> = ({
     document.body.appendChild(lightbox);
   };
 
-  // useEffect(() => {
-  //   const currentQuestionResponse = response && response[activeIndex]?.response;
-  //   if (currentQuestionResponse) {
-  //     setSelectedOption(currentQuestionResponse);
-  //   }
-  //   return () => {
-  //     setSelectedOption("");
-  //   };
-  // }, [activeIndex, response]);
   useEffect(() => {
-    setSelectedOption(response[activeIndex]?.response || "");
+    setSelectedOptionId(response[activeIndex]?.response || "");
+    console.log("Current response:", response[activeIndex]?.response);
   }, [activeIndex, response]);
-  // console.log(response)
-  // console.log(questions)
 
   return (
     <div className="flex-1 flex-grow px-4 py-5 min-h-[86%] flex flex-col text-sm md:text-base">
@@ -95,39 +73,21 @@ export const Player: React.FC<Props> = ({
             src={questions[activeIndex].image}
             alt="Question Image"
             className="w-full max-w-md h-auto object-contain cursor-pointer"
-            onClick={() => openLightbox(questions[activeIndex].image || "")} 
+            onClick={() => openLightbox(questions[activeIndex].image || "")}
           />
         </div>
-        // <div className="my-4 flex justify-center">
-        //   {/* <img
-        //     src={questions[activeIndex].image}
-        //     alt="Question Image"
-        //     className="max-w-md max-h-[300px] object-contain cursor-zoom-in"
-        //     // onClick={() => window.open(questions[activeIndex].image, '_blank')} // Membuka gambar di tab baru ketika diklik
-        //   /> */}
-        // </div>
       )}
       <p className="break-words whitespace-pre-wrap mb-4">
         {questions && questions[activeIndex].title}
       </p>
 
-      {/* <p className="break-words">{questions && questions[activeIndex].title}</p> */}
       <div className="flex flex-col items-start">
-        {/* {questions &&
-          questions[activeIndex].options.map((option: IOption, i: number) => (
-            <Option
-              key={i}
-              onClick={() => onOptionClick(option.value)}
-              selectedOption={selectedOption}
-              option={option}
-            />
-          ))} */}
         {questions &&
           questions[activeIndex]?.options?.map((option: IOption, i: number) => (
             <Option
-              key={i}
-              onClick={() => onOptionClick(option.value)}
-              selectedOption={selectedOption}
+              key={option._id}
+              onClick={() => onOptionClick(option._id || "")}
+              selectedOptionId={selectedOptionId}
               option={option}
             />
           ))}

@@ -141,6 +141,7 @@ export default function PlayerScreen({
         quiz: data.testName, // Nama tes, misalnya 'SKD'
         response: "",
         options: q.choices.map((choice: any) => ({
+          _id: choice.id.toString(), // Ensure the id is correctly included
           value: choice.content,
           label: choice.content,
           image: choice.image || "",
@@ -149,7 +150,8 @@ export default function PlayerScreen({
       setResponse(newResponses);
     }
   }, [data, packageId]);
-  // console.log(response)
+  console.log(data)
+  console.log(response)
 
   useEffect(() => {
     const handleBeforeUnload = (e: any) => {
