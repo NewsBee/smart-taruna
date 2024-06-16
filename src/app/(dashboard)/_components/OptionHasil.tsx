@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircleIcon } from '@heroicons/react/24/solid'; // Make sure you have Heroicons installed
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
 
 interface Option {
   id: string;
@@ -118,7 +118,6 @@ export const OptionHasil: React.FC<Props> = ({
           </div>
         </div>
       </button>
-      
     </div>
   );
 };

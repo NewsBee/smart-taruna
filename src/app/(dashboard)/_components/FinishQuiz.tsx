@@ -5,6 +5,8 @@ import { EmptyResponse } from "./EmptyResponse";
 import { OptionHasil } from "./OptionHasil";
 import { Box, Typography } from "@mui/material";
 import { CheckCircleIcon, LockClosedIcon } from "@heroicons/react/24/solid";
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
 
 interface Props {
   responses: any;
@@ -47,10 +49,12 @@ export const ShowResponses: React.FC<Props> = ({
 }) => {
   const [responseData, setResponseData] = useState<IResponse[]>([]);
   const [choicesData, setChoicesData] = useState<IOption[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchResponses = async () => {
       try {
+        setLoading(true);
         const res = await fetch(`/api/hasil/${packageId}/respon`);
         const data = await res.json();
         console.log("Fetched data:", data); // Log the fetched data
@@ -61,6 +65,8 @@ export const ShowResponses: React.FC<Props> = ({
         })));
       } catch (error) {
         console.error("Error fetching responses:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -290,7 +296,15 @@ export const ShowResponses: React.FC<Props> = ({
                       </div>
                     )}
                     <div className="flex flex-col items-start mb-4">
-                      {resp.options &&
+                      {loading ? (
+                        <div className="w-full">
+                          <Skeleton height={40} className="mb-4" />
+                          <Skeleton height={40} className="mb-4" />
+                          <Skeleton height={40} className="mb-4" />
+                          <Skeleton height={40} className="mb-4" />
+                        </div>
+                      ) : (
+                        resp.options &&
                         resp.options.map((option: IOption, index: number) => {
                           const optionWithPercentage =
                             optionsWithPercentages.find(
@@ -309,7 +323,8 @@ export const ShowResponses: React.FC<Props> = ({
                               tipeSoal={tipe}
                             />
                           );
-                        })}
+                        })
+                      )}
                     </div>
                     {(resp.quiz === "TKP" || resp.response !== resp.correct) && (
                       <div className="bg-green-500 p-4 rounded-md">

@@ -175,12 +175,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         );
         if (response.ok) {
           const data = await response.json();
-          setUserResults(data.results);
+          // Sort the user results by score in descending order
+          const sortedResults = data.results.sort((a: UserResult, b: UserResult) => b.score - a.score);
+          setUserResults(sortedResults);
           setQuestionMissCount(data.questionMissCount);
           setLoading(false);
-
-          if (data.results.length > 0) {
-            const scores = data.results.map(
+  
+          if (sortedResults.length > 0) {
+            const scores = sortedResults.map(
               (result: UserResult) => result.score
             );
             setAverageScore(
@@ -207,6 +209,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     };
     fetchUserResults();
   }, [type, selectedPackage, date, setUserResults]);
+  
 
   const renderStats = () => (
     <Grid container spacing={2}>

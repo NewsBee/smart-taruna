@@ -47,9 +47,18 @@ export const GET = async (req: NextRequest, context: { params: { id: any } }) =>
     });
 
 
-    if (!attempt || attempt.userId !== Number(session.user.id)) { // Sesuaikan `attempt.userId` dengan struktur data Anda
-      return NextResponse.json({message: "Anda tidak memiliki akses"}, {status: 403});
+    // if (!attempt || attempt.userId !== Number(session.user.id)) { // Sesuaikan `attempt.userId` dengan struktur data Anda
+    //   return NextResponse.json({message: "Anda tidak memiliki akses"}, {status: 403});
+    // }
+
+    if (!attempt) {
+      return NextResponse.json({ message: "Attempt not found" }, { status: 404 });
     }
+
+    // Check if the user is either the owner of the attempt or an admin
+  if (attempt.userId !== Number(session.user.id) && session.user.role !== 'admin') {
+    return NextResponse.json({ message: "Anda tidak memiliki akses" }, { status: 403 });
+  }
 
     if (attempt) {
       return NextResponse.json({attempt})
