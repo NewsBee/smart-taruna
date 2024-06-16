@@ -21,6 +21,7 @@ import {
   TableHead,
   Button,
   CircularProgress,
+  Tooltip as MuiTooltip,
 } from "@mui/material";
 import { makeStyles } from "@mui/styles";
 import { useRouter } from "next/navigation";
@@ -103,6 +104,13 @@ const useStyles = makeStyles({
   },
 });
 
+const truncateText = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) {
+    return text;
+  }
+  return text.slice(0, maxLength) + "...";
+};
+
 const AdminPanel: React.FC<AdminPanelProps> = ({
   userResults,
   setUserResults,
@@ -130,6 +138,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   const handleChange = (event: React.ChangeEvent<{}>, newValue: number) => {
     setValue(newValue);
   };
+
+  function truncateText(text: any, maxLength: any) {
+    if (text.length > maxLength) {
+      return text.substring(0, maxLength) + "...";
+    } else {
+      return text;
+    }
+  }
 
   useEffect(() => {
     const fetchPackages = async () => {
@@ -267,7 +283,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           (q) => q.id === questionId
         );
         if (question) {
-          return question.content || `Soal Gambar ${question.id}`;
+          const truncatedContent = truncateText(
+            question.content || `Soal Gambar ${question.id}`,
+            20
+          );
+          return truncatedContent;
         }
       }
       return `Soal ${item[0]}`;
@@ -350,6 +370,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                     },
                     tooltip: {
                       callbacks: {
+                        title: function (context) {
+                          const index = context[0].dataIndex;
+                          const label = context[0].label;
+                          if (
+                            questionLabels[index] &&
+                            typeof questionLabels[index] === "string"
+                          ) {
+                            return questionLabels[index];
+                          } else {
+                            return label;
+                          }
+                        },
                         label: function (context) {
                           return `${context.dataset.label}: ${context.raw}`;
                         },
