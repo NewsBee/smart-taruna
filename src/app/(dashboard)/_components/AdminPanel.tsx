@@ -44,11 +44,6 @@ ChartJS.register(
   Legend
 );
 
-interface Question {
-  id: number;
-  content: string;
-}
-
 interface Package {
   id: number;
   title: string;
@@ -59,16 +54,18 @@ interface Package {
   questions: Question[];
 }
 
-interface User {
+interface Question {
   id: number;
-  username: string;
-  email: string;
+  content: string;
 }
 
 interface UserResult {
   id: number;
   score: number;
-  User: User;
+  User: {
+    username: string;
+    email: string;
+  };
   Package: Package;
 }
 
@@ -126,7 +123,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   const [medianScore, setMedianScore] = useState<number | null>(null);
   const [minScore, setMinScore] = useState<number | null>(null);
   const [maxScore, setMaxScore] = useState<number | null>(null);
-  const [questionMissCount, setQuestionMissCount] = useState<{ [key: number]: number }>({});
+  const [questionMissCount, setQuestionMissCount] = useState<{
+    [key: number]: number;
+  }>({});
 
   const handleChange = (event: React.ChangeEvent<{}>, newValue: number) => {
     setValue(newValue);
@@ -249,18 +248,24 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 
     const scoreDistribution: { [key: string]: number } = {};
     userResults.forEach((result) => {
-      const scoreRange: string = `${Math.floor(result.score / 10) * 10} - ${Math.floor(result.score / 10) * 10 + 9}`;
-      scoreDistribution[scoreRange] =
-        (scoreDistribution[scoreRange] || 0) + 1;
+      const scoreRange: string = `${Math.floor(result.score / 10) * 10} - ${
+        Math.floor(result.score / 10) * 10 + 9
+      }`;
+      scoreDistribution[scoreRange] = (scoreDistribution[scoreRange] || 0) + 1;
     });
 
     const questionLabels = sortedMissedQuestions.slice(0, 5).map((item) => {
       const questionId = parseInt(item[0]);
-      const questionResult = userResults.find(result => 
-        result.Package && result.Package.questions && result.Package.questions.some(q => q.id === questionId)
+      const questionResult = userResults.find(
+        (result) =>
+          result.Package &&
+          result.Package.questions &&
+          result.Package.questions.some((q) => q.id === questionId)
       );
       if (questionResult) {
-        const question = questionResult.Package.questions.find(q => q.id === questionId);
+        const question = questionResult.Package.questions.find(
+          (q) => q.id === questionId
+        );
         if (question) {
           return question.content || `Soal Gambar ${question.id}`;
         }
@@ -293,6 +298,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                       beginAtZero: true,
                     },
                   },
+                  plugins: {
+                    legend: {
+                      display: true,
+                      position: "top",
+                    },
+                    tooltip: {
+                      callbacks: {
+                        label: function (context) {
+                          return `${context.dataset.label}: ${context.raw}`;
+                        },
+                      },
+                    },
+                  },
                 }}
               />
             </CardContent>
@@ -323,6 +341,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                   scales: {
                     y: {
                       beginAtZero: true,
+                    },
+                  },
+                  plugins: {
+                    legend: {
+                      display: true,
+                      position: "top",
+                    },
+                    tooltip: {
+                      callbacks: {
+                        label: function (context) {
+                          return `${context.dataset.label}: ${context.raw}`;
+                        },
+                      },
                     },
                   },
                 }}
