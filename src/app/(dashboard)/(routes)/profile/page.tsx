@@ -51,11 +51,6 @@ interface User {
   email: string;
 }
 
-interface Question {
-  id: number;
-  content: string;
-}
-
 interface Package {
   id: number;
   title: string;
@@ -66,10 +61,18 @@ interface Package {
   questions: Question[];
 }
 
+interface Question {
+  id: number;
+  content: string;
+}
+
 interface UserResult {
   id: number;
   score: number;
-  User: User;
+  User: {
+    username: string;
+    email: string;
+  };
   Package: Package;
 }
 
