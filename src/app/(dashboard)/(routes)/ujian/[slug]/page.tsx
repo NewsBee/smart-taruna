@@ -110,6 +110,7 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
     // if (data.length > 0) {
     // }
   }, [data, params.slug]);
+  console.log(data)
 
   return (
     <div className="pb-10 px-10">

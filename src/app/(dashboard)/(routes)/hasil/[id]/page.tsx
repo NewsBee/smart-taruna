@@ -5,22 +5,27 @@ import { useEffect, useState } from "react";
 import { ErrorMessage } from "../../../_components/ErrorMessage";
 import { Loader } from "../../../_components/Svgs";
 import { ShowResponses } from "../../../_components/FinishQuiz";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { EmptyResponse } from "../../../_components/EmptyResponse";
+import { getSession, useSession } from "next-auth/react";
 import DropdownButton from "@/app/(dashboard)/_components/DropDownButton";
 import CustomAccordion from "@/app/(dashboard)/_components/CustomAccordion";
+import { Button, Typography } from "@mui/material";
 
 interface AttemptData {
   score: number;
-  packageId?:number;
-  responses: any[]; // Sesuaikan dengan struktur data yang sebenarnya
+  packageId?: number;
+  responses: any[];
   Package: {
     testName: string;
+  };
+  User: {
+    id: number;
   };
 }
 
 interface IChoice {
-  id : string;
+  id: string;
   content: string;
   isCorrect: boolean;
   scoreValue?: number;
@@ -32,16 +37,17 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<any>(null);
   const [attemptData, setAttemptData] = useState<AttemptData | null>(null);
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
   useEffect(() => {
     const fetchAttemptData = async () => {
       try {
         setLoading(true);
         const response = await axios.get(`/api/hasil/${attemptId}`);
-        // console.log(response)
         setAttemptData(response.data.attempt);
       } catch (err) {
-        const error = err as AxiosError; // Menggunakan type assertion
+        const error = err as AxiosError;
         setError(
           error.response
             ? error.response.data
@@ -54,8 +60,6 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
 
     fetchAttemptData();
   }, [attemptId]);
-  // console.log(attemptData?.Package.testName)
-  console.log(attemptData?.packageId)
 
   if (loading) {
     return <Loader halfScreen />;
@@ -63,6 +67,25 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
 
   if (error) {
     return <ErrorMessage message={error.message} statusCode={error.status} />;
+  }
+
+  const userId = session?.user?.id ? parseInt(session.user.id, 10) : null;
+
+  // Ensure session is loaded before checking access
+  if (status === "loading") {
+    return <Loader halfScreen />;
+  }
+
+  if (!session || (session.user.role !== "admin" && userId !== attemptData?.User.id)) {
+    return (
+      <div className="access-denied">
+        <Typography variant="h6">Akses Ditolak</Typography>
+        <Typography variant="body2">Anda tidak memiliki akses untuk melihat halaman ini.</Typography>
+        <Button variant="contained" color="primary" onClick={() => router.push("/")}>
+          Kembali ke Beranda
+        </Button>
+      </div>
+    );
   }
 
   if (!attemptData) {
@@ -86,15 +109,12 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
       image: choice.image,
     })),
   }));
-  
 
   return (
     <>
       {transformedResponses.length > 0 ? (
         <div className="">
-          <div className=" ">
-            {/* <DropdownButton/>
-            <CustomAccordion/> */}
+          <div className="">
             <ShowResponses
               responses={transformedResponses}
               score={attemptData.score}
@@ -102,9 +122,6 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
               tipe={attemptData.Package.testName}
               packageId={attemptData?.packageId}
             />
-          </div>
-          <div>
-
           </div>
         </div>
       ) : (

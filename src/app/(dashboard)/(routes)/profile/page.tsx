@@ -19,19 +19,15 @@ import {
   CircularProgress,
   Snackbar,
   Alert,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
-  TableHead,
   AppBar,
   Tabs,
   Tab,
 } from "@mui/material";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { useSession } from "next-auth/react";
-import { format, subDays } from "date-fns";
 import { makeStyles } from "@mui/styles";
+import AdminPanel from "../../_components/AdminPanel";
+
 
 interface ProfileType {
   avatar: string;
@@ -49,10 +45,32 @@ interface ProfileType {
   [key: string]: any;
 }
 
+interface User {
+  id: number;
+  username: string;
+  email: string;
+}
+
+interface Question {
+  id: number;
+  content: string;
+}
+
+interface Package {
+  id: number;
+  title: string;
+  description: string;
+  type: string;
+  isHidden: boolean;
+  isLocked: boolean;
+  questions: Question[];
+}
+
 interface UserResult {
   id: number;
-  name: string;
   score: number;
+  User: User;
+  Package: Package;
 }
 
 const useStyles = makeStyles({
@@ -86,15 +104,11 @@ const UserProfile = () => {
     message: "",
     severity: "success",
   });
-  const [packages, setPackages] = useState<{ id: number; title: string; description: string; type: string }[]>([]);
-  const [type, setType] = useState("SKD");
-  const [selectedPackage, setSelectedPackage] = useState<string>("");
-  const [dateRange, setDateRange] = useState({
-    startDate: format(subDays(new Date(), 7), "yyyy-MM-dd"),
-    endDate: format(new Date(), "yyyy-MM-dd"),
-  });
+  const [packages, setPackages] = useState<Package[]>([]);
   const [userResults, setUserResults] = useState<UserResult[]>([]);
-  const [value, setValue] = useState(0);
+  const [type, setType] = useState("");
+  const [selectedPackage, setSelectedPackage] = useState("");
+  const [date, setDate] = useState("");
 
   const toggleHover = (value: any) => () => {
     setIsHovered(value);
@@ -115,25 +129,6 @@ const UserProfile = () => {
     fetchProfile();
   }, []);
 
-  useEffect(() => {
-    if (profile && profile.role === "admin") {
-      // Dummy data for packages
-      const dummyPackages = [
-        { id: 1, title: "Paket 1", description: "Deskripsi Paket 1", type: "SKD" },
-        { id: 2, title: "Paket 2", description: "Deskripsi Paket 2", type: "SKD" },
-        { id: 3, title: "Paket 3", description: "Deskripsi Paket 3", type: "TPA" },
-      ];
-      setPackages(dummyPackages);
-
-      // Dummy data for user results
-      const dummyResults = [
-        { id: 1, name: "User 1", score: 85 },
-        { id: 2, name: "User 2", score: 90 },
-        { id: 3, name: "User 3", score: 75 },
-      ];
-      setUserResults(dummyResults);
-    }
-  }, [profile]);
 
   const handleEditClick = () => {
     setIsEditModalOpen(true);
@@ -246,29 +241,6 @@ const UserProfile = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
-  };
-
-  const handleChange = (event: React.ChangeEvent<{}>, newValue: number) => {
-    setValue(newValue);
-  };
-
-  const TabPanel = (props: { children?: React.ReactNode, index: number, value: number }) => {
-    const { children, value, index, ...other } = props;
-    return (
-      <div
-        role="tabpanel"
-        hidden={value !== index}
-        id={`simple-tabpanel-${index}`}
-        aria-labelledby={`simple-tab-${index}`}
-        {...other}
-      >
-        {value === index && (
-          <Box p={3}>
-            {children}
-          </Box>
-        )}
-      </div>
-    );
   };
 
   if (!profile) {
@@ -440,15 +412,15 @@ const UserProfile = () => {
                 <Legend />
                 <Line
                   type="monotone"
-                  dataKey="highestSKD"
+                  dataKey="highestTPA"
                   stroke="#8884d8"
-                  name="Highest SKD"
+                  name="Highest TPA"
                 />
                 <Line
                   type="monotone"
-                  dataKey="averageSKD"
+                  dataKey="averageTPA"
                   stroke="#82ca9d"
-                  name="Average SKD "
+                  name="Average TPA"
                 />
               </LineChart>
             </CardContent>
@@ -457,152 +429,18 @@ const UserProfile = () => {
       </Grid>
 
       {session?.user.role === "admin" && (
-        <Grid container spacing={2} className="mt-4">
-          <Grid item xs={12}>
-            <Card className="shadow-lg">
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Admin Panel
-                </Typography>
-                <FormControl fullWidth className="mb-4">
-                  <InputLabel>Type</InputLabel>
-                  <Select value={type} onChange={(e) => setType(e.target.value)}>
-                    <MenuItem value="SKD">SKD</MenuItem>
-                    <MenuItem value="TPA">TPA</MenuItem>
-                  </Select>
-                </FormControl>
-                <FormControl fullWidth className="mb-4" disabled={!type}>
-                  <InputLabel>Pilih Paket</InputLabel>
-                  <Select value={selectedPackage} onChange={(e) => setSelectedPackage(e.target.value)}>
-                    {packages
-                      .filter((pkg) => pkg.type === type)
-                      .map((pkg) => (
-                        <MenuItem key={pkg.id} value={pkg.id}>{pkg.title}</MenuItem>
-                      ))}
-                  </Select>
-                </FormControl>
-                <TextField
-                  label="Start Date"
-                  type="date"
-                  fullWidth
-                  className="mb-4"
-                  InputLabelProps={{ shrink: true }}
-                  value={dateRange.startDate}
-                  onChange={(e) =>
-                    setDateRange((prev) => ({ ...prev, startDate: e.target.value }))
-                  }
-                />
-                <TextField
-                  label="End Date"
-                  type="date"
-                  fullWidth
-                  className="mb-4"
-                  InputLabelProps={{ shrink: true }}
-                  value={dateRange.endDate}
-                  onChange={(e) =>
-                    setDateRange((prev) => ({ ...prev, endDate: e.target.value }))
-                  }
-                />
-                <AppBar position="static" className={classes.appBar}>
-                  <Tabs
-                    value={value}
-                    onChange={handleChange}
-                    aria-label="simple tabs example"
-                    centered
-                    className={classes.tabs}
-                  >
-                    <Tab label="Statistik" className={classes.tab} />
-                    <Tab label="Hasil" className={classes.tab} />
-                  </Tabs>
-                </AppBar>
-                <TabPanel value={value} index={0}>
-                  <Typography variant="h6" className="font-bold mb-2" style={{ color: "#000" }}>
-                    Statistik
-                  </Typography>
-                  <Typography variant="body2" style={{ marginBottom: 16, color: "#000" }}>
-                    Data yang ditampilkan adalah statistik dari paket yang dipilih.
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={4}>
-                      <Card className="shadow-lg">
-                        <CardContent>
-                          <Typography variant="h6">Rata-rata</Typography>
-                          <Typography variant="body2">46,77 / 100 poin</Typography>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                    <Grid item xs={4}>
-                      <Card className="shadow-lg">
-                        <CardContent>
-                          <Typography variant="h6">Median</Typography>
-                          <Typography variant="body2">46 / 100 poin</Typography>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                    <Grid item xs={4}>
-                      <Card className="shadow-lg">
-                        <CardContent>
-                          <Typography variant="h6">Rentang</Typography>
-                          <Typography variant="body2">18 - 98 poin</Typography>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  </Grid>
-                  <Typography variant="h6" className="font-bold mb-2 mt-4" style={{ color: "#000" }}>
-                    Distribusi poin total
-                  </Typography>
-                  <LineChart width={600} height={300} data={[
-                    { name: '0-10', uv: 4 },
-                    { name: '10-20', uv: 2 },
-                    { name: '20-30', uv: 6 },
-                    { name: '30-40', uv: 3 },
-                    { name: '40-50', uv: 8 },
-                    { name: '50-60', uv: 5 },
-                    { name: '60-70', uv: 1 },
-                    { name: '70-80', uv: 2 },
-                    { name: '80-90', uv: 1 },
-                    { name: '90-100', uv: 0 },
-                  ]}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="uv" stroke="#8884d8" />
-                  </LineChart>
-                </TabPanel>
-                <TabPanel value={value} index={1}>
-                  <Typography variant="h6" className="font-bold mb-2" style={{ color: "#000" }}>
-                    Hasil
-                  </Typography>
-                  <Typography variant="body2" style={{ marginBottom: 16, color: "#000" }}>
-                    Data yang ditampilkan adalah hasil dari user yang mengerjakan paket yang dipilih.
-                  </Typography>
-                  <TableContainer>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>ID</TableCell>
-                          <TableCell>Nama</TableCell>
-                          <TableCell>Skor</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {userResults.map((user) => (
-                          <TableRow key={user.id}>
-                            <TableCell>{user.id}</TableCell>
-                            <TableCell>{user.name}</TableCell>
-                            <TableCell>{user.score}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </TabPanel>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+        <AdminPanel
+          userResults={userResults}
+          setUserResults={setUserResults}
+          type={type}
+          setType={setType}
+          selectedPackage={selectedPackage}
+          setSelectedPackage={setSelectedPackage}
+          date={date}
+          setDate={setDate}
+          packages={packages}
+          setPackages={setPackages}
+        />
       )}
 
       <Modal open={isEditModalOpen} onClose={handleModalClose}>
