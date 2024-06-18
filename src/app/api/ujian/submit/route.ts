@@ -5,6 +5,12 @@ import { getServerSession } from "next-auth";
 import { getSession } from "next-auth/react";
 import { NextRequest, NextResponse } from "next/server";
 
+interface ResponseCountMap {
+  [questionId: number]: {
+    [responseId: string]: number;
+  };
+}
+
 export const POST = async (req: NextRequest) => {
   const session: any = await getServerSession(authOptions);
   if (!session) {
@@ -52,6 +58,28 @@ export const POST = async (req: NextRequest) => {
           attemptId: attemptNumber,
         },
       });
+    }
+
+    // Recalculate percentages for all questions
+    const allQuestions = await prismadb.question.findMany({
+      include: { Choices: true, responses: true },
+    });
+
+    for (const question of allQuestions) {
+      const totalResponses = question.responses.length;
+
+      for (const choice of question.Choices) {
+        const choiceResponses = question.responses.filter(
+          response => response.content === choice.id.toString()
+        ).length;
+
+        const percentage = totalResponses ? (choiceResponses / totalResponses) * 100 : 0;
+
+        await prismadb.choice.update({
+          where: { id: choice.id },
+          data: { percentage },
+        });
+      }
     }
 
     await prismadb.attempt.update({

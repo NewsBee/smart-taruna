@@ -4,6 +4,7 @@ import { CheckCircleIcon } from '@heroicons/react/24/solid';
 interface Option {
   id: string;
   content: string;
+  label?: string;
   image?: string;
   percentage?: number;
 }
@@ -25,6 +26,7 @@ export const OptionHasil: React.FC<Props> = ({
   correctOptionId,
   tipeSoal,
 }) => {
+  console.log(option)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   const userSelectedCorrectOption = tipeSoal === "TKP" || (selectedOptionId === correctOptionId && selectedOptionId === option.id);
@@ -34,12 +36,12 @@ export const OptionHasil: React.FC<Props> = ({
   const getClasses = () => {
     let baseClasses = `flex items-center px-4 py-2 border w-full text-left mt-4 rounded-md disabled:opacity-80 transition-all duration-300 cursor-pointer`;
 
-    if (tipeSoal === "TKP") {
-      return `${baseClasses} bg-green-500 border-green-500 text-white`;
-    } else if (userSelectedCorrectOption) {
-      return `${baseClasses} bg-green-700 border-green-700 text-white`;
-    } else if (isCorrectOption) {
-      return `${baseClasses} bg-green-500 border-green-500 text-white`;
+    if (isCorrectOption) {
+      if (isUserSelectedOption) {
+        return `${baseClasses} bg-green-700 border-green-700 text-white`;
+      } else {
+        return `${baseClasses} bg-green-500 border-green-500 text-white`;
+      }
     } else if (isUserSelectedOption) {
       return `${baseClasses} bg-red-500 border-red-500 text-white`;
     }
@@ -82,12 +84,12 @@ export const OptionHasil: React.FC<Props> = ({
 
   return (
     <div className="w-full">
-      <button onClick={onClick} className={classes}>
+      <button onClick={onClick} className={classes} disabled={disabled}>
         <div className="flex items-start w-full">
           {option.image && (
             <img
               src={option.image || ""}
-              alt={`Option ${option.content} Image`}
+              alt={`Option ${option.label} Image`}
               className="w-24 h-24 object-contain mb-2 rounded-md border cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
@@ -100,9 +102,9 @@ export const OptionHasil: React.FC<Props> = ({
               {isCorrectOption && (
                 <CheckCircleIcon className="h-5 w-5 text-white mr-2" />
               )}
-              {option.content && (
+              {option.label && (
                 <p style={{ wordBreak: 'break-word' }} className="text-sm md:text-base font-semibold">
-                  {option.content}
+                  {option.label}
                 </p>
               )}
             </div>

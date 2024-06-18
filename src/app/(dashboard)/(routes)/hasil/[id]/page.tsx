@@ -7,9 +7,7 @@ import { Loader } from "../../../_components/Svgs";
 import { ShowResponses } from "../../../_components/FinishQuiz";
 import { useRouter } from "next/navigation";
 import { EmptyResponse } from "../../../_components/EmptyResponse";
-import { getSession, useSession } from "next-auth/react";
-import DropdownButton from "@/app/(dashboard)/_components/DropDownButton";
-import CustomAccordion from "@/app/(dashboard)/_components/CustomAccordion";
+import { useSession } from "next-auth/react";
 import { Button, Typography } from "@mui/material";
 
 interface AttemptData {
@@ -30,6 +28,7 @@ interface IChoice {
   isCorrect: boolean;
   scoreValue?: number;
   image?: string;
+  percentage?: number;
 }
 
 export default function QuizResponse({ params }: { params: { id: any } }) {
@@ -45,6 +44,7 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
       try {
         setLoading(true);
         const response = await axios.get(`/api/hasil/${attemptId}`);
+        console.log(response);
         setAttemptData(response.data.attempt);
       } catch (err) {
         const error = err as AxiosError;
@@ -107,6 +107,8 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
       value: choice.content,
       label: choice.content,
       image: choice.image,
+      isCorrect: choice.isCorrect,
+      percentage: choice.percentage,
     })),
   }));
 

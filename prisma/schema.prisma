@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -26,11 +23,9 @@ model User {
   createdAt   DateTime     @default(now()) // Tanggal pembuatan akun
   updatedAt   DateTime     @default(now())
 
-  // Pertimbangkan untuk menambahkan field-field berikut jika diperlukan
   profileImage String? // URL Gambar Profil
   bio          String? // Biografi singkat pengguna
   birthDate    DateTime? // Tanggal Lahir
-  // Lainnya sesuai kebutuhan
 }
 
 model SocialLink {
@@ -39,7 +34,6 @@ model SocialLink {
   user     User   @relation(fields: [userId], references: [id])
   platform String
   link     String
-  // Lainnya sesuai kebutuhan
 }
 
 model Test {
@@ -74,12 +68,10 @@ model Tag {
 model Question {
   id          Int        @id @default(autoincrement())
   content     String   @db.Text
-  // content     String // Konten pertanyaan
   type        String // Misalnya "TIU", "TWK", "TKP", atau "TPA"
   packageId   Int // ID Paket
   image       String? // Optional URL to an image for the question
   explanation String? // Penjelasan atas jawaban
-  // Package     Package    @relation(fields: [packageId], references: [id])
   Package     Package    @relation(fields: [packageId], references: [id], onDelete: Cascade)
   Choices     Choice[] // Pilihan jawaban untuk pertanyaan
   responses   Response[]
@@ -93,6 +85,7 @@ model Choice {
   questionId Int // ID Pertanyaan
   Question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
   image      String?  // Optional URL to an image for the choice
+  percentage Float?   // Tambahkan field ini
 }
 
 model Attempt {
@@ -102,7 +95,6 @@ model Attempt {
   packageId   Int // ID Paket yang dipilih
   userId      Int // ID User
   Test        Test       @relation(fields: [testId], references: [id])
-  // Package     Package    @relation(fields: [packageId], references: [id])
   Package     Package    @relation(fields: [packageId], references: [id], onDelete: Cascade)
   User        User       @relation(fields: [userId], references: [id])
   responses   Response[]

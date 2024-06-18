@@ -1,19 +1,10 @@
 import prismadb from "@/app/lib/prismadb";
-import { getAccessToken } from "@auth0/nextjs-auth0";
-import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { authOptions } from "../../../auth/[...nextauth]/route";
 
 export const GET = async (
   req: NextRequest,
   { params }: { params: { id: string } }
 ) => {
-  // const session = await getServerSession(authOptions);
-
-  // if (!session) {
-  //   return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  // }
-
   const packageId = parseInt(params.id, 10);
 
   if (isNaN(packageId)) {
@@ -28,7 +19,11 @@ export const GET = async (
         },
       },
       include: {
-        Question: true,
+        Question: {
+          include: {
+            Choices: true,
+          },
+        },
         Attempt: true,
       },
     });
@@ -41,7 +36,49 @@ export const GET = async (
       },
     });
 
-    return NextResponse.json({ responses, choices }, { status: 200 });
+    // Define types for questionChoiceMap and responseCountMap
+    const questionChoiceMap: { [key: number]: any[] } = {};
+    const responseCountMap: { [key: number]: { [key: string]: number } } = {};
+
+    // Calculate the percentage of each choice
+    choices.forEach(choice => {
+      if (!questionChoiceMap[choice.questionId]) {
+        questionChoiceMap[choice.questionId] = [];
+      }
+      questionChoiceMap[choice.questionId].push(choice);
+    });
+
+    responses.forEach(response => {
+      const responseContent = response.content ?? "";
+      if (!responseCountMap[response.questionId]) {
+        responseCountMap[response.questionId] = {};
+      }
+      if (!responseCountMap[response.questionId][responseContent]) {
+        responseCountMap[response.questionId][responseContent] = 0;
+      }
+      responseCountMap[response.questionId][responseContent]++;
+    });
+
+    const choicePercentageMap: { [key: number]: any[] } = {};
+    for (const [questionId, choices] of Object.entries(questionChoiceMap)) {
+      const totalResponses = Object.values(responseCountMap[parseInt(questionId)] || {}).reduce((acc, count) => acc + count, 0);
+      choices.forEach(choice => {
+        const matchCount = responseCountMap[parseInt(questionId)]?.[String(choice.id)] || 0;
+        choice.percentage = totalResponses ? (matchCount / totalResponses) * 100 : 0;
+        if (!choicePercentageMap[parseInt(questionId)]) {
+          choicePercentageMap[parseInt(questionId)] = [];
+        }
+        choicePercentageMap[parseInt(questionId)].push(choice);
+      });
+    }
+
+    const enrichedResponses = responses.map(response => ({
+      ...response,
+      choices: choicePercentageMap[response.questionId] || [],
+      correct: response.Question.Choices.find(choice => choice.isCorrect)?.id.toString()
+    }));
+
+    return NextResponse.json({ responses: enrichedResponses }, { status: 200 });
   } catch (error) {
     console.error("Error fetching responses:", error);
     return NextResponse.json(
