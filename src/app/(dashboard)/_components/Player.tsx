@@ -24,7 +24,7 @@ export const Player: React.FC<Props> = ({
   const [selectedOptionId, setSelectedOptionId] = useState<string>("");
 
   const onOptionClick = (optionId: string) => {
-    console.log("Selected option:", optionId);
+    // console.log("Selected option:", optionId);
     setSelectedOptionId(optionId);
     setResponse((res) =>
       res.map((r, index) =>
@@ -62,7 +62,7 @@ export const Player: React.FC<Props> = ({
 
   useEffect(() => {
     setSelectedOptionId(response[activeIndex]?.response || "");
-    console.log("Current response:", response[activeIndex]?.response);
+    // console.log("Current response:", response[activeIndex]?.response);
   }, [activeIndex, response]);
 
   return (

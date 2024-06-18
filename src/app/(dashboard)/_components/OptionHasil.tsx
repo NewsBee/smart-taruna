@@ -26,7 +26,7 @@ export const OptionHasil: React.FC<Props> = ({
   correctOptionId,
   tipeSoal,
 }) => {
-  console.log(option)
+  // console.log(option)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   const userSelectedCorrectOption = tipeSoal === "TKP" || (selectedOptionId === correctOptionId && selectedOptionId === option.id);
@@ -84,7 +84,7 @@ export const OptionHasil: React.FC<Props> = ({
 
   return (
     <div className="w-full">
-      <button onClick={onClick} className={classes} disabled={disabled}>
+      <button onClick={onClick} className={classes}>
         <div className="flex items-start w-full">
           {option.image && (
             <img

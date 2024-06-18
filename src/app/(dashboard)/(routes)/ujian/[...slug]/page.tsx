@@ -150,8 +150,8 @@ export default function PlayerScreen({
       setResponse(newResponses);
     }
   }, [data, packageId]);
-  console.log(data)
-  console.log(response)
+  // console.log(data)
+  // console.log(response)
 
   useEffect(() => {
     const handleBeforeUnload = (e: any) => {

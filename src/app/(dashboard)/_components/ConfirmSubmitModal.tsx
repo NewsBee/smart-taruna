@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { IResponse } from "../shared/interfaces";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { CircularProgress } from "@mui/material";
 
 interface Props {
   handleConfirmSubmitModalClose: () => void;
@@ -23,11 +24,13 @@ export const ConfirmSubmitModalContent: React.FC<Props> = ({
 }) => {
   const [marked, setMarked] = useState(0);
   const [unmarked, setUnmarked] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   // const [attemptId, setAttemptId] = useState(null);
   const router = useRouter()
   // console.log(responses)
 
   const handleSubmitAnswers = async () => {
+    setIsLoading(true);
     try {
       // Call your API to submit the responses
       const res = await axios.post('/api/ujian/submit', { attemptId, responses });
@@ -37,6 +40,7 @@ export const ConfirmSubmitModalContent: React.FC<Props> = ({
     } catch (error) {
       console.error('Error submitting quiz:', error);
     } finally{
+      setIsLoading(false);
       router.push(`/hasil/${attemptId}`)
     }
   };
@@ -75,18 +79,18 @@ export const ConfirmSubmitModalContent: React.FC<Props> = ({
   return (
     <>
       <h4 className="text-gray-555 text-center font-semibold text-2xl mt-3 mb-8">
-        Submit Quiz
+        Kirim Jawaban
       </h4>
       <div className="my-4 mb-5 mx-5 md:mx-10">
         <p className="text-gray-555 text-sm md:text-lg font-medium">
-          Are you sure you want to submit?
+          Apakah anda yakin ingin menyelesaikan Try Out ini?
         </p>
         <div className="my-3">
           <p className="text-gray-555 text-sm md:text-lg font-normal">
-            Questions Attempted: {marked}
+            Jawaban diisi: {marked}
           </p>
           <p className="text-gray-555 text-sm md:text-lg font-normal">
-            Questions Unattempted: {unmarked}
+            Jawaban kosong: {unmarked}
           </p>
         </div>
         {marked === 0 && (
@@ -105,7 +109,7 @@ export const ConfirmSubmitModalContent: React.FC<Props> = ({
               disabled={isQuizCorrectAnsLoading || marked === 0}
               onClick={handleSubmitAnswers}
             >
-              Submit
+              {isLoading ? <CircularProgress size={24} /> : "Kirim"}
             </Button>
           </div>
         </div>
