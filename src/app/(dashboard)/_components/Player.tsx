@@ -12,6 +12,7 @@ interface Props {
   setActiveIndex: React.Dispatch<React.SetStateAction<number>>;
   response: IResponse[];
   setResponse: React.Dispatch<React.SetStateAction<IResponse[] | []>>;
+  isTimeUp: boolean; // Tambahkan prop ini
 }
 
 export const Player: React.FC<Props> = ({
@@ -20,17 +21,26 @@ export const Player: React.FC<Props> = ({
   setActiveIndex,
   response,
   setResponse,
+  isTimeUp,
 }) => {
   const [selectedOptionId, setSelectedOptionId] = useState<string>("");
 
   const onOptionClick = (optionId: string) => {
     // console.log("Selected option:", optionId);
-    setSelectedOptionId(optionId);
-    setResponse((res) =>
-      res.map((r, index) =>
-        index === activeIndex ? { ...r, response: optionId } : r
-      )
-    );
+    if (!isTimeUp) { // Cek apakah waktu habis
+      setSelectedOptionId(optionId);
+      setResponse((res) =>
+        res.map((r, index) =>
+          index === activeIndex ? { ...r, response: optionId } : r
+        )
+      );
+    }
+    // setSelectedOptionId(optionId);
+    // setResponse((res) =>
+    //   res.map((r, index) =>
+    //     index === activeIndex ? { ...r, response: optionId } : r
+    //   )
+    // );
   };
 
   const openLightbox = (imageSrc: string) => {

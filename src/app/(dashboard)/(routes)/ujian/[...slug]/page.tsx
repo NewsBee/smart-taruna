@@ -81,6 +81,8 @@ export default function PlayerScreen({
   const [quizEnd, setQuizEnd] = useState(false);
   const [isSubmitConfirmed, setIsSubmitConfirmed] = useState(false);
   const [score, setScore] = useState(0);
+  const [isTimeUp, setIsTimeUp] = useState(false);
+  const [loadingScreen, setLoadingScreen] = useState(false);
   const [attemptId, setAttemptId] = useState(null);
   const [confirmSubmitModalActive, setConfirmSubmitModalActive] =
     useState(false);
@@ -96,6 +98,7 @@ export default function PlayerScreen({
   const router = useRouter();
 
   const onSubmitTimeUp = async () => {
+    setLoadingScreen(true);
     try {
       // Replace '/api/path-to-submit-quiz' dengan endpoint API Anda yang sebenarnya
       const res = await axios.post("/api/ujian/submit", {
@@ -261,6 +264,7 @@ export default function PlayerScreen({
                   setResponse={setResponse}
                   activeIndex={activeIndex}
                   setActiveIndex={setActiveIndex}
+                  isTimeUp={isTimeUp}
                 />
               )}
 
@@ -291,6 +295,14 @@ export default function PlayerScreen({
           />
         )}
       </div>
+      {loadingScreen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-50">
+          <div className="text-white text-center">
+            <CircularProgress />
+            <p className="mt-4">Waktu telah habis</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
