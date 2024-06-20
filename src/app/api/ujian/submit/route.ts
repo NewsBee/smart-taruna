@@ -70,27 +70,6 @@ export const POST = async (req: NextRequest) => {
         });
       }
 
-      const allQuestions = await tx.question.findMany({
-        include: { Choices: true, responses: true },
-      });
-
-      for (const question of allQuestions) {
-        const totalResponses = question.responses.length;
-
-        for (const choice of question.Choices) {
-          const choiceResponses = question.responses.filter(
-            response => response.content === choice.id.toString()
-          ).length;
-
-          const percentage = totalResponses ? (choiceResponses / totalResponses) * 100 : 0;
-
-          await tx.choice.update({
-            where: { id: choice.id },
-            data: { percentage },
-          });
-        }
-      }
-
       await tx.attempt.update({
         where: { id: attemptNumber },
         data: {
@@ -98,7 +77,31 @@ export const POST = async (req: NextRequest) => {
           completedAt: new Date(),
         },
       });
+    }, {
+      timeout: 30000 // Tambahkan parameter timeout di sini
     });
+
+    // Pindahkan logika perhitungan persentase di luar transaksi utama
+    const allQuestions = await prismadb.question.findMany({
+      include: { Choices: true, responses: true },
+    });
+
+    for (const question of allQuestions) {
+      const totalResponses = question.responses.length;
+
+      for (const choice of question.Choices) {
+        const choiceResponses = question.responses.filter(
+          response => response.content === choice.id.toString()
+        ).length;
+
+        const percentage = totalResponses ? (choiceResponses / totalResponses) * 100 : 0;
+
+        await prismadb.choice.update({
+          where: { id: choice.id },
+          data: { percentage },
+        });
+      }
+    }
 
     return NextResponse.json({ score: totalScore }, { status: 200 });
   } catch (error: any) {
