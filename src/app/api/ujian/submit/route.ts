@@ -3,6 +3,13 @@ import prismadb from "@/app/lib/prismadb";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
+interface ResponseData {
+  content: string;
+  score: number;
+  questionId: number;
+  attemptId: number;
+}
+
 export const POST = async (req: NextRequest) => {
   const session: any = await getServerSession(authOptions);
   if (!session) {
@@ -19,77 +26,90 @@ export const POST = async (req: NextRequest) => {
 
   try {
     let totalScore = 0;
+    const responseData: ResponseData[] = [];
+    const questionIds = responses.map((response: any) => parseInt(response._id, 10));
+
+    const existingResponses = await prismadb.response.findMany({
+      where: {
+        attemptId: attemptNumber,
+        questionId: { in: questionIds },
+      },
+    });
+
+    const existingResponseMap = new Map(existingResponses.map((res) => [res.questionId, res]));
 
     for (const response of responses) {
       const questionId = parseInt(response._id, 10);
-      if (isNaN(questionId)) continue;
+      if (isNaN(questionId) || existingResponseMap.has(questionId)) continue;
 
-      // Check if the response already exists
-      const existingResponse = await prismadb.response.findFirst({
-        where: {
-          attemptId: attemptNumber,
-          questionId: questionId,
-        },
+      const question = await prismadb.question.findUnique({
+        where: { id: questionId },
+        include: { Choices: true },
       });
 
-      if (!existingResponse) {
-        const question = await prismadb.question.findUnique({
-          where: { id: questionId },
-          include: { Choices: true },
+      if (!question) continue;
+
+      let questionScore = 0;
+      if (question.type === "TKP" && response.response) {
+        const selectedChoice = question.Choices.find(choice => choice.id === parseInt(response.response, 10));
+        questionScore = selectedChoice ? selectedChoice.scoreValue : 0;
+      } else {
+        const isCorrectAnswer = question.Choices.some(choice => choice.isCorrect && choice.id === parseInt(response.response, 10));
+        questionScore = isCorrectAnswer ? 5 : 0;
+      }
+
+      totalScore += questionScore;
+
+      responseData.push({
+        content: response.response,
+        score: questionScore,
+        questionId: questionId,
+        attemptId: attemptNumber,
+      });
+    }
+
+    await prismadb.$transaction(async (tx) => {
+      if (responseData.length > 0) {
+        await tx.response.createMany({
+          data: responseData,
+        });
+      }
+
+      const allQuestions = await tx.question.findMany({
+        include: { Choices: true, responses: true },
+      });
+
+      for (const question of allQuestions) {
+        const totalResponses = question.responses.length;
+
+        const updateData = question.Choices.map((choice) => {
+          const choiceResponses = question.responses.filter(
+            response => response.content === choice.id.toString()
+          ).length;
+
+          const percentage = totalResponses ? (choiceResponses / totalResponses) * 100 : 0;
+
+          return {
+            id: choice.id,
+            percentage: percentage,
+          };
         });
 
-        if (!question) continue;
-
-        let questionScore = 0;
-        if (question.type === "TKP" && response.response) {
-          const selectedChoice = question.Choices.find(choice => choice.id === parseInt(response.response, 10));
-          questionScore = selectedChoice ? selectedChoice.scoreValue : 0;
-        } else {
-          const isCorrectAnswer = question.Choices.some(choice => choice.isCorrect && choice.id === parseInt(response.response, 10));
-          questionScore = isCorrectAnswer ? 5 : 0;
+        for (const data of updateData) {
+          await tx.choice.update({
+            where: { id: data.id },
+            data: { percentage: data.percentage },
+          });
         }
-
-        totalScore += questionScore;
-
-        await prismadb.response.create({
-          data: {
-            content: response.response,
-            score: questionScore,
-            questionId: questionId,
-            attemptId: attemptNumber,
-          },
-        });
       }
-    }
 
-    // Recalculate percentages for all questions
-    const allQuestions = await prismadb.question.findMany({
-      include: { Choices: true, responses: true },
-    });
-
-    for (const question of allQuestions) {
-      const totalResponses = question.responses.length;
-
-      for (const choice of question.Choices) {
-        const choiceResponses = question.responses.filter(
-          response => response.content === choice.id.toString()
-        ).length;
-
-        const percentage = totalResponses ? (choiceResponses / totalResponses) * 100 : 0;
-
-        await prismadb.choice.update({
-          where: { id: choice.id },
-          data: { percentage },
-        });
-      }
-    }
-
-    await prismadb.attempt.update({
-      where: { id: attemptNumber },
-      data: {
-        score: totalScore,
-        completedAt: new Date(),
-      },
+      await tx.attempt.update({
+        where: { id: attemptNumber },
+        data: {
+          score: totalScore,
+          completedAt: new Date(),
+        },
+      });
     });
 
     return NextResponse.json({ score: totalScore }, { status: 200 });
