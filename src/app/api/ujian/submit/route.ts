@@ -1,7 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { IResponse } from "@/app/(dashboard)/shared/interfaces";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import prismadb from "@/app/lib/prismadb";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { getSession } from "next-auth/react";
+import { NextRequest, NextResponse } from "next/server";
+
+interface ResponseCountMap {
+  [questionId: number]: {
+    [responseId: string]: number;
+  };
+}
 
 export const POST = async (req: NextRequest) => {
   const session: any = await getServerSession(authOptions);
@@ -20,68 +28,39 @@ export const POST = async (req: NextRequest) => {
   try {
     let totalScore = 0;
 
-    // Menggunakan transaksi Prisma untuk memastikan semua operasi dilakukan dalam satu transaksi
-    await prismadb.$transaction(async (tx) => {
-      const responseData = [];
-      const questionIds = responses.map((response: any) => parseInt(response._id, 10));
+    for (const response of responses) {
+      const questionId = parseInt(response._id, 10);
+      if (isNaN(questionId)) continue;
 
-      const existingResponses = await tx.response.findMany({
-        where: {
-          attemptId: attemptNumber,
-          questionId: { in: questionIds },
-        },
+      const question = await prismadb.question.findUnique({
+        where: { id: questionId },
+        include: { Choices: true },
       });
 
-      const existingResponseMap = new Map(existingResponses.map((res) => [res.questionId, res]));
+      if (!question) continue;
 
-      for (const response of responses) {
-        const questionId = parseInt(response._id, 10);
-        if (isNaN(questionId) || existingResponseMap.has(questionId)) continue;
+      let questionScore = 0;
+      if (question.type === "TKP" && response.response) {
+        const selectedChoice = question.Choices.find(choice => choice.id === parseInt(response.response, 10));
+        questionScore = selectedChoice ? selectedChoice.scoreValue : 0;
+      } else {
+        const isCorrectAnswer = question.Choices.some(choice => choice.isCorrect && choice.id === parseInt(response.response, 10));
+        questionScore = isCorrectAnswer ? 5 : 0;
+      }
 
-        const question = await tx.question.findUnique({
-          where: { id: questionId },
-          include: { Choices: true },
-        });
+      totalScore += questionScore;
 
-        if (!question) continue;
-
-        let questionScore = 0;
-        if (question.type === "TKP" && response.response) {
-          const selectedChoice = question.Choices.find(choice => choice.id === parseInt(response.response, 10));
-          questionScore = selectedChoice ? selectedChoice.scoreValue : 0;
-        } else {
-          const isCorrectAnswer = question.Choices.some(choice => choice.isCorrect && choice.id === parseInt(response.response, 10));
-          questionScore = isCorrectAnswer ? 5 : 0;
-        }
-
-        totalScore += questionScore;
-
-        responseData.push({
+      await prismadb.response.create({
+        data: {
           content: response.response,
           score: questionScore,
           questionId: questionId,
           attemptId: attemptNumber,
-        });
-      }
-
-      if (responseData.length > 0) {
-        await tx.response.createMany({
-          data: responseData,
-        });
-      }
-
-      await tx.attempt.update({
-        where: { id: attemptNumber },
-        data: {
-          score: totalScore,
-          completedAt: new Date(),
         },
       });
-    }, {
-      timeout: 30000 // Tambahkan parameter timeout di sini
-    });
+    }
 
-    // Pindahkan logika perhitungan persentase di luar transaksi utama
+    // Recalculate percentages for all questions
     const allQuestions = await prismadb.question.findMany({
       include: { Choices: true, responses: true },
     });
@@ -102,6 +81,14 @@ export const POST = async (req: NextRequest) => {
         });
       }
     }
+
+    await prismadb.attempt.update({
+      where: { id: attemptNumber },
+      data: {
+        score: totalScore,
+        completedAt: new Date(),
+      },
+    });
 
     return NextResponse.json({ score: totalScore }, { status: 200 });
   } catch (error: any) {
