@@ -1,15 +1,7 @@
-import { IResponse } from "@/app/(dashboard)/shared/interfaces";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { NextRequest, NextResponse } from "next/server";
 import prismadb from "@/app/lib/prismadb";
 import { getServerSession } from "next-auth";
-import { getSession } from "next-auth/react";
-import { NextRequest, NextResponse } from "next/server";
-
-interface ResponseCountMap {
-  [questionId: number]: {
-    [responseId: string]: number;
-  };
-}
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export const POST = async (req: NextRequest) => {
   const session: any = await getServerSession(authOptions);
@@ -32,32 +24,42 @@ export const POST = async (req: NextRequest) => {
       const questionId = parseInt(response._id, 10);
       if (isNaN(questionId)) continue;
 
-      const question = await prismadb.question.findUnique({
-        where: { id: questionId },
-        include: { Choices: true },
-      });
-
-      if (!question) continue;
-
-      let questionScore = 0;
-      if (question.type === "TKP" && response.response) {
-        const selectedChoice = question.Choices.find(choice => choice.id === parseInt(response.response, 10));
-        questionScore = selectedChoice ? selectedChoice.scoreValue : 0;
-      } else {
-        const isCorrectAnswer = question.Choices.some(choice => choice.isCorrect && choice.id === parseInt(response.response, 10));
-        questionScore = isCorrectAnswer ? 5 : 0;
-      }
-
-      totalScore += questionScore;
-
-      await prismadb.response.create({
-        data: {
-          content: response.response,
-          score: questionScore,
-          questionId: questionId,
+      // Check if the response already exists
+      const existingResponse = await prismadb.response.findFirst({
+        where: {
           attemptId: attemptNumber,
+          questionId: questionId,
         },
       });
+
+      if (!existingResponse) {
+        const question = await prismadb.question.findUnique({
+          where: { id: questionId },
+          include: { Choices: true },
+        });
+
+        if (!question) continue;
+
+        let questionScore = 0;
+        if (question.type === "TKP" && response.response) {
+          const selectedChoice = question.Choices.find(choice => choice.id === parseInt(response.response, 10));
+          questionScore = selectedChoice ? selectedChoice.scoreValue : 0;
+        } else {
+          const isCorrectAnswer = question.Choices.some(choice => choice.isCorrect && choice.id === parseInt(response.response, 10));
+          questionScore = isCorrectAnswer ? 5 : 0;
+        }
+
+        totalScore += questionScore;
+
+        await prismadb.response.create({
+          data: {
+            content: response.response,
+            score: questionScore,
+            questionId: questionId,
+            attemptId: attemptNumber,
+          },
+        });
+      }
     }
 
     // Recalculate percentages for all questions
