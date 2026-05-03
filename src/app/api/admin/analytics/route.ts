@@ -5,6 +5,8 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+const MAIN_TEST_NAMES = ["SKD", "TPA"];
+
 function formatDate(date: Date | null) {
   if (!date) return "-";
   return new Intl.DateTimeFormat("id-ID", {
@@ -75,10 +77,16 @@ export const GET = async () => {
       orderBy: { createdAt: "desc" },
     }),
     prismadb.test.findMany({
+      where: {
+        name: { in: MAIN_TEST_NAMES },
+      },
       select: { id: true, name: true },
       orderBy: { id: "asc" },
     }),
     prismadb.package.findMany({
+      where: {
+        testName: { in: MAIN_TEST_NAMES },
+      },
       select: {
         id: true,
         title: true,
@@ -105,7 +113,12 @@ export const GET = async () => {
       ],
     }),
     prismadb.attempt.findMany({
-      where: { completedAt: { not: null } },
+      where: {
+        completedAt: { not: null },
+        Package: {
+          testName: { in: MAIN_TEST_NAMES },
+        },
+      },
       select: {
         id: true,
         score: true,
@@ -158,7 +171,12 @@ export const GET = async () => {
       orderBy: { completedAt: "desc" },
     }),
     prismadb.attempt.findMany({
-      where: { completedAt: null },
+      where: {
+        completedAt: null,
+        Package: {
+          testName: { in: MAIN_TEST_NAMES },
+        },
+      },
       select: {
         id: true,
         createdAt: true,
@@ -184,6 +202,11 @@ export const GET = async () => {
       orderBy: { createdAt: "desc" },
     }),
     prismadb.question.findMany({
+      where: {
+        Package: {
+          testName: { in: MAIN_TEST_NAMES },
+        },
+      },
       select: {
         id: true,
         content: true,
@@ -193,6 +216,13 @@ export const GET = async () => {
       orderBy: { id: "asc" },
     }),
     prismadb.securityEvent.findMany({
+      where: {
+        Attempt: {
+          Package: {
+            testName: { in: MAIN_TEST_NAMES },
+          },
+        },
+      },
       orderBy: { createdAt: "desc" },
       take: 30,
       select: {

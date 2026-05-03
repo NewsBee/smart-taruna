@@ -1,9 +1,15 @@
 import prismadb from "@/app/lib/prismadb";
-import { getAccessToken } from "@auth0/nextjs-auth0";
 import { NextRequest, NextResponse } from "next/server";
 
+const MAIN_TEST_NAMES = ["SKD", "TPA"];
+
 export const GET = async(req: NextRequest, context: { params: { slug: any } } ) =>{
-  const slug = context.params.slug;
+  const slug = String(context.params.slug || "").toUpperCase();
+
+  if (!MAIN_TEST_NAMES.includes(slug)) {
+    return NextResponse.json({ packages: [] });
+  }
+
     const packages = await prismadb.package.findMany({
         where: {
           Test: {
