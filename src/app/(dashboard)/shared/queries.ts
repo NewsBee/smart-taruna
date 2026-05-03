@@ -120,14 +120,8 @@ const DeleteMutationFactory = (
 
 export const useQuizQuestions = (testId: any) => {
   return useQuery(["quizQuestions", testId], async () => {
-    try {
-      const { data } = await axios.get(`/api/test/${testId}/questions`);
-      // console.log(data); // Tambahkan ini
-      return data;
-    } catch (error) {
-      console.error(error);
-      throw new Error('Gagal mengambil data');
-    }
+    const { data } = await axios.get(`/api/test/${testId}/questions`);
+    return data;
   }, {
     // Jika Anda ingin memastikan data selalu fresh, Anda bisa menambahkan opsi refetchOnWindowFocus
     refetchOnWindowFocus: true,

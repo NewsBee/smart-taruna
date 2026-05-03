@@ -32,6 +32,34 @@ body {
   background-color: '#fff';
 }
 
+button.MuiButton-contained {
+  background-color: var(--mui-contained-bg, #00adb5);
+  color: var(--mui-contained-color, #fbfbfb);
+  box-shadow: none;
+}
+
+button.MuiButton-contained:hover {
+  background-color: var(--mui-contained-hover-bg, #0d6a69);
+  box-shadow: none;
+}
+
+button.MuiButton-contained:active {
+  background-color: var(--mui-contained-active-bg, #0d6a69);
+  box-shadow: none;
+}
+
+button.MuiButton-containedSecondary {
+  --mui-contained-bg: #ffaf35;
+  --mui-contained-hover-bg: #d0821c;
+  --mui-contained-active-bg: #b96e13;
+}
+
+button.MuiButton-contained.Mui-disabled {
+  background-color: var(--mui-contained-disabled-bg, #94a3b8);
+  color: var(--mui-contained-disabled-color, #f8fafc);
+  opacity: 1;
+}
+
 @-webkit-keyframes click_animation {
   from {
     -webkit-transform: scale(1);

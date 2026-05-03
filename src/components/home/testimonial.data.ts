@@ -3,61 +3,61 @@ import type { Testimonial } from '@/interfaces/testimonial'
 export const data: Array<Testimonial> = [
   {
     id: 1,
-    title: 'Detailed learning materials',
+    title: 'Latihan lebih terarah',
     content:
-      'Classes that provide very detailed material in term of making UI UX Design starting team making low and hight quality, system designs, using data layout and make prototypes and testing.',
+      'Paket latihan membantu siswa membiasakan diri dengan batas waktu, variasi soal, dan evaluasi nilai per kategori.',
     user: {
       id: 1,
-      name: 'Luis Sera',
-      professional: 'UI/UX Engineer',
+      name: 'Raka Pratama',
+      professional: 'Siswa Try Out SKD',
       photo: '1.jpg',
     },
   },
   {
     id: 2,
-    title: 'Best Quality Online Course!',
+    title: 'Monitoring ujian jelas',
     content:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+      'Admin dapat melihat peserta yang sedang mengerjakan, jawaban yang sudah tersimpan, dan catatan aktivitas selama sesi ujian.',
     user: {
       id: 1,
-      name: 'Riski',
-      professional: 'Software Engineer',
+      name: 'Riski Amelia',
+      professional: 'Admin Bimbel',
       photo: '2.jpg',
     },
   },
   {
     id: 3,
-    title: 'Very complete class',
+    title: 'Rekap nilai mudah dibaca',
     content:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+      'Hasil try out bisa dipantau berdasarkan paket, sehingga perkembangan siswa dari TO 1 ke TO berikutnya lebih mudah dianalisis.',
     user: {
       id: 1,
-      name: 'Nguyễn Văn',
-      professional: 'FullStack Designer',
+      name: 'Dimas Nugroho',
+      professional: 'Koordinator Kelas',
       photo: '3.jpg',
     },
   },
   {
     id: 4,
-    title: 'Great Quality!',
+    title: 'Akses paket memakai token',
     content:
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+      'Setiap paket bisa diberi token berbeda sehingga siswa hanya dapat membuka sesi ujian yang memang sedang dijadwalkan.',
     user: {
       id: 1,
-      name: 'Diana Jordan',
-      professional: 'SEO Expert',
+      name: 'Nadya Putri',
+      professional: 'Pengelola Try Out',
       photo: '4.jpg',
     },
   },
   {
     id: 5,
-    title: 'Detailed learning materials',
+    title: 'Evaluasi soal lebih cepat',
     content:
-      'Classes that provide very detailed material in term of making UI UX Design starting team making low and hight quality, system designs, using data layout and make prototypes and testing.',
+      'Analisis soal membantu admin menemukan soal yang terlalu sulit, sering salah, atau perlu diperbaiki sebelum try out berikutnya.',
     user: {
       id: 1,
-      name: 'Ashley Graham',
-      professional: 'Back-End Developer',
+      name: 'Fajar Saputra',
+      professional: 'Tim Akademik',
       photo: '5.jpg',
     },
   },

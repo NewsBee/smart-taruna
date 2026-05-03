@@ -3,11 +3,13 @@ import React, { useEffect, useState } from "react";
 const CountDown: React.FC<{
   startAt: Date;
   duration: number;
+  totalPausedMs?: number;
+  isPaused?: boolean;
   onTimeUp: () => void;
-}> = ({ startAt, duration, onTimeUp }) => {
+}> = ({ startAt, duration, totalPausedMs = 0, isPaused = false, onTimeUp }) => {
   const calculateTimeLeft = () => {
     const startTime = new Date(startAt).getTime();
-    const endTime = startTime + duration * 60000; // Convert duration from minutes to milliseconds
+    const endTime = startTime + duration * 60000 + totalPausedMs; // Convert duration from minutes to milliseconds
     const difference = endTime - new Date().getTime();
 
     let timeLeft: { [key: string]: number } = {
@@ -31,6 +33,8 @@ const CountDown: React.FC<{
   const [isTimeUp, setIsTimeUp] = useState(false);
 
   useEffect(() => {
+    if (isPaused) return;
+
     const timer = setTimeout(() => {
       const updatedTimeLeft = calculateTimeLeft();
       setTimeLeft(updatedTimeLeft);
@@ -48,7 +52,7 @@ const CountDown: React.FC<{
     }, 1000);
 
     return () => clearTimeout(timer); // Clean up the timer
-  }, [timeLeft, onTimeUp, startAt, duration]); // Added dependencies
+  }, [timeLeft, onTimeUp, startAt, duration, totalPausedMs, isPaused]); // Added dependencies
 
   return (
     <div className="flex items-center space-x-2">

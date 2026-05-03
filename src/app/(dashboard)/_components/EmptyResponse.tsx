@@ -45,7 +45,7 @@ export const EmptyResponse: React.FC<Props> = ({ resource }) => {
           <Image
             src={EmptyMail}
             className="w-full h-full overflow-hidden"
-            alt="Empty Attempt Illustration"
+            alt="Ilustrasi data kosong"
           />
         </div>
       )}

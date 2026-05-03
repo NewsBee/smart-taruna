@@ -10,6 +10,7 @@ interface Props {
   setActiveIndex: React.Dispatch<React.SetStateAction<number>>;
   response: IResponse[];
   setResponse: React.Dispatch<React.SetStateAction<IResponse[] | []>>;
+  onResponseChange?: (questionId: string, answer: string) => void;
 }
 
 export const Player: React.FC<Props> = ({
@@ -18,6 +19,7 @@ export const Player: React.FC<Props> = ({
   setActiveIndex,
   response,
   setResponse,
+  onResponseChange,
 }) => {
   const [selectedOption, setSelectedOption] = useState<string>("");
 
@@ -43,6 +45,17 @@ export const Player: React.FC<Props> = ({
         index === activeIndex ? { ...r, response: option } : r
       )
     );
+    onResponseChange?.(questions[activeIndex]._id, option);
+  };
+
+  const onInputChange = (answer: string) => {
+    setSelectedOption(answer);
+    setResponse((res) =>
+      res.map((r, index) =>
+        index === activeIndex ? { ...r, response: answer } : r
+      )
+    );
+    onResponseChange?.(questions[activeIndex]._id, answer);
   };
 
   // useEffect(() => {
@@ -83,6 +96,16 @@ export const Player: React.FC<Props> = ({
             />
           ))} */}
         {questions &&
+          (questions[activeIndex]?.answerType === "SHORT_TEXT" ||
+          questions[activeIndex]?.answerType === "NUMERIC" ? (
+            <input
+              className="mt-4 w-full rounded-md border border-gray-300 px-4 py-3 text-sm md:text-base outline-none focus:border-indigo-600"
+              type={questions[activeIndex]?.answerType === "NUMERIC" ? "number" : "text"}
+              value={selectedOption}
+              onChange={(event) => onInputChange(event.target.value)}
+              placeholder="Ketik jawaban"
+            />
+          ) : (
           questions[activeIndex]?.options?.map((option: IOption, i: number) => (
             <Option
               key={i}
@@ -90,6 +113,7 @@ export const Player: React.FC<Props> = ({
               selectedOption={selectedOption}
               option={option}
             />
+          ))
           ))}
       </div>
       <div className="w-full flex items-center justify-between mt-10">

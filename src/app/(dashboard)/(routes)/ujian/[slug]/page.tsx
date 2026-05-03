@@ -13,6 +13,7 @@ import { QuizCard } from "@/app/(dashboard)/_components/QuizCard";
 import { Loader } from "@/app/(dashboard)/_components/Svgs";
 import { IQuiz } from "@/app/(dashboard)/shared/interfaces";
 import { useRouter } from "next/navigation";
+import { ExamTokenAccess } from "@/app/(dashboard)/_components/ExamTokenAccess";
 
 const globalColors = {
   brand: "#4f46e5",
@@ -162,6 +163,7 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
           </h2>
         </div>
       )}
+      <ExamTokenAccess testName={params.slug} />
       {isLoading ? (
         <Loader halfScreen />
       ) : data ? (

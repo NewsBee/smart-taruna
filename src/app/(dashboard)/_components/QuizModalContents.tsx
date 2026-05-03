@@ -31,11 +31,21 @@ export const QuizModalContents: React.FC<Props> = ({
 }) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [examToken, setExamToken] = useState("");
+  const [tokenError, setTokenError] = useState("");
 
   const startQuiz = async () => {
+    if (!examToken.trim()) {
+      setTokenError("Token ujian wajib diisi.");
+      return;
+    }
+
+    setTokenError("");
     setIsLoading(true);
     try {
-      const response = await axios.post(`/api/ujian/start/${_id}`);
+      const response = await axios.post(`/api/ujian/start/${_id}`, {
+        examToken,
+      });
       // Jika berhasil, navigasikan ke halaman quiz
       // console.log(response);
       router.push(`/ujian/${currTest}/${response.data.attemptId}`);
@@ -51,9 +61,16 @@ export const QuizModalContents: React.FC<Props> = ({
         router.push(`/ujian/${currTest}/${error.response.data.attemptId}`);
       } else {
         // Jika tidak ada data paket soal yang sedang dikerjakan, tampilkan pesan kesalahan
+        setTokenError(
+          error.response?.status === 403
+            ? "Token ujian tidak valid."
+            : "Gagal memulai ujian. Silakan coba lagi."
+        );
         console.error("Error starting quiz: ", error);
       }
-    } 
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // const handleBeginClick = async () => {
@@ -171,8 +188,29 @@ export const QuizModalContents: React.FC<Props> = ({
               "Mulai"
             )}
           </Button>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <label
+              htmlFor="exam-token"
+              className="mb-2 block text-sm font-semibold text-gray-700"
+            >
+              Token ujian
+            </label>
+            <input
+              id="exam-token"
+              value={examToken}
+              onChange={(event) => setExamToken(event.target.value.toUpperCase())}
+              className="w-full rounded-md border border-gray-300 px-4 py-3 text-sm outline-none focus:border-indigo-600"
+              placeholder="Masukkan token dari pengawas/admin"
+            />
+            {tokenError && (
+              <p className="mt-2 text-sm font-medium text-rose-600">
+                {tokenError}
+              </p>
+            )}
+          </div>
         </div>
-      </div>
-    </div>
   );
 };

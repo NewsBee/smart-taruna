@@ -1,7 +1,7 @@
 export const errorMessages = {
-    default: 'Something went wrong, please try again later.',
-    notFound: (resource?: string) => `${resource || 'Resource'} not found.`,
-    auth403: `You do not have the permission to do this action.`,
+    default: 'Terjadi kesalahan. Silakan coba lagi.',
+    notFound: (resource?: string) => `${translateResourceName(resource)} tidak ditemukan.`,
+    auth403: `Anda tidak memiliki izin untuk melakukan aksi ini.`,
 }
 
 export const globalColors = {
@@ -23,21 +23,52 @@ type TResource = 'Question' | 'Paket'
 
 export const successMessages = {
     actionSuccess: (action: TactionSuccess, resource?: TResource) =>
-        `Berhasil ${action} ${resource || 'resource'}`,
+        `Berhasil ${translateAction(action)} ${translateResource(resource)}`,
 }
 
 export const loadingMessages = {
     actionLoading: (action: TactionLoading, resource?: TResource) =>
-        `${action} ${resource || 'resource'}`,
+        `${translateAction(action)} ${translateResource(resource)}`,
 }
+
+const translateAction = (action: TactionSuccess | TactionLoading) => {
+    const dictionary: Record<TactionSuccess | TactionLoading, string> = {
+        Updated: 'memperbarui',
+        Deleted: 'menghapus',
+        Membuat: 'membuat',
+        Updating: 'Memperbarui',
+        Deleting: 'Menghapus',
+        Creating: 'Membuat',
+    };
+
+    return dictionary[action] || action;
+};
+
+const translateResource = (resource?: TResource) => {
+    if (resource === 'Question') return 'soal';
+    if (resource === 'Paket') return 'paket';
+    return 'data';
+};
+
+const translateResourceName = (resource?: string) => {
+    const dictionary: Record<string, string> = {
+        Quiz: 'Paket ujian',
+        Question: 'Soal',
+        Questions: 'Soal',
+        Attempt: 'Sesi ujian',
+        Paket: 'Paket',
+    };
+
+    return resource ? dictionary[resource] || resource : 'Data';
+};
 
 export const emptyResponseMessages = {
     attempt: ['Anda belum pernah mengerjakan soal ini.'],
-    responses: ["You can only see responses to first attempt at any quiz."],
-    dashboardQuizes: ['You have not created any quizes yet.'],
-    quizQuestions: ['This quiz have no questions.'],
-    mainQuizes: ['There are no active Quizes at the moment.', 'Go ahead make a Quiz.'],
-    filteredQuizes: ['No active Quizes found with the given filters.'],
+    responses: ["Jawaban hanya ditampilkan untuk sesi ujian yang sudah selesai."],
+    dashboardQuizes: ['Belum ada paket ujian yang dibuat.'],
+    quizQuestions: ['Paket ini belum memiliki soal.'],
+    mainQuizes: ['Belum ada paket ujian aktif saat ini.', 'Silakan buat paket ujian terlebih dahulu.'],
+    filteredQuizes: ['Tidak ada paket ujian aktif yang cocok dengan filter.'],
 }
 
 export const uiMessages = {

@@ -1,4 +1,4 @@
-import { Button } from "@material-ui/core";
+import { Button } from "@mui/material";
 import { AxiosError } from "axios";
 import { Formik } from "formik";
 import { useSnackbar } from "notistack";
@@ -36,15 +36,26 @@ export const QuizForm: React.FC<Props> = ({
   const router = useRouter()
 
   const queryClient = useQueryClient();
+  const normalizedTestName = String(testname || "").toUpperCase();
+  const defaultPassingGrades =
+    normalizedTestName === "SKD"
+      ? { TWK: 65, TIU: 80, TKP: 166 }
+      : normalizedTestName === "TKP"
+      ? { TWK: 0, TIU: 0, TKP: 166 }
+      : { TWK: 0, TIU: 0, TKP: 0 };
 
   return (
     <Formik<IQuizForm>
       initialValues={{
         title: title || "",
         description: description || "",
-        tags: tags || [],
+        tags: tags || (testname ? [testname.toUpperCase()] : []),
         status: status || "",
-        duration: 0,
+        duration: 120,
+        maxAttempts: 1,
+        passingGrades: defaultPassingGrades,
+        examToken: "",
+        tryoutOrder: "",
       }}
       validationSchema={AddEditQuizValidation}
       onSubmit={async (values, { setSubmitting, setFieldError }) => {
@@ -56,6 +67,10 @@ export const QuizForm: React.FC<Props> = ({
           description: values.description,
           tagNames : values.tags,
           duration: values.duration,
+          maxAttempts: values.maxAttempts,
+          passingGrades: values.passingGrades,
+          examToken: values.examToken,
+          tryoutOrder: values.tryoutOrder,
         };
         // console.log(values.duration)
         // if (!id) delete body.status;
@@ -82,8 +97,10 @@ export const QuizForm: React.FC<Props> = ({
                 id && queryClient.invalidateQueries(["Quiz", id]);
                 router.push(redirect);
               },
-              onError: () => {
-                enqueueSnackbar(errorMessages.default);
+              onError: (error: AxiosError<any>) => {
+                enqueueSnackbar(error.response?.data?.message || errorMessages.default, {
+                  variant: "error",
+                });
               },
               onSettled: () => {
                 reset();
@@ -98,20 +115,23 @@ export const QuizForm: React.FC<Props> = ({
     >
       {({ handleSubmit, isSubmitting }) => (
         <form className="pb-2" onSubmit={handleSubmit}>
-          <div className="mx-10">
+          <div>
             <AddEditQuizFormFields id={id} />
-            <div className="flex justify-end mt-4">
-              <div className="mr-4">
-                <Button onClick={() => router.push('/dashboard')}>Cancel</Button>
-              </div>
-
+            <div className="mt-6 flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
+              <Button
+                variant="outlined"
+                onClick={() => router.push(redirect)}
+                disabled={isSubmitting}
+              >
+                Batal
+              </Button>
               <Button
                 variant="contained"
                 color="primary"
                 disabled={isSubmitting}
                 type="submit"
               >
-                Submit
+                {isSubmitting ? "Menyimpan..." : id ? "Simpan Perubahan" : "Buat Paket"}
               </Button>
             </div>
           </div>

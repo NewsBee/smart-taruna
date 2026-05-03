@@ -3,7 +3,7 @@ import fs from "fs";
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import { pipeline } from "stream";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/app/lib/auth-options";
 import { getServerSession } from "next-auth";
 import AWS from "aws-sdk";
 import { Readable } from "stream";

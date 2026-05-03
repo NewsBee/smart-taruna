@@ -2,7 +2,7 @@ import prismadb from "@/app/lib/prismadb";
 import { getAccessToken } from "@auth0/nextjs-auth0";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/app/lib/auth-options";
 
 export const GET = async (req: NextRequest, context: { params: { id: any } }) => {
   // console.log("Halooo")
@@ -29,10 +29,18 @@ export const GET = async (req: NextRequest, context: { params: { id: any } }) =>
       include: {
         Package: {
           select: {
-            testName: true
+            testName: true,
+            passingGrades: {
+              orderBy: {
+                type: "asc",
+              },
+            },
           }
         },
         responses: {
+          orderBy: {
+            questionId: "asc",
+          },
           include: {
             Question: {
               include: {
@@ -47,14 +55,14 @@ export const GET = async (req: NextRequest, context: { params: { id: any } }) =>
     });
 
 
-    if (!attempt || attempt.userId !== Number(session.user.id)) { // Sesuaikan `attempt.userId` dengan struktur data Anda
+    if (!attempt || (attempt.userId !== Number(session.user.id) && session.user.role !== "admin")) { // Sesuaikan `attempt.userId` dengan struktur data Anda
       return NextResponse.json({message: "Anda tidak memiliki akses"}, {status: 403});
     }
 
     if (attempt) {
       return NextResponse.json({attempt})
     } else {
-      return NextResponse.json({message:"Attempt not found"}, {status:404})
+      return NextResponse.json({message:"Sesi ujian tidak ditemukan"}, {status:404})
     }
   
   };

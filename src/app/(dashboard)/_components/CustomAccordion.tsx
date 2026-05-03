@@ -111,7 +111,7 @@ const CustomAccordion: React.FC<Props> = ({
                 </tr>
                 <tr>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    Passing Grade
+                    Nilai Batas Kelulusan
                   </td>
                   <td
                     className={`px-6 py-4 whitespace-nowrap text-sm ${

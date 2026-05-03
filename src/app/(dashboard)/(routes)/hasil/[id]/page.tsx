@@ -5,16 +5,17 @@ import { useEffect, useState } from "react";
 import { ErrorMessage } from "../../../_components/ErrorMessage";
 import { Loader } from "../../../_components/Svgs";
 import { ShowResponses } from "../../../_components/FinishQuiz";
-import { useRouter } from "next/router";
 import { EmptyResponse } from "../../../_components/EmptyResponse";
-import DropdownButton from "@/app/(dashboard)/_components/DropDownButton";
-import CustomAccordion from "@/app/(dashboard)/_components/CustomAccordion";
 
 interface AttemptData {
   score: number;
   responses: any[]; // Sesuaikan dengan struktur data yang sebenarnya
   Package: {
     testName: string;
+    passingGrades: {
+      type: string;
+      minScore: number;
+    }[];
   };
 }
 
@@ -52,8 +53,6 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
     fetchAttemptData();
   }, [attemptId]);
   // console.log(attemptData?.Package.testName)
-  console.log(attemptData)
-
   if (loading) {
     return <Loader halfScreen />;
   }
@@ -72,9 +71,12 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
     score: resp.score,
     image: resp.Question.image,
     quiz: resp.Question.type,
+    answerType: resp.Question.answerType,
     response: resp.content,
-    correct: resp.Question.Choices.find((choice: IChoice) => choice.isCorrect)
-      ?.content,
+    correct:
+      resp.Question.correctAnswer ||
+      resp.Question.Choices.find((choice: IChoice) => choice.isCorrect)
+        ?.content,
     explanation: resp.Question.explanation,
     options: resp.Question.Choices.map((choice: IChoice) => ({
       value: choice.content,
@@ -95,6 +97,7 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
               score={attemptData.score}
               as="AFTER_QUIZ_RESPONSE"
               tipe={attemptData.Package.testName}
+              passingGrades={attemptData.Package.passingGrades}
             />
           </div>
           <div>

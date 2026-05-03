@@ -10,10 +10,27 @@ export const GET = async(req: NextRequest, context: { params: { slug: any } } ) 
             name: slug,
           },
         },
-        include: {
+        select: {
+          id: true,
+          testName: true,
+          title: true,
+          description: true,
+          duration: true,
+          maxAttempts: true,
+          examToken: true,
+          tryoutOrder: true,
+          isHidden: true,
+          isLocked: true,
           questions: true, // Opsional, jika Anda ingin memasukkan pertanyaan dari masing-masing paket
           tags: true,
+          passingGrades: {
+            orderBy: { type: "asc" },
+          },
         },
+        orderBy: [
+          { tryoutOrder: "asc" },
+          { id: "asc" },
+        ],
       });
     // const { accessToken } = await getAccessToken();
     if(packages){

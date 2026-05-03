@@ -1,11 +1,11 @@
 import prismadb from "@/app/lib/prismadb";
-import { getAccessToken } from "@auth0/nextjs-auth0";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/app/lib/auth-options";
 
-function formatDate(dateString:any) {
-  const date = new Date(dateString);
+function formatDate(dateValue: Date | null) {
+  if (!dateValue) return "-";
+  const date = new Date(dateValue);
   return date.toLocaleString("id-ID", {
     year: 'numeric', 
     month: 'long', 
@@ -37,7 +37,8 @@ export const GET = async (req: NextRequest) => {
         select: {
           title: true,
           id: true,
-          // Menambahkan judul paket
+          duration: true,
+          tryoutOrder: true,
         },
       },
       Test: {
@@ -45,15 +46,35 @@ export const GET = async (req: NextRequest) => {
           name: true,
         },
       },
+      responses: {
+        select: { id: true, content: true },
+      },
+      securityEvents: {
+        select: { id: true },
+      },
     },
-    orderBy: { id: "asc" }, // Urutkan berdasarkan ID attempt
+    orderBy: { createdAt: "desc" },
   });
   if (attempt) {
     const formattedAttempts = attempt.map(attempt => {
       return {
-        ...attempt,
+        id: attempt.id,
+        score: attempt.score,
+        testId: attempt.testId,
+        packageId: attempt.packageId,
+        userId: attempt.userId,
         createdAt: formatDate(attempt.createdAt),
         completedAt: formatDate(attempt.completedAt),
+        status: attempt.completedAt ? "Selesai" : "Berjalan",
+        answeredCount: attempt.responses.filter((response) => response.content).length,
+        savedAnswers: attempt.responses.length,
+        securityEventCount: attempt.securityEvents.length,
+        tryoutLabel: attempt.Package.tryoutOrder
+          ? `TO ${attempt.Package.tryoutOrder}`
+          : "TO -",
+        User: attempt.User,
+        Package: attempt.Package,
+        Test: attempt.Test,
       };
     });
 

@@ -132,6 +132,26 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({
 
       <div className="mt-4">
         <TextField
+          select
+          fullWidth
+          name="answerType"
+          value={values.answerType || "MULTIPLE_CHOICE"}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          error={!!(touched.answerType && errors.answerType)}
+          helperText={touched.answerType && errors.answerType}
+          label="Bentuk jawaban"
+          variant="outlined"
+        >
+          <MenuItem value="MULTIPLE_CHOICE">Pilihan ganda</MenuItem>
+          <MenuItem value="SCORED_CHOICE">Pilihan berskor / TKP</MenuItem>
+          <MenuItem value="SHORT_TEXT">Jawaban teks singkat</MenuItem>
+          <MenuItem value="NUMERIC">Jawaban angka</MenuItem>
+        </TextField>
+      </div>
+
+      <div className="mt-4">
+        <TextField
           fullWidth
           value={values.explanation}
           onChange={handleChange}
@@ -143,6 +163,38 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({
           variant="outlined"
         />
       </div>
+      {(values.answerType === "SHORT_TEXT" || values.answerType === "NUMERIC") && (
+        <>
+          <div className="mt-4">
+            <TextField
+              fullWidth
+              name="correctAnswer"
+              value={values.correctAnswer || ""}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={!!(touched.correctAnswer && errors.correctAnswer)}
+              helperText={touched.correctAnswer && errors.correctAnswer}
+              label="Kunci jawaban"
+              variant="outlined"
+            />
+          </div>
+          {values.answerType === "NUMERIC" && (
+            <div className="mt-4">
+              <TextField
+                fullWidth
+                type="number"
+                name="tolerance"
+                value={values.tolerance ?? 0}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                label="Toleransi jawaban angka"
+                variant="outlined"
+                InputProps={{ inputProps: { min: 0, step: "0.01" } }}
+              />
+            </div>
+          )}
+        </>
+      )}
       {/* Field untuk 'poin' */}
       {/* {values.type === "TPA" && (
         <div className="mt-4">
@@ -160,6 +212,7 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({
           />
         </div>
       )} */}
+      {values.answerType !== "SHORT_TEXT" && values.answerType !== "NUMERIC" && (
       <div className="mt-4">
         <FieldArray name="options">
           {({ remove, push }) => {
@@ -208,7 +261,7 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({
                           `options.${index}.value`
                         )}
                       />
-                      {values.type === "TKP" && (
+                      {(values.type === "TKP" || values.answerType === "SCORED_CHOICE") && (
                         <TextField
                           fullWidth
                           type="number"
@@ -236,7 +289,7 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({
                         />
                       )}
 
-                      {values.type !== "TKP" && (
+                      {values.type !== "TKP" && values.answerType !== "SCORED_CHOICE" && (
                         <div className="grid items-center justify-center">
                           <div
                             onClick={() => {
@@ -260,6 +313,7 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({
                             }}
                             className={`cursor-pointer flex items-center justify-center border-2 w-6 h-6 rounded-full ${
                               values.type === "TKP" ||
+                              values.answerType === "SCORED_CHOICE" ||
                               values.correct === option.value
                                 ? "border-indigo-600 bg-indigo-600"
                                 : "border-gray-300"
@@ -271,10 +325,11 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({
                                 &nbsp;
                               </div>
                             )} */}
-                            {values.type === "TKP" && (
+                            {(values.type === "TKP" || values.answerType === "SCORED_CHOICE") && (
                               <div className="w-4 h-4 rounded-full bg-white"></div>
                             )}
                             {values.type !== "TKP" &&
+                              values.answerType !== "SCORED_CHOICE" &&
                               values.correct === option.value && (
                                 <div className="w-4 h-4 rounded-full bg-white"></div>
                               )}
@@ -304,6 +359,7 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({
           ))}
         </div>
       </div>
+      )}
       <div className="mb-10">
         <div className="flex justify-end mt-4">
           <div className="mr-4">

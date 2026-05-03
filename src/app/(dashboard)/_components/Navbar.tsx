@@ -16,7 +16,7 @@ import {
   Typography,
 } from "@mui/material";
 import React, { useEffect, useState } from "react"; // Jangan lupa untuk mengimpor React useState
-import { AccountCircle, ExitToApp } from "@mui/icons-material";
+import { AccountCircle, ExitToApp, ManageAccounts } from "@mui/icons-material";
 
 interface Props {}
 
@@ -108,6 +108,13 @@ export const NavBar: React.FC<Props> = () => {
             Dashboard
           </p>
         </Link>
+        {session?.user?.role === "admin" && (
+          <Link href="/dashboard/users" className="">
+            <p className="text-default text-xs sm:text-sm cursor-pointer px-4">
+              Users
+            </p>
+          </Link>
+        )}
         <div className="px-3">
           <Avatar
             src={avatar}

@@ -1,8 +1,17 @@
 "use client";
 
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import GoogleIcon from "@mui/icons-material/Google";
+import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
+import { IconButton } from "@mui/material";
 import { signIn } from "next-auth/react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useState } from "react";
+
+const loginImage =
+  "https://images.pexels.com/photos/7777672/pexels-photo-7777672.jpeg?auto=compress&cs=tinysrgb&w=1400";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -10,191 +19,194 @@ const LoginPage = () => {
   const [error, setError] = useState("");
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  // const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-  //   event.preventDefault();
-  //   setIsLoading(true);
-  //   console.log(email)
-  //   console.log(password)
-  //   const signInData = await signIn('credentials', {
-  //     email : email,
-  //     password : password
-  //   })
-  //   console.log(signInData);
-  // };
-  const handleSubmit = async (event:any) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(""); // Clear any previous errors
+    setError("");
     setIsLoading(true);
 
     const result = await signIn("credentials", {
-      redirect: false, // Tell NextAuth.js not to redirect after sign-in
-      email: email,
-      password: password
+      redirect: false,
+      email,
+      password,
     });
-    // console.log(result)
 
-    // Check if signIn was successful
     if (result?.ok) {
-      router.push('/dashboard'); // Redirect to the URL provided by NextAuth.js or a desired path
-    } else {
-      setError("Login failed. Check your email and password.");
-      setIsLoading(false); // Stop loading state
+      router.push("/dashboard");
+      return;
     }
+
+    setError("Email atau password tidak sesuai.");
+    setIsLoading(false);
+  };
+
+  const handleGoogleSignIn = () => {
+    signIn("google", { callbackUrl: "/dashboard" });
   };
 
   return (
-    <>
-      <div className="h-screen bg-gray-100 flex items-center py-16">
-        <main className="w-full max-w-md mx-auto p-6">
-          <div className="mt-7 bg-white border border-gray-200 rounded-xl shadow-sm">
-            <div className="p-4 sm:p-7">
-              <div className="text-center">
-                <h1 className="block text-2xl font-bold text-gray-800 font-poppins ">
-                  Masuk
+    <main className="min-h-screen bg-slate-50">
+      <div className="grid min-h-screen lg:grid-cols-[1.05fr_0.95fr]">
+        <section className="relative hidden overflow-hidden bg-slate-950 lg:block">
+          <Image
+            src={loginImage}
+            alt="Siswa Smart Taruna bersiap mengikuti try out CBT"
+            fill
+            priority
+            className="object-cover opacity-55"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-950/85 to-teal-950/50" />
+          <div className="relative z-10 flex h-full flex-col justify-between p-12 text-white">
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              className="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold backdrop-blur transition hover:bg-white/15"
+            >
+              <ArrowBackIcon fontSize="small" />
+              Kembali
+            </button>
+            <div className="max-w-xl">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-teal-500 text-white">
+                <ShieldOutlinedIcon />
+              </div>
+              <h1 className="mt-6 text-5xl font-bold leading-tight">
+                Masuk ke ruang CBT Smart Taruna.
+              </h1>
+              <p className="mt-5 text-base leading-7 text-slate-200">
+                Lanjutkan ujian yang sedang berjalan, cek hasil try out, atau
+                kelola paket ujian sesuai jenis akun Anda.
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-3 text-sm">
+              {["Token ujian", "Simpan otomatis", "Analitik"].map((item) => (
+                <div
+                  key={item}
+                  className="rounded-lg border border-white/15 bg-white/10 p-4 font-semibold backdrop-blur"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="flex items-center justify-center px-5 py-10 md:px-10">
+          <div className="w-full max-w-md">
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-teal-700 lg:hidden"
+            >
+              <ArrowBackIcon fontSize="small" />
+              Kembali
+            </button>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-wide text-teal-700">
+                  Masuk akun
+                </p>
+                <h1 className="mt-2 text-3xl font-bold text-slate-950">
+                  Selamat datang kembali
                 </h1>
-                <p className="mt-2 text-sm text-gray-600 font-poppins">
-                  Belum punya akun?{" "}
-                  <a
-                    className="text-[#FFAF35] decoration-2 hover:underline font-medium dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
-                    href="/auth/sign-up"
-                  >
-                    Buat akun disini{" "}
-                  </a>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  Masuk untuk membuka dashboard, halaman ujian, riwayat try out,
+                  dan profil belajar.
                 </p>
               </div>
 
-              <div className="mt-5">
-                <div className="py-3 flex items-center text-xs text-gray-400 uppercase before:flex-[1_1_0%] before:border-t before:border-gray-200 before:me-6 after:flex-[1_1_0%] after:border-t after:border-gray-200 after:ms-6 dark:text-gray-500 dark:before:border-gray-600 dark:after:border-gray-600">
-                  Or
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                className="mt-6 inline-flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-slate-300 bg-white text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+              >
+                <GoogleIcon fontSize="small" className="text-teal-600" />
+                Masuk dengan Google
+              </button>
+
+              <div className="my-5 flex items-center gap-3 text-xs font-semibold uppercase text-slate-400">
+                <span className="h-px flex-1 bg-slate-200" />
+                atau
+                <span className="h-px flex-1 bg-slate-200" />
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="email" className="text-sm font-semibold text-slate-800">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    className="mt-2 h-12 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm text-slate-950 outline-none transition focus:border-teal-600 focus:ring-4 focus:ring-teal-50"
+                    placeholder="nama@email.com"
+                    required
+                  />
                 </div>
 
-                <form onSubmit={handleSubmit}>
-                  <div className="grid gap-y-4">
-                    <div>
-                      <label
-                        htmlFor="email"
-                        className="block  mb-2 dark:text-black text-md "
-                      >
-                        Email
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          id="email"
-                          name="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="py-3 px-4 block w-full border border-gray-400 rounded-lg text-sm  focus:ring focus:ring-blue-500 outline-none disabled:opacity-50 disabled:pointer-events-none  "
-                          required
-                          aria-describedby="email-error"
-                        />
-                        <div className="hidden absolute inset-y-0 end-0 flex items-center pointer-events-none pe-3">
-                          <svg
-                            className="h-5 w-5 text-red-500"
-                            width="16"
-                            height="16"
-                            fill="currentColor"
-                            viewBox="0 0 16 16"
-                            aria-hidden="true"
-                          >
-                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
-                          </svg>
-                        </div>
-                      </div>
-                      <p
-                        className="hidden text-xs text-red-600 mt-2"
-                        id="email-error"
-                      >
-                        Please include a valid email address so we can get back
-                        to you
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between items-center">
-                        <label
-                          htmlFor="password"
-                          className="block text-md mb-2 text-black"
-                        >
-                          Password
-                        </label>
-                      </div>
-                      <div className="relative">
-                        <input
-                          type="password"
-                          id="password"
-                          name="password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="py-3 px-4 block w-full border border-gray-400 rounded-lg text-sm  focus:ring focus:ring-blue-500 outline-none disabled:opacity-50 disabled:pointer-events-none  "
-                          required
-                          aria-describedby="email-error"
-                        />
-                        <div className="hidden absolute inset-y-0 end-0 flex items-center pointer-events-none pe-3">
-                          <svg
-                            className="h-5 w-5 text-red-500"
-                            width="16"
-                            height="16"
-                            fill="currentColor"
-                            viewBox="0 0 16 16"
-                            aria-hidden="true"
-                          >
-                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
-                          </svg>
-                        </div>
-                      </div>
-                      <p
-                        className="hidden text-xs text-red-600 mt-2"
-                        id="password-error"
-                      >
-                        8+ characters required
-                      </p>
-                    </div>
-
-                    <div className="flex items-center"></div>
-                    {error && (
-                      <p className="text-red-600 text-sm font-semibold font-poppins text-center mb-2">
-                        {error}
-                      </p>
-                    )}
-                    <button
-                      type="submit"
-                      className="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-[#00ADB5] text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600 font-poppins"
+                <div>
+                  <label
+                    htmlFor="password"
+                    className="text-sm font-semibold text-slate-800"
+                  >
+                    Password
+                  </label>
+                  <div className="relative mt-2">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      id="password"
+                      name="password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      className="h-12 w-full rounded-lg border border-slate-300 bg-white px-4 pr-12 text-sm text-slate-950 outline-none transition focus:border-teal-600 focus:ring-4 focus:ring-teal-50"
+                      placeholder="Masukkan password"
+                      required
+                    />
+                    <IconButton
+                      aria-label={showPassword ? "Sembunyikan password" : "Lihat password"}
+                      onClick={() => setShowPassword((current) => !current)}
+                      edge="end"
+                      size="small"
+                      className="absolute right-2 top-1/2 -translate-y-1/2"
                     >
-                      {isLoading ? ( // Mengganti konten button saat loading
-                        <svg
-                          className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.373A8 8 0 0012 20v4c-4.418 0-8-3.582-8-8h4zM20 12h4a8 8 0 01-8 8v-4c3.627 0 6.373-2.373 8-5.627z"
-                          ></path>
-                        </svg>
-                      ) : (
-                        "Masuk"
-                      )}
-                    </button>
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
                   </div>
-                </form>
-              </div>
+                </div>
+
+                {error && (
+                  <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="inline-flex h-12 w-full items-center justify-center rounded-lg bg-teal-600 px-5 text-sm font-bold text-white transition hover:bg-teal-700 disabled:bg-slate-400"
+                >
+                  {isLoading ? "Memproses..." : "Masuk"}
+                </button>
+              </form>
+
+              <p className="mt-6 text-center text-sm text-slate-600">
+                Belum punya akun?{" "}
+                <a
+                  className="font-bold text-teal-700 hover:text-teal-800"
+                  href="/auth/sign-up"
+                >
+                  Daftar sekarang
+                </a>
+              </p>
             </div>
           </div>
-        </main>
+        </section>
       </div>
-    </>
+    </main>
   );
 };
 

@@ -6,6 +6,9 @@ export interface IQuestionForm {
     options: IOptions[];
     poin ?: number;
     type ?: string;
+    answerType?: string;
+    correctAnswer?: string;
+    tolerance?: number | string;
     explanation ?: string;
     image: string; // URL gambar yang diupload
     imageName: string; // Nama file gambars will hold the image file
@@ -16,6 +19,9 @@ export interface IQuestion {
     title: string;
     options: IOption[];
     image ?: string;
+    answerType?: string;
+    correctAnswer?: string;
+    tolerance?: number;
 }
 
 export interface IOption {
@@ -42,6 +48,10 @@ export interface IQuizForm {
     tags?: string[];
     status?: string;
     duration ?: number;
+    maxAttempts?: number | string;
+    passingGrades?: Record<string, number | string>;
+    examToken?: string;
+    tryoutOrder?: number | string;
 }
 
 export interface IQuiz extends IQuizForm {

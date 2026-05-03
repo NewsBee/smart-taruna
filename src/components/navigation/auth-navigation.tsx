@@ -36,10 +36,10 @@ const AuthNavigation: FC = () => {
         // If the user is not logged in, show Sign In and Sign Up buttons
         <>
           <StyledButton onClick={() => router.push("/auth/sign-in")} disableHoverEffect={true} variant="outlined">
-            Sign In
+            Masuk
           </StyledButton>
           <StyledButton onClick={() => router.push("/auth/sign-up")} disableHoverEffect={true}>
-            Sign Up
+            Daftar
           </StyledButton>
         </>
       )}

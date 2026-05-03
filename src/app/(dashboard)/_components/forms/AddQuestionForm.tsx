@@ -39,6 +39,9 @@ export const AddQuestionForm: React.FC<Props> = ({ quizId }) => {
         title: "",
         correct: "",
         type: "",
+        answerType: "MULTIPLE_CHOICE",
+        correctAnswer: "",
+        tolerance: 0,
         explanation: "",
         options: [
           { value: "", poin: 0 },
@@ -55,20 +58,33 @@ export const AddQuestionForm: React.FC<Props> = ({ quizId }) => {
       validationSchema={AddEditQuestionValidationNew}
       onSubmit={async (values, { setSubmitting, setFieldError, resetForm }) => {
         // console.log(values.image)
+        const isInputQuestion =
+          values.answerType === "SHORT_TEXT" || values.answerType === "NUMERIC";
         const payload = {
           content: values.title,
           type: values.type,
+          answerType:
+            values.type === "TKP" && values.answerType === "MULTIPLE_CHOICE"
+              ? "SCORED_CHOICE"
+              : values.answerType,
+          correctAnswer: isInputQuestion ? values.correctAnswer : undefined,
+          tolerance:
+            values.answerType === "NUMERIC" && values.tolerance !== ""
+              ? Number(values.tolerance)
+              : undefined,
           explanation: values.explanation,
           image: values.image,
           // packageId:  quizId,
-          Choices: values.options.map((option) => ({
-            content: option.value,
-            isCorrect: values.correct === option.value,
-            scoreValue:
-              values.type !== "TKP" && values.correct === option.value
-                ? 5
-                : option.poin,
-          })),
+          Choices: isInputQuestion
+            ? []
+            : values.options.map((option) => ({
+                content: option.value,
+                isCorrect: values.correct === option.value || values.type === "TKP",
+                scoreValue:
+                  values.type !== "TKP" && values.correct === option.value
+                    ? 5
+                    : option.poin,
+              })),
         };
 
         // console.log(payload);
@@ -79,35 +95,47 @@ export const AddQuestionForm: React.FC<Props> = ({ quizId }) => {
             setFieldError("title", "Only Spaces not allowed.");
             throw Error("Form Error");
           }
+          if (!isInputQuestion && values.type !== "TKP" && values.answerType !== "SCORED_CHOICE" && !values.correct) {
+            setFieldError("correct", "Correct Option is Required.");
+            throw Error("Form Error");
+          }
+          if (isInputQuestion && !String(values.correctAnswer || "").trim()) {
+            setFieldError("correctAnswer", "Correct answer is required.");
+            throw Error("Form Error");
+          }
 
-          values.options.forEach((option, index) => {
-            if (!!!option.value.trim()) {
-              setFieldError(
-                `options.${index}.value`,
-                "Only Spaces not allowed."
-              );
-              throw Error("Form Error");
-            }
-          });
+          if (!isInputQuestion) {
+            values.options.forEach((option, index) => {
+              if (!!!option.value.trim()) {
+                setFieldError(
+                  `options.${index}.value`,
+                  "Only Spaces not allowed."
+                );
+                throw Error("Form Error");
+              }
+            });
+          }
 
           const maping: { [key: string]: number[] } = {};
 
-          values.options.forEach((option1, i1) => {
-            if (option1.value) {
-              // Ensure option1.value is defined
-              let flag = 0;
-              const option1Indices: number[] = [];
-              values.options.forEach((option2, i2) => {
-                if (option1.value === option2.value) {
-                  flag++;
-                  option1Indices.push(i2);
+          if (!isInputQuestion) {
+            values.options.forEach((option1, i1) => {
+              if (option1.value) {
+                // Ensure option1.value is defined
+                let flag = 0;
+                const option1Indices: number[] = [];
+                values.options.forEach((option2, i2) => {
+                  if (option1.value === option2.value) {
+                    flag++;
+                    option1Indices.push(i2);
+                  }
+                });
+                if (flag > 1) {
+                  maping[option1.value] = option1Indices;
                 }
-              });
-              if (flag > 1) {
-                maping[option1.value] = option1Indices;
               }
-            }
-          });
+            });
+          }
 
           const errors = Object.entries(maping);
 

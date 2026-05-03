@@ -1,4 +1,12 @@
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/app/lib/auth-options";
+import { ensureAttemptOpen } from "@/app/api/ujian/_attempt";
+import {
+  createChoiceOrder,
+  createQuestionOrder,
+  EXAM_QUESTION_LIMIT,
+  parseChoiceOrder,
+  parseNumberArray,
+} from "@/app/api/ujian/_security";
 import prismadb from "@/app/lib/prismadb";
 import { getAccessToken } from "@auth0/nextjs-auth0";
 import { getServerSession } from "next-auth";
@@ -35,50 +43,209 @@ export const GET = async (
   //   },
   // });
 
-  const packageWithQuestions = await prismadb.package.findUnique({
-    where: {
-      id: parseInt(packageId),
-    },
-    include: {
-      questions: {
-        include: {
-          Choices: true, // Mengikutsertakan pilihan jawaban
-        },
+  const packageNumber = parseInt(packageId, 10);
+  const [packageWithQuestions, attempt] = await Promise.all([
+    prismadb.package.findUnique({
+      where: {
+        id: packageNumber,
       },
-      Test: true, // Mengikutsertakan data Test
-      attempts: {
-        where: {
-          userId: userId, // Hanya mengambil attempt yang relevan dengan user
+      select: {
+        id: true,
+        title: true,
+        duration: true,
+        Test: {
+          select: {
+            name: true,
+          },
         },
+        questions: {
         orderBy: {
-          createdAt: "desc", // Mengambil attempt terbaru
+          id: "asc",
         },
-        take: 1, // Hanya mengambil satu attempt teratas
+        select: {
+          id: true,
+          content: true,
+          type: true,
+          answerType: true,
+          correctAnswer: true,
+          tolerance: true,
+          image: true,
+          explanation: true,
+          Choices: {
+            orderBy: {
+              id: "asc",
+            },
+            select: {
+              id: true,
+              content: true,
+              isCorrect: true,
+              scoreValue: true,
+            },
+          },
+        },
       },
-    },
-  });
+      },
+    }),
+    prismadb.attempt.findFirst({
+      where: {
+        userId,
+        packageId: packageNumber,
+        completedAt: null,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        totalPausedMs: true,
+        questionOrder: true,
+        choiceOrder: true,
+      },
+    }),
+  ]);
 
   if (packageWithQuestions) {
-    const attempt = packageWithQuestions.attempts[0];
+    if (session.user.role === "admin") {
+      return NextResponse.json({
+        packageId: packageWithQuestions.id,
+        attemptId: null,
+        title: packageWithQuestions.title,
+        testName: packageWithQuestions.Test.name,
+        duration: packageWithQuestions.duration,
+        createdAt: null,
+        totalPausedMs: 0,
+        questions: packageWithQuestions.questions.map((question) => ({
+          id: question.id,
+          content: question.content,
+          type: question.type,
+          answerType: question.answerType,
+          correctAnswer: question.correctAnswer,
+          tolerance: question.tolerance,
+          image: question.image,
+          explanation: question.explanation,
+          savedResponse: "",
+          choices: question.Choices.map((choice) => ({
+            id: choice.id,
+            content: choice.content,
+            isCorrect: choice.isCorrect,
+            scoreValue: choice.scoreValue,
+          })),
+        })),
+      });
+    }
+
+    if (!attempt) {
+      return NextResponse.json(
+        { message: "Mulai ujian dan masukkan token terlebih dahulu." },
+        { status: 403 }
+      );
+    }
+
+    const attemptStatus = await ensureAttemptOpen(attempt.id, userId);
+
+    if (attemptStatus.status === "expired") {
+      return NextResponse.json(
+        {
+          message: "Waktu ujian sudah habis. Jawaban otomatis dikumpulkan oleh server.",
+          completed: true,
+          autoSubmitted: true,
+          attemptId: attempt.id,
+          score: attemptStatus.result?.score ?? 0,
+          redirectUrl: `/hasil/${attempt.id}`,
+        },
+        { status: 410 }
+      );
+    }
+
+    if (attemptStatus.status === "completed") {
+      return NextResponse.json(
+        {
+          message: "Ujian sudah selesai.",
+          completed: true,
+          attemptId: attempt.id,
+          redirectUrl: `/hasil/${attempt.id}`,
+        },
+        { status: 410 }
+      );
+    }
+
+    let questionOrder = parseNumberArray(attempt.questionOrder);
+    let choiceOrder = parseChoiceOrder(attempt.choiceOrder);
+
+    if (questionOrder.length === 0) {
+      questionOrder = createQuestionOrder(packageWithQuestions.questions);
+    } else if (questionOrder.length > EXAM_QUESTION_LIMIT) {
+      questionOrder = questionOrder.slice(0, EXAM_QUESTION_LIMIT);
+    }
+
+    if (Object.keys(choiceOrder).length === 0) {
+      choiceOrder = createChoiceOrder(packageWithQuestions.questions, questionOrder);
+    }
+
+    if (
+      !attempt.questionOrder ||
+      !attempt.choiceOrder ||
+      parseNumberArray(attempt.questionOrder).length > EXAM_QUESTION_LIMIT
+    ) {
+      await prismadb.attempt.update({
+        where: { id: attempt.id },
+        data: {
+          questionOrder,
+          choiceOrder,
+        },
+      });
+    }
+
+    const savedResponses = attempt
+      ? await prismadb.response.findMany({
+          where: { attemptId: attempt.id },
+          select: { questionId: true, content: true },
+        })
+      : [];
+    const savedResponseMap = new Map(
+      savedResponses.map((response) => [response.questionId, response.content ?? ""])
+    );
+    const questionsById = new Map(
+      packageWithQuestions.questions.map((question) => [question.id, question])
+    );
+    const orderedQuestions = questionOrder
+      .map((questionId) => questionsById.get(questionId))
+      .filter((question): question is NonNullable<typeof question> => Boolean(question));
+
     // Transformasi data untuk response
     const transformedData = {
       packageId: packageWithQuestions.id,
+      attemptId: attempt.id,
       title: packageWithQuestions.title,
       testName: packageWithQuestions.Test.name,
       duration: packageWithQuestions.duration,
-      createdAt: attempt ? attempt.createdAt : null,
-      questions: packageWithQuestions.questions.map((question) => ({
+      createdAt: attempt.createdAt,
+      totalPausedMs: attempt.totalPausedMs,
+      questions: orderedQuestions.map((question) => {
+        const orderedChoiceIds = choiceOrder[question.id.toString()] || [];
+        const choicesById = new Map(
+          question.Choices.map((choice) => [choice.id, choice])
+        );
+        const orderedChoices = orderedChoiceIds.length
+          ? orderedChoiceIds
+              .map((choiceId) => choicesById.get(choiceId))
+              .filter((choice): choice is NonNullable<typeof choice> => Boolean(choice))
+          : question.Choices;
+
+        return {
         id: question.id,
         content: question.content,
         type: question.type,
+        answerType: question.answerType,
         image: question.image,
-        explanation: question.explanation,
-        choices: question.Choices.map((choice) => ({
+        savedResponse: savedResponseMap.get(question.id) ?? "",
+        choices: orderedChoices.map((choice) => ({
           id: choice.id,
           content: choice.content,
-          isCorrect: choice.isCorrect,
         })),
-      })),
+      };
+      }),
     };
 
     return NextResponse.json(transformedData);
@@ -128,11 +295,14 @@ export const GET = async (
 
 export async function POST(req: Request, context: { params: { id: any } }) {
   const packageId = context.params.id;
-  const { content, type, explanation, Choices, image } = await req.json();
+  const { content, type, answerType, correctAnswer, tolerance, explanation, Choices = [], image } = await req.json();
   try {
     // Periksa apakah tipe soal adalah TKP dan sesuaikan nilai isCorrect jika benar
+    const resolvedAnswerType = answerType || "MULTIPLE_CHOICE";
+    const isInputQuestion =
+      resolvedAnswerType === "SHORT_TEXT" || resolvedAnswerType === "NUMERIC";
     const modifiedChoices = Choices.map((choice: Option) => {
-      if (type === "TKP") {
+      if (type === "TKP" || resolvedAnswerType === "SCORED_CHOICE") {
         // Untuk TPA, semua pilihan dianggap benar dan scoreValue mengikuti yang dikirim dari frontend
         return {
           ...choice,
@@ -148,19 +318,30 @@ export async function POST(req: Request, context: { params: { id: any } }) {
       }
     });
     // Create a new question
-    const newQuestion = await prismadb.question.create({
-      data: {
-        content,
-        type,
-        explanation,
-        image,
-        packageId: parseInt(packageId), // Pastikan packageId disediakan dan valid
-        Choices: {
-          createMany: {
-            data: modifiedChoices,
-          },
+    const questionData: any = {
+      content,
+      type,
+      answerType: resolvedAnswerType,
+      correctAnswer: isInputQuestion ? correctAnswer : null,
+      tolerance:
+        resolvedAnswerType === "NUMERIC" && tolerance !== undefined
+          ? Number(tolerance)
+          : null,
+      explanation,
+      image,
+      packageId: parseInt(packageId), // Pastikan packageId disediakan dan valid
+    };
+
+    if (!isInputQuestion && modifiedChoices.length > 0) {
+      questionData.Choices = {
+        createMany: {
+          data: modifiedChoices,
         },
-      },
+      };
+    }
+
+    const newQuestion = await prismadb.question.create({
+      data: questionData,
     });
 
     return NextResponse.json({ newQuestion }, { status: 201 });

@@ -14,6 +14,9 @@ interface Update {
   correct: string;
   options: { _id: number; value: string, poin: number }[];
   type : string;
+  answerType?: string;
+  correctAnswer?: string;
+  tolerance?: number | null;
   explanation : string;
 }
 
@@ -37,13 +40,16 @@ export default function UpdateQuestion({
       const formattedData = {
         id: data.id.toString(),
         title: data.content,
-        correct: data.Choices.find((choice: any) => choice.isCorrect).content,
+        correct: data.Choices.find((choice: any) => choice.isCorrect)?.content || data.correctAnswer || "",
         options: data.Choices.map((choice: any) => ({
           _id: choice.id,
           value: choice.content,
           poin : choice.scoreValue,
         })),
         type: data.type,
+        answerType: data.answerType,
+        correctAnswer: data.correctAnswer,
+        tolerance: data.tolerance,
         explanation: data.explanation,
       };
       setQuestionData(formattedData);

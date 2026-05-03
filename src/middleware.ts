@@ -48,7 +48,7 @@ export async function middleware(req: NextRequest) {
   // Jika pengguna tidak terotentikasi dan mencoba mengakses halaman lain selain '/', '/auth/sign-in', dan '/auth/sign-up'
   if (!token && requestedPage !== '/' && requestedPage !== '/auth/sign-in' && requestedPage !== '/auth/sign-up') {
     const url = req.nextUrl.clone();
-    url.pathname = requestedPage; // Redirect ke halaman login
+    url.pathname = '/auth/sign-in'; // Redirect ke halaman login
     return NextResponse.redirect(url);
   }
 

@@ -44,14 +44,48 @@ export const PUT = async (
   context: { params: { id: any } }
 ) => {
   const questionId = context.params.id;
-  const { content, type, explanation, Choices, image } = await req.json();
+  const { content, type, answerType, correctAnswer, tolerance, explanation, Choices = [], image } = await req.json();
 
   try {
+    const resolvedAnswerType = answerType || "MULTIPLE_CHOICE";
+    const isInputQuestion =
+      resolvedAnswerType === "SHORT_TEXT" || resolvedAnswerType === "NUMERIC";
+
+    if (isInputQuestion) {
+      const updatedQuestion = await prismadb.question.update({
+        where: { id: parseInt(questionId) },
+        data: {
+          content,
+          type,
+          answerType: resolvedAnswerType,
+          correctAnswer,
+          tolerance:
+            resolvedAnswerType === "NUMERIC" && tolerance !== undefined
+              ? Number(tolerance)
+              : null,
+          explanation,
+          Choices: {
+            deleteMany: {},
+          },
+          image,
+        },
+      });
+
+      return NextResponse.json({ updatedQuestion }, { status: 200 });
+    }
+
     const updateManyChoices = Choices.map((choice: Choice) => {
       // Logika untuk menentukan isCorrect dan scoreValue berdasarkan tipe soal
-      const isCorrect = type === "TKP" ? true : choice.isCorrect; // Semua choice dianggap benar untuk TKP
+      const isCorrect =
+        type === "TKP" || resolvedAnswerType === "SCORED_CHOICE"
+          ? true
+          : choice.isCorrect; // Semua choice dianggap benar untuk TKP
       const scoreValue =
-        type === "TKP" ? choice.scoreValue : choice.isCorrect ? 5 : 0; // Gunakan scoreValue dari frontend untuk TKP, atau tetapkan 5 jika benar dan 0 jika salah untuk tipe lain
+        type === "TKP" || resolvedAnswerType === "SCORED_CHOICE"
+          ? choice.scoreValue
+          : choice.isCorrect
+          ? 5
+          : 0; // Gunakan scoreValue dari frontend untuk TKP, atau tetapkan 5 jika benar dan 0 jika salah untuk tipe lain
 
       return {
         where: { id: choice.id },
@@ -68,6 +102,9 @@ export const PUT = async (
       data: {
         content,
         type,
+        answerType: resolvedAnswerType,
+        correctAnswer: null,
+        tolerance: null,
         explanation,
         Choices: {
           updateMany: updateManyChoices,

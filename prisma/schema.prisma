@@ -11,20 +11,21 @@ datasource db {
 }
 
 model User {
-  id          Int          @id @default(autoincrement())
-  username    String       @unique
-  email       String       @unique
-  password    String
-  role        String       @default("siswa")
-  attempts    Attempt[]
-  gender      String? // Jenis Kelamin
-  phoneNumber String? // Nomor Telepon
-  education   String? // Pendidikan Terakhir
-  major       String? // Jurusan
-  institution String? // Institusi / Kampus yang dituju
-  socialLinks SocialLink[] // Relasi satu-ke-banyak dengan SocialLink
-  createdAt   DateTime     @default(now()) // Tanggal pembuatan akun
-  updatedAt   DateTime     @default(now())
+  id             Int             @id @default(autoincrement())
+  username       String          @unique
+  email          String          @unique
+  password       String
+  role           String          @default("siswa")
+  attempts       Attempt[]
+  securityEvents SecurityEvent[]
+  gender         String? // Jenis Kelamin
+  phoneNumber    String? // Nomor Telepon
+  education      String? // Pendidikan Terakhir
+  major          String? // Jurusan
+  institution    String? // Institusi / Kampus yang dituju
+  socialLinks    SocialLink[] // Relasi satu-ke-banyak dengan SocialLink
+  createdAt      DateTime        @default(now()) // Tanggal pembuatan akun
+  updatedAt      DateTime        @default(now())
 
   // Pertimbangkan untuk menambahkan field-field berikut jika diperlukan
   profileImage String? // URL Gambar Profil
@@ -52,17 +53,35 @@ model Test {
 }
 
 model Package {
-  id          Int        @id @default(autoincrement())
-  testName    String
-  title       String // Misalnya "Paket 1", "Paket 2", dll.
-  questions   Question[]
-  Test        Test       @relation(fields: [testName], references: [name])
-  attempts    Attempt[]
-  description String // Deskripsi opsional
-  tags        Tag[] // Relasi many-to-many dengan Tag
-  duration    Int? // Duration in minutes
-  isHidden    Boolean    @default(false) // Tandai apakah paket ini disembunyikan
-  isLocked    Boolean    @default(true) // Tandai apakah paket ini terkunci
+  id            Int                   @id @default(autoincrement())
+  testName      String
+  title         String // Misalnya "Paket 1", "Paket 2", dll.
+  questions     Question[]
+  Test          Test                  @relation(fields: [testName], references: [name])
+  attempts      Attempt[]
+  description   String // Deskripsi opsional
+  tags          Tag[] // Relasi many-to-many dengan Tag
+  duration      Int? // Duration in minutes
+  maxAttempts   Int                   @default(1) // Maksimal percobaan per siswa untuk paket ini
+  passingGrades PackagePassingGrade[]
+  isHidden      Boolean               @default(false) // Tandai apakah paket ini disembunyikan
+  isLocked      Boolean               @default(true) // Tandai apakah paket ini terkunci
+  examToken     String? // Token ujian untuk autentikasi level kedua sebelum mulai CBT
+  tryoutOrder   Int? // Urutan paket sebagai Try Out ke-berapa dalam satu jenis test
+
+  @@index([examToken])
+  @@index([testName, tryoutOrder])
+}
+
+model PackagePassingGrade {
+  id        Int     @id @default(autoincrement())
+  packageId Int
+  type      String
+  minScore  Int
+  Package   Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@unique([packageId, type])
+  @@index([packageId])
 }
 
 model Tag {
@@ -72,15 +91,18 @@ model Tag {
 }
 
 model Question {
-  id          Int        @id @default(autoincrement())
-  content     String // Konten pertanyaan
-  type        String // Misalnya "TIU", "TWK", "TKP", atau "TPA"
-  packageId   Int // ID Paket
-  image       String? // Optional URL to an image for the question
-  explanation String? // Penjelasan atas jawaban
-  Package     Package    @relation(fields: [packageId], references: [id])
-  Choices     Choice[] // Pilihan jawaban untuk pertanyaan
-  responses   Response[]
+  id            Int        @id @default(autoincrement())
+  content       String // Konten pertanyaan
+  type          String // Misalnya "TIU", "TWK", "TKP", atau "TPA"
+  answerType    String     @default("MULTIPLE_CHOICE")
+  correctAnswer String?
+  tolerance     Float?
+  packageId     Int // ID Paket
+  image         String? // Optional URL to an image for the question
+  explanation   String? // Penjelasan atas jawaban
+  Package       Package    @relation(fields: [packageId], references: [id])
+  Choices       Choice[] // Pilihan jawaban untuk pertanyaan
+  responses     Response[]
 }
 
 model Choice {
@@ -93,17 +115,26 @@ model Choice {
 }
 
 model Attempt {
-  id          Int        @id @default(autoincrement())
-  score       Int? // Skor yang dicapai
-  testId      Int // ID Test
-  packageId   Int // ID Paket yang dipilih
-  userId      Int // ID User
-  Test        Test       @relation(fields: [testId], references: [id])
-  Package     Package    @relation(fields: [packageId], references: [id])
-  User        User       @relation(fields: [userId], references: [id])
-  responses   Response[]
-  createdAt   DateTime   @default(now())
-  completedAt DateTime?
+  id                  Int             @id @default(autoincrement())
+  score               Int? // Skor yang dicapai
+  testId              Int // ID Test
+  packageId           Int // ID Paket yang dipilih
+  userId              Int // ID User
+  Test                Test            @relation(fields: [testId], references: [id])
+  Package             Package         @relation(fields: [packageId], references: [id])
+  User                User            @relation(fields: [userId], references: [id])
+  responses           Response[]
+  createdAt           DateTime        @default(now())
+  completedAt         DateTime?
+  lastHeartbeatAt     DateTime?
+  totalPausedMs       Int             @default(0)
+  examTokenVerifiedAt DateTime?
+  questionOrder       Json?
+  choiceOrder         Json?
+  securityEvents      SecurityEvent[]
+
+  @@index([userId, completedAt])
+  @@index([packageId, userId])
 }
 
 model Response {
@@ -114,4 +145,21 @@ model Response {
   questionId Int // ID Pertanyaan
   Attempt    Attempt  @relation(fields: [attemptId], references: [id])
   Question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+}
+
+model SecurityEvent {
+  id        Int      @id @default(autoincrement())
+  attemptId Int
+  userId    Int
+  type      String
+  metadata  Json?
+  createdAt DateTime @default(now())
+  Attempt   Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  User      User     @relation(fields: [userId], references: [id])
+
+  @@index([attemptId])
+  @@index([userId, createdAt])
 }

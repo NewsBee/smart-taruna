@@ -8,7 +8,7 @@ import {
 } from "../../shared/constants";
 import { IOption, IQuestionForm } from "../../shared/interfaces";
 // import { useUpdateQuestion } from "../../shared/queries";
-import { AddEditQuestionValidation } from "../../shared/validationSchema";
+import { AddEditQuestionValidationNew } from "../../shared/validationSchema";
 import { AddEditQuestionFormFields } from "./AddEditQuestionFormFields";
 import { useUpdateQuestion } from "../../shared/queries";
 import { useRouter } from "next/navigation";
@@ -19,6 +19,9 @@ interface Props {
   correct: string;
   options: IOptions[];
   type : string,
+  answerType?: string;
+  correctAnswer?: string;
+  tolerance?: number | null;
   explanation : string,
   slug : string;
   quizId : number;
@@ -36,6 +39,9 @@ export const UpdateQuestionForm: React.FC<Props> = ({
   correct,
   options,
   type,
+  answerType,
+  correctAnswer,
+  tolerance,
   explanation,
   slug,
   quizId,
@@ -60,6 +66,9 @@ export const UpdateQuestionForm: React.FC<Props> = ({
         title: title || "",
         correct: correct || "",
         type: type,
+        answerType: answerType || "MULTIPLE_CHOICE",
+        correctAnswer: correctAnswer || "",
+        tolerance: tolerance ?? 0,
         explanation: explanation,
         options: options.length > 0 ? options : [
           { value: "", poin: 0 },
@@ -71,7 +80,7 @@ export const UpdateQuestionForm: React.FC<Props> = ({
         image:'',
         imageName:'',
       }}
-      validationSchema={AddEditQuestionValidation}
+      validationSchema={AddEditQuestionValidationNew}
       onSubmit={async (values, { setSubmitting }) => {
         setSubmitting(true);
         enqueueSnackbar(loadingMessages.actionLoading("Updating", "Question"), {
@@ -82,6 +91,9 @@ export const UpdateQuestionForm: React.FC<Props> = ({
         const payload = {
           content: values.title,
           type: values.type,
+          answerType: values.answerType,
+          correctAnswer: values.correctAnswer,
+          tolerance: values.answerType === "NUMERIC" ? Number(values.tolerance || 0) : undefined,
           explanation: values.explanation,
           image: values.image,
           Choices: values.options.map(option => ({
