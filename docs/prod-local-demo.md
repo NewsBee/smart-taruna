@@ -17,7 +17,7 @@ Saya sudah mengisi `DATABASE_URL` lokal dengan asumsi:
 - Database user: `smarttaruna_user`
 - Database name: `smart_taruna`
 - Cloud SQL instance: `smarttaruna-495205:asia-southeast2:smart-taruna-mysql`
-- Koneksi lokal melalui Cloud SQL Auth Proxy di `127.0.0.1:3306`
+- Koneksi lokal melalui Cloud SQL Auth Proxy di `127.0.0.1:3307`
 
 Kalau nama user atau database di Cloud SQL berbeda, ubah `.env.production.local`.
 
@@ -67,6 +67,8 @@ Buka terminal pertama:
 ```
 
 Biarkan terminal ini tetap terbuka.
+
+Script ini memakai port `3307` karena port `3306` sering sudah dipakai MySQL lokal.
 
 ### 4. Push schema dan seed database
 

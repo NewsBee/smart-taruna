@@ -1,6 +1,6 @@
 param(
   [string]$Instance = "smarttaruna-495205:asia-southeast2:smart-taruna-mysql",
-  [int]$Port = 3306
+  [int]$Port = 3307
 )
 
 $proxy = Get-Command cloud-sql-proxy -ErrorAction SilentlyContinue
