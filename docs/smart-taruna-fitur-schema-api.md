@@ -83,7 +83,7 @@ API terkait:
 
 ### 2.3 Test
 
-Model `Test` menyimpan kategori ujian, misalnya `SKD`, `TPA`, atau `tkp`.
+Model `Test` menyimpan jenis try out utama, yaitu `SKD` dan `TPA`. `TKP` bukan jenis try out terpisah, melainkan tipe soal di dalam SKD bersama `TWK` dan `TIU`.
 
 Field penting:
 
@@ -900,7 +900,7 @@ API:
 
 Halaman:
 
-- `/dashboard/[slug]`, misalnya `/dashboard/SKD` atau `/dashboard/tkp`
+- `/dashboard/[slug]`, misalnya `/dashboard/SKD` atau `/dashboard/TPA`
 
 Fungsi:
 
@@ -1202,7 +1202,7 @@ Isi seed saat ini:
 - Siswa: `siswa@smarttaruna.test`, password `password123`.
 - Paket SKD Token A: token `SKD-A-2026`, 240 soal.
 - Paket SKD Token B: token `SKD-B-2026`, 240 soal.
-- Paket TKP Token A: token `TKP-A-2026`, 240 soal.
+- Paket TPA Token A: token `TPA-A-2026`, 240 soal.
 
 Saat siswa mengerjakan, hanya 110 soal acak yang dipilih dari 240 soal paket.
 

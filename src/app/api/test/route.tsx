@@ -16,7 +16,16 @@ export const dynamic = "force-dynamic";
 // }
 
 export const GET = async(req: NextRequest ) =>{
-    const tests = await prismadb.test.findMany({})
+    const tests = await prismadb.test.findMany({
+        where: {
+            name: {
+                in: ["SKD", "TPA"],
+            },
+        },
+        orderBy: {
+            name: "asc",
+        },
+    })
     // const { accessToken } = await getAccessToken();
     if(tests){
         return NextResponse.json({ tests })

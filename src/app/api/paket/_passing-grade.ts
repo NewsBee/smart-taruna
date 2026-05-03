@@ -13,10 +13,6 @@ export function defaultPassingGrades(testName?: string | null) {
     ];
   }
 
-  if (normalizedTestName === "TKP") {
-    return [{ type: "TKP", minScore: 166 }];
-  }
-
   return [];
 }
 

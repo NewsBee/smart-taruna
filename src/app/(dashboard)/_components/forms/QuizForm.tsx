@@ -40,8 +40,6 @@ export const QuizForm: React.FC<Props> = ({
   const defaultPassingGrades =
     normalizedTestName === "SKD"
       ? { TWK: 65, TIU: 80, TKP: 166 }
-      : normalizedTestName === "TKP"
-      ? { TWK: 0, TIU: 0, TKP: 166 }
       : { TWK: 0, TIU: 0, TKP: 0 };
 
   return (

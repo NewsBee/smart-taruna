@@ -22,12 +22,12 @@ const skdPackages = [
   },
 ];
 
-const tkpPackages = [
+const tpaPackages = [
   {
-    title: "Paket TKP Token A - Pelayanan Publik",
+    title: "Paket TPA Token A - Potensi Akademik",
     description:
-      "Paket khusus TKP berbasis token untuk menguji konsistensi randomisasi pada soal perilaku kerja dan pelayanan publik.",
-    token: "TKP-A-2026",
+      "Paket TPA berbasis token untuk latihan potensi akademik, penalaran verbal, numerik, logika, dan analisis bacaan.",
+    token: "TPA-A-2026",
     offset: 120,
     tryoutOrder: 1,
   },
@@ -289,6 +289,105 @@ function makeTkpQuestions(offset) {
   return questions;
 }
 
+function makeTpaQuestions(offset) {
+  const questions = [];
+
+  for (let index = 1; index <= 60; index += 1) {
+    const a = 3 + ((index + offset) % 12);
+    const b = 2 + ((index * 3 + offset) % 15);
+    const c = a * 4 + b;
+    questions.push(
+      makeMultipleChoice(
+        "TPA",
+        `TPA Numerik ${index}: Jika ${a} x 4 + ${b} = ${c}, maka nilai yang benar adalah ...`,
+        String(c),
+        [String(c + 3), String(c - 2), String(a + b), String(a * b)],
+        `Hitung ${a} x 4 = ${a * 4}, lalu tambah ${b}. Hasilnya ${c}.`
+      )
+    );
+  }
+
+  const verbalItems = [
+    ["analitis", "mampu menguraikan masalah secara logis", "emosional", "pasif", "acak", "tertutup"],
+    ["komprehensif", "menyeluruh", "terbatas", "singkat", "dangkal", "parsial"],
+    ["implisit", "tersirat", "terang-terangan", "langsung", "terucap", "terlihat"],
+    ["valid", "sah dan dapat diterima", "lemah", "keliru", "sementara", "kabur"],
+    ["objektif", "berdasarkan fakta", "memihak", "personal", "dugaan", "emosional"],
+    ["inferensi", "kesimpulan dari bukti", "pertanyaan awal", "contoh acak", "data mentah", "pendapat bebas"],
+  ];
+
+  for (let index = 1; index <= 60; index += 1) {
+    const item = verbalItems[(index + offset) % verbalItems.length];
+    questions.push(
+      makeMultipleChoice(
+        "TPA",
+        `TPA Verbal ${index}: Makna paling tepat dari "${item[0]}" adalah ...`,
+        item[1],
+        item.slice(2),
+        `"${item[0]}" paling tepat dimaknai sebagai ${item[1]}.`
+      )
+    );
+  }
+
+  const logicItems = [
+    {
+      premise: "Semua peserta yang lulus administrasi mengikuti ujian. Raka lulus administrasi.",
+      correct: "Raka mengikuti ujian",
+      wrong: ["Raka pasti lulus ujian", "Raka tidak perlu ujian", "Semua peserta pasti lulus", "Administrasi tidak berpengaruh"],
+    },
+    {
+      premise: "Jika jadwal berubah, panitia mengirim pengumuman. Tidak ada pengumuman dari panitia.",
+      correct: "Jadwal tidak berubah",
+      wrong: ["Jadwal pasti berubah", "Panitia lupa bekerja", "Peserta bebas datang kapan saja", "Pengumuman tidak diperlukan"],
+    },
+    {
+      premise: "Semua modul numerik memuat latihan hitung. Paket A adalah modul numerik.",
+      correct: "Paket A memuat latihan hitung",
+      wrong: ["Paket A hanya berisi verbal", "Semua latihan hitung pasti Paket A", "Paket A tidak dapat dipelajari", "Modul numerik tidak punya soal"],
+    },
+  ];
+
+  for (let index = 1; index <= 60; index += 1) {
+    const item = logicItems[(index + offset) % logicItems.length];
+    questions.push(
+      makeMultipleChoice(
+        "TPA",
+        `TPA Logika ${index}: ${item.premise} Kesimpulan yang tepat adalah ...`,
+        item.correct,
+        item.wrong,
+        "Kesimpulan mengikuti hubungan sebab-akibat atau himpunan yang disebutkan pada premis."
+      )
+    );
+  }
+
+  const readingTopics = [
+    "Disiplin belajar membantu peserta menjaga konsistensi latihan dan mengurangi kesalahan yang berulang.",
+    "Evaluasi hasil try out berguna untuk menentukan materi yang perlu diprioritaskan pada sesi latihan berikutnya.",
+    "Manajemen waktu diperlukan agar peserta tidak menghabiskan terlalu banyak waktu pada satu soal.",
+    "Latihan berbasis pembahasan membantu peserta memahami alasan jawaban benar dan memperbaiki strategi pengerjaan.",
+  ];
+
+  for (let index = 1; index <= 60; index += 1) {
+    const topic = readingTopics[(index + offset) % readingTopics.length];
+    questions.push(
+      makeMultipleChoice(
+        "TPA",
+        `TPA Pemahaman Bacaan ${index}: "${topic}" Gagasan utama kalimat tersebut adalah ...`,
+        topic.split(" membantu ")[0].replace(" diperlukan agar peserta tidak menghabiskan terlalu banyak waktu pada satu soal.", "Manajemen waktu"),
+        [
+          "Pembahasan tidak diperlukan dalam latihan",
+          "Try out tidak membutuhkan evaluasi",
+          "Semua soal harus dikerjakan tanpa strategi",
+          "Latihan cukup dilakukan sekali",
+        ],
+        "Gagasan utama diambil dari inti pembahasan pada awal kalimat."
+      )
+    );
+  }
+
+  return questions;
+}
+
 function buildSkdQuestions(offset) {
   return [
     ...makeTwkQuestions(offset),
@@ -388,16 +487,18 @@ async function main() {
     create: { name: "SKD" },
   });
 
-  await prisma.test.upsert({
+  const tpa = await prisma.test.upsert({
     where: { name: "TPA" },
     update: {},
     create: { name: "TPA" },
   });
 
-  const tkp = await prisma.test.upsert({
-    where: { name: "tkp" },
-    update: {},
-    create: { name: "tkp" },
+  await prisma.package.updateMany({
+    where: { testName: { in: ["tkp", "TKP"] } },
+    data: {
+      isHidden: true,
+      isLocked: true,
+    },
   });
 
   for (const seededPackage of skdPackages) {
@@ -425,25 +526,21 @@ async function main() {
     );
   }
 
-  for (const seededPackage of tkpPackages) {
+  for (const seededPackage of tpaPackages) {
     const pkg = await upsertPackage({
-      testName: tkp.name,
+      testName: tpa.name,
       title: seededPackage.title,
       description: seededPackage.description,
       duration: 100,
       maxAttempts: 2,
-      passingGrades: [{ type: "TKP", minScore: 166 }],
+      passingGrades: [],
       isLocked: false,
       isHidden: false,
       examToken: seededPackage.token,
       tryoutOrder: seededPackage.tryoutOrder,
     });
 
-    const questions = [
-      ...makeTkpQuestions(seededPackage.offset),
-      ...makeTkpQuestions(seededPackage.offset + 80),
-      ...makeTkpQuestions(seededPackage.offset + 160),
-    ];
+    const questions = makeTpaQuestions(seededPackage.offset);
     await replacePackageQuestions(pkg.id, questions);
     console.log(
       `${seededPackage.title}: ${questions.length} soal, token ${seededPackage.token}`

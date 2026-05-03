@@ -701,10 +701,10 @@ const UserProfile = () => {
                     icon: <QuizRoundedIcon fontSize="small" />,
                   },
                   {
-                    title: "Paket TKP",
-                    description: "Kelola paket TKP dan soal berbobot skor per pilihan.",
-                    action: "Kelola TKP",
-                    href: "/dashboard/tkp",
+                    title: "Paket TPA",
+                    description: "Kelola paket TPA untuk latihan potensi akademik.",
+                    action: "Kelola TPA",
+                    href: "/dashboard/TPA",
                     icon: <VerifiedUserRoundedIcon fontSize="small" />,
                   },
                 ].map((item) => (

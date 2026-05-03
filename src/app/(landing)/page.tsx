@@ -36,7 +36,8 @@ const features = [
 
 const stats = [
   { label: "Soal ditampilkan", value: "110" },
-  { label: "Kategori SKD", value: "TWK TIU TKP" },
+  { label: "Jenis try out", value: "SKD & TPA" },
+  { label: "Materi SKD", value: "TWK TIU TKP" },
   { label: "Mode akses", value: "Token" },
 ];
 
@@ -72,9 +73,9 @@ export default function LandingPage() {
               Smart Taruna CBT yang siap untuk ujian berbasis token.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-200 md:text-lg">
-              Siapkan try out SKD dan latihan kedinasan dengan token ujian,
-              urutan soal acak, batas waktu, pemantauan aktivitas, nilai batas
-              kelulusan, dan rekap hasil siswa dalam satu sistem.
+              Siapkan try out SKD dan TPA dengan token ujian, urutan soal
+              acak, batas waktu, pemantauan aktivitas, nilai batas kelulusan,
+              dan rekap hasil siswa dalam satu sistem.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <button
@@ -97,7 +98,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="mt-10 grid gap-3 md:grid-cols-3">
+          <div className="mt-10 grid gap-3 md:grid-cols-4">
             {stats.map((item) => (
               <div
                 key={item.label}
