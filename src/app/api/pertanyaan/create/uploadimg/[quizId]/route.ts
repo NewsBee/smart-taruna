@@ -14,26 +14,44 @@ import { v4 as uuidv4 } from 'uuid';
 import { Upload } from "@aws-sdk/lib-storage";
 import { authOptions } from "@/app/lib/auth-options";
 
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION as string,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID as string,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY as string,
-  },
-});
+const getUploadConfig = () => {
+  const region = process.env.AWS_REGION;
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+  const bucket = process.env.AWS_S3_BUCKET_NAME;
+
+  if (!region || !accessKeyId || !secretAccessKey || !bucket) {
+    return null;
+  }
+
+  return { region, accessKeyId, secretAccessKey, bucket };
+};
 
 // Fungsi untuk mengunggah gambar ke S3
 async function uploadImageToS3(
   fileStream: Readable,
   fileName: string
 ): Promise<string> {
+  const uploadConfig = getUploadConfig();
+  if (!uploadConfig) {
+    throw new Error("UPLOAD_STORAGE_NOT_CONFIGURED");
+  }
+
+  const s3Client = new S3Client({
+    region: uploadConfig.region,
+    credentials: {
+      accessKeyId: uploadConfig.accessKeyId,
+      secretAccessKey: uploadConfig.secretAccessKey,
+    },
+  });
+
   // const fileKey = `profile-pictures/${Date.now()}-${fileName}`;
   const fileKey = `pertanyaan/${uuidv4()}-${fileName}`;
 
   const uploader = new Upload({
     client: s3Client,
     params: {
-      Bucket: process.env.AWS_S3_BUCKET_NAME,
+      Bucket: uploadConfig.bucket,
       Key: fileKey,
       Body: fileStream,
     },
@@ -43,7 +61,7 @@ async function uploadImageToS3(
   
 
   // Return URL lengkap gambar
-  const fileUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
+  const fileUrl = `https://${uploadConfig.bucket}.s3.${uploadConfig.region}.amazonaws.com/${fileKey}`;
   return fileUrl;
 }
 
@@ -84,7 +102,14 @@ export async function POST(req: NextRequest, context: { params: { quizId: string
 
     // return NextResponse.json({ success: true, fileUrl });
   } catch (error) {
+    if (error instanceof Error && error.message === "UPLOAD_STORAGE_NOT_CONFIGURED") {
+      return NextResponse.json(
+        { message: "Upload gambar belum dikonfigurasi untuk environment ini." },
+        { status: 503 }
+      );
+    }
+
     console.error("Error uploading image:", error);
-    NextResponse.json({ message: "Error uploading image" });
+    return NextResponse.json({ message: "Gagal mengunggah gambar" }, { status: 500 });
   }
 }
