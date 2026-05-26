@@ -8,6 +8,7 @@ import {
   parseNumberArray,
 } from "@/app/api/ujian/_security";
 import prismadb from "@/app/lib/prismadb";
+import { resolveExamDuration } from "@/app/lib/exam-time";
 import { getAccessToken } from "@auth0/nextjs-auth0";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -53,6 +54,7 @@ export const GET = async (
         id: true,
         title: true,
         duration: true,
+        deletedAt: true,
         Test: {
           select: {
             name: true,
@@ -71,6 +73,7 @@ export const GET = async (
           tolerance: true,
           image: true,
           explanation: true,
+          explanationImage: true,
           Choices: {
             orderBy: {
               id: "asc",
@@ -106,13 +109,22 @@ export const GET = async (
   ]);
 
   if (packageWithQuestions) {
+    if (packageWithQuestions.deletedAt && session.user.role !== "admin") {
+      return NextResponse.json(
+        { message: "Paket sudah tidak tersedia" },
+        { status: 410 }
+      );
+    }
+
+    const resolvedDuration = resolveExamDuration(packageWithQuestions.duration);
+
     if (session.user.role === "admin") {
       return NextResponse.json({
         packageId: packageWithQuestions.id,
         attemptId: null,
         title: packageWithQuestions.title,
         testName: packageWithQuestions.Test.name,
-        duration: packageWithQuestions.duration,
+        duration: resolvedDuration,
         createdAt: null,
         totalPausedMs: 0,
         questions: packageWithQuestions.questions.map((question) => ({
@@ -124,6 +136,7 @@ export const GET = async (
           tolerance: question.tolerance,
           image: question.image,
           explanation: question.explanation,
+          explanationImage: question.explanationImage,
           savedResponse: "",
           choices: question.Choices.map((choice) => ({
             id: choice.id,
@@ -219,7 +232,7 @@ export const GET = async (
       attemptId: attempt.id,
       title: packageWithQuestions.title,
       testName: packageWithQuestions.Test.name,
-      duration: packageWithQuestions.duration,
+      duration: resolvedDuration,
       createdAt: attempt.createdAt,
       totalPausedMs: attempt.totalPausedMs,
       questions: orderedQuestions.map((question) => {
@@ -239,6 +252,7 @@ export const GET = async (
         type: question.type,
         answerType: question.answerType,
         image: question.image,
+        explanationImage: question.explanationImage,
         savedResponse: savedResponseMap.get(question.id) ?? "",
         choices: orderedChoices.map((choice) => ({
           id: choice.id,
@@ -295,7 +309,7 @@ export const GET = async (
 
 export async function POST(req: Request, context: { params: { id: any } }) {
   const packageId = context.params.id;
-  const { content, type, answerType, correctAnswer, tolerance, explanation, Choices = [], image } = await req.json();
+  const { content, type, answerType, correctAnswer, tolerance, explanation, explanationImage, Choices = [], image } = await req.json();
   try {
     // Periksa apakah tipe soal adalah TKP dan sesuaikan nilai isCorrect jika benar
     const resolvedAnswerType = answerType || "MULTIPLE_CHOICE";
@@ -328,6 +342,7 @@ export async function POST(req: Request, context: { params: { id: any } }) {
           ? Number(tolerance)
           : null,
       explanation,
+      explanationImage,
       image,
       packageId: parseInt(packageId), // Pastikan packageId disediakan dan valid
     };

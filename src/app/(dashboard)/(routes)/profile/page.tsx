@@ -385,6 +385,37 @@ const UserProfile = () => {
     }
   };
 
+  const handleClearProfileImage = async () => {
+    setIsUploading(true);
+
+    try {
+      const response = await fetch("/api/profile/uploadprofile", {
+        method: "DELETE",
+      });
+
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(result.message || "Gagal menghapus foto profil");
+      }
+
+      setProfile((current) => (current ? { ...current, avatar: null } : current));
+      setEditedProfile((current) => ({ ...current, avatar: null }));
+      setSnackbar({
+        open: true,
+        message: "Foto profil berhasil dikosongkan.",
+        severity: "success",
+      });
+    } catch (error: any) {
+      setSnackbar({
+        open: true,
+        message: error.message || "Gagal menghapus foto profil.",
+        severity: "error",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   if (!profile) {
     return (
       <div className="flex min-h-[70vh] items-center justify-center bg-slate-50">
@@ -469,6 +500,28 @@ const UserProfile = () => {
               </div>
 
               <div className="flex flex-wrap gap-3">
+                {profile.avatar && (
+                  <Button
+                    variant="outlined"
+                    color="inherit"
+                    onClick={handleClearProfileImage}
+                    disabled={isUploading}
+                    sx={{
+                      minHeight: 42,
+                      borderRadius: "8px",
+                      borderColor: "rgba(255,255,255,0.35)",
+                      color: "#ffffff",
+                      textTransform: "none",
+                      fontWeight: 700,
+                      "&:hover": {
+                        borderColor: "rgba(255,255,255,0.6)",
+                        backgroundColor: "rgba(255,255,255,0.08)",
+                      },
+                    }}
+                  >
+                    Hapus foto
+                  </Button>
+                )}
                 <Button
                   variant="contained"
                   startIcon={<EditRoundedIcon />}

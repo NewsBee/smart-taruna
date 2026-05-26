@@ -52,6 +52,8 @@ export const AddQuestionForm: React.FC<Props> = ({ quizId }) => {
         ],
         image:'',
         imageName:'',
+        explanationImage: "",
+        explanationImageName: "",
 
       }}
       
@@ -74,6 +76,7 @@ export const AddQuestionForm: React.FC<Props> = ({ quizId }) => {
               : undefined,
           explanation: values.explanation,
           image: values.image,
+          explanationImage: values.explanationImage,
           // packageId:  quizId,
           Choices: isInputQuestion
             ? []

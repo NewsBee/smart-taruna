@@ -20,6 +20,44 @@ function average(values: number[]) {
   return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
 }
 
+function percentage(part: number, total: number) {
+  if (!total) return 0;
+  return Math.round((part / total) * 100);
+}
+
+function scoreDistribution(scores: number[]) {
+  const buckets = [
+    { label: "0-99", count: 0 },
+    { label: "100-199", count: 0 },
+    { label: "200-299", count: 0 },
+    { label: "300-399", count: 0 },
+    { label: "400+", count: 0 },
+  ];
+
+  for (const score of scores) {
+    if (score < 100) buckets[0].count += 1;
+    else if (score < 200) buckets[1].count += 1;
+    else if (score < 300) buckets[2].count += 1;
+    else if (score < 400) buckets[3].count += 1;
+    else buckets[4].count += 1;
+  }
+
+  return buckets.map((bucket) => ({
+    ...bucket,
+    percentage: percentage(bucket.count, scores.length),
+  }));
+}
+
+function riskLevel(score: number) {
+  if (score >= 70) return "Tinggi";
+  if (score >= 35) return "Sedang";
+  return "Rendah";
+}
+
+function riskScore(securityEvents: number, pausedMinutes: number, unfinishedSessions = 0) {
+  return Math.min(100, securityEvents * 12 + pausedMinutes * 2 + unfinishedSessions * 8);
+}
+
 function tryoutLabel(order?: number | null) {
   return order ? `TO ${order}` : "TO -";
 }
@@ -86,6 +124,7 @@ export const GET = async () => {
     prismadb.package.findMany({
       where: {
         testName: { in: MAIN_TEST_NAMES },
+        deletedAt: null,
       },
       select: {
         id: true,
@@ -117,6 +156,7 @@ export const GET = async () => {
         completedAt: { not: null },
         Package: {
           testName: { in: MAIN_TEST_NAMES },
+          deletedAt: null,
         },
       },
       select: {
@@ -146,7 +186,7 @@ export const GET = async () => {
         },
         totalPausedMs: true,
         securityEvents: {
-          select: { id: true },
+          select: { id: true, type: true },
         },
         responses: {
           select: {
@@ -175,6 +215,7 @@ export const GET = async () => {
         completedAt: null,
         Package: {
           testName: { in: MAIN_TEST_NAMES },
+          deletedAt: null,
         },
       },
       select: {
@@ -182,7 +223,7 @@ export const GET = async () => {
         createdAt: true,
         lastHeartbeatAt: true,
         User: { select: { username: true, email: true } },
-        Package: { select: { title: true, testName: true, tryoutOrder: true } },
+        Package: { select: { id: true, title: true, testName: true, tryoutOrder: true } },
         responses: { select: { id: true } },
         securityEvents: {
           orderBy: { createdAt: "desc" },
@@ -205,13 +246,21 @@ export const GET = async () => {
       where: {
         Package: {
           testName: { in: MAIN_TEST_NAMES },
+          deletedAt: null,
         },
       },
       select: {
         id: true,
         content: true,
         type: true,
-        Package: { select: { title: true, testName: true } },
+        Package: { select: { id: true, title: true, testName: true, tryoutOrder: true } },
+        Choices: {
+          select: {
+            content: true,
+            isCorrect: true,
+            scoreValue: true,
+          },
+        },
       },
       orderBy: { id: "asc" },
     }),
@@ -220,11 +269,12 @@ export const GET = async () => {
         Attempt: {
           Package: {
             testName: { in: MAIN_TEST_NAMES },
+            deletedAt: null,
           },
         },
       },
       orderBy: { createdAt: "desc" },
-      take: 30,
+      take: 80,
       select: {
         id: true,
         type: true,
@@ -296,23 +346,105 @@ export const GET = async () => {
       attemptsByPackage.set(attempt.Package.id, current);
     }
 
+    const typeStats = new Map<
+      string,
+      {
+        type: string;
+        totalScore: number;
+        totalAnswers: number;
+        positiveAnswers: number;
+        blankAnswers: number;
+      }
+    >();
+
+    for (const attempt of studentAttempts) {
+      for (const response of attempt.responses) {
+        const type = response.Question.type;
+        const current = typeStats.get(type) || {
+          type,
+          totalScore: 0,
+          totalAnswers: 0,
+          positiveAnswers: 0,
+          blankAnswers: 0,
+        };
+
+        current.totalScore += response.score || 0;
+        current.totalAnswers += 1;
+        if (response.score > 0) current.positiveAnswers += 1;
+        if (!response.content) current.blankAnswers += 1;
+        typeStats.set(type, current);
+      }
+    }
+
+    const typeBreakdown = Array.from(typeStats.values()).map((item) => ({
+      ...item,
+      accuracy: percentage(item.positiveAnswers, item.totalAnswers),
+      blankRate: percentage(item.blankAnswers, item.totalAnswers),
+    }));
+    const rankedTypes = typeBreakdown
+      .filter((item) => item.totalAnswers > 0)
+      .sort((a, b) => b.accuracy - a.accuracy);
+    const strongestType = rankedTypes[0]?.type || "-";
+    const weakestType = rankedTypes[rankedTypes.length - 1]?.type || "-";
+    const totalPausedMinutes = Math.round(
+      studentAttempts.reduce((sum, attempt) => sum + (attempt.totalPausedMs || 0), 0) / 60000
+    );
+    const totalSecurityEvents = studentAttempts.reduce(
+      (sum, attempt) => sum + attempt.securityEvents.length,
+      0
+    );
+    const studentRiskScore = riskScore(totalSecurityEvents, totalPausedMinutes);
+    const latestScore = studentAttempts[0]?.score ?? null;
+    const previousScore = studentAttempts[1]?.score ?? null;
+    const progressDelta =
+      latestScore !== null && previousScore !== null ? latestScore - previousScore : null;
+    const progressTrend =
+      progressDelta === null
+        ? "Belum cukup data"
+        : progressDelta > 0
+        ? "Naik"
+        : progressDelta < 0
+        ? "Turun"
+        : "Stabil";
+    const recommendation = !studentAttempts.length
+      ? "Belum ada hasil try out. Arahkan siswa untuk mengerjakan paket pertama."
+      : weakestType !== "-"
+      ? `Prioritaskan latihan ${weakestType}, karena akurasi bagian ini paling rendah.`
+      : "Pertahankan ritme latihan dan evaluasi hasil setiap selesai try out.";
+
     return {
       id: student.id,
       username: student.username,
       email: student.email,
       totalAttempts: studentAttempts.length,
-      latestScore: latestAttempt?.score ?? null,
+      latestScore,
       highestScore: studentScores.length ? Math.max(...studentScores) : 0,
       averageScore: average(studentScores),
       lastTest: latestAttempt?.Package.title || "-",
       lastCompletedAt: formatDate(latestAttempt?.completedAt || null),
-      totalSecurityEvents: studentAttempts.reduce(
-        (sum, attempt) => sum + attempt.securityEvents.length,
-        0
-      ),
+      totalSecurityEvents,
+      riskScore: studentRiskScore,
+      riskLevel: riskLevel(studentRiskScore),
+      strongestType,
+      weakestType,
+      progressDelta,
+      progressTrend,
+      totalPausedMinutes,
+      recommendation,
+      typeBreakdown,
       attempts: studentAttempts.slice(0, 20).map((attempt) => {
         const answered = attempt.responses.filter((response) => response.content).length;
         const correctAnswers = attempt.responses.filter((response) => response.score > 0).length;
+        const durationMinutes =
+          attempt.completedAt && attempt.createdAt
+            ? Math.max(
+                0,
+                Math.round(
+                  (attempt.completedAt.getTime() - attempt.createdAt.getTime()) / 60000
+                )
+              )
+            : null;
+
         return {
           id: attempt.id,
           packageId: attempt.Package.id,
@@ -326,6 +458,8 @@ export const GET = async () => {
           answered,
           totalQuestions: attempt.responses.length,
           correctAnswers,
+          answeredRate: percentage(answered, attempt.responses.length),
+          durationMinutes,
           pausedMinutes: Math.round((attempt.totalPausedMs || 0) / 60000),
           securityEvents: attempt.securityEvents.length,
         };
@@ -346,9 +480,33 @@ export const GET = async () => {
   const packageRows = packages.map((pkg) => {
     const packageAttempts = attempts.filter((attempt) => attempt.Package.id === pkg.id);
     const packageScores = packageAttempts.map((attempt) => attempt.score ?? 0);
+    const packageQuestions = questions.filter((question) => question.Package.id === pkg.id);
+    const packageActiveSessions = activeAttempts.filter((attempt) => attempt.Package.id === pkg.id);
+    const participantCount = new Set(packageAttempts.map((attempt) => attempt.User.id)).size;
+    const totalAnswered = packageAttempts.reduce(
+      (sum, attempt) =>
+        sum + attempt.responses.filter((response) => response.content).length,
+      0
+    );
+    const expectedAnswers = packageAttempts.length * pkg.questions.length;
+    const typeBreakdown = Array.from(
+      packageQuestions.reduce<Map<string, number>>((acc, question) => {
+        acc.set(question.type, (acc.get(question.type) || 0) + 1);
+        return acc;
+      }, new Map())
+    ).map(([type, totalQuestions]) => ({ type, totalQuestions }));
+    const packageRiskScore = riskScore(
+      packageAttempts.reduce((sum, attempt) => sum + attempt.securityEvents.length, 0),
+      Math.round(
+        packageAttempts.reduce((sum, attempt) => sum + (attempt.totalPausedMs || 0), 0) /
+          60000
+      ),
+      packageActiveSessions.length
+    );
     const passed = packageAttempts.filter((attempt) =>
       passesConfiguredPassingGrade(attempt)
     ).length;
+
     return {
       id: pkg.id,
       title: pkg.title,
@@ -359,13 +517,20 @@ export const GET = async () => {
       tryoutLabel: tryoutLabel(pkg.tryoutOrder),
       totalQuestions: pkg.questions.length,
       totalAttempts: packageAttempts.length,
+      participantCount,
+      activeSessionCount: packageActiveSessions.length,
+      completionRate: percentage(totalAnswered, expectedAnswers),
       averageScore: average(packageScores),
       highestScore: packageScores.length ? Math.max(...packageScores) : 0,
       passingRate: packageAttempts.length
         ? Math.round((passed / packageAttempts.length) * 100)
         : 0,
+      scoreDistribution: scoreDistribution(packageScores),
+      typeBreakdown,
+      riskScore: packageRiskScore,
+      riskLevel: riskLevel(packageRiskScore),
       passingGrades: pkg.passingGrades,
-      status: pkg.isHidden ? "Hidden" : pkg.isLocked ? "Locked" : "Published",
+      status: pkg.isHidden ? "Disembunyikan" : pkg.isLocked ? "Dikunci" : "Terbit",
     };
   });
 
@@ -375,12 +540,16 @@ export const GET = async () => {
       questionId: number;
       content: string;
       type: string;
+      packageId: number;
       packageTitle: string;
       testName: string;
+      tryoutOrder: number | null;
       totalAnswers: number;
       correctAnswers: number;
       blankAnswers: number;
+      totalScore: number;
       optionFrequency: Record<string, number>;
+      choices: { content: string; isCorrect: boolean; scoreValue: number }[];
     }
   >();
 
@@ -389,12 +558,16 @@ export const GET = async () => {
       questionId: question.id,
       content: question.content,
       type: question.type,
+      packageId: question.Package.id,
       packageTitle: question.Package.title,
       testName: question.Package.testName,
+      tryoutOrder: question.Package.tryoutOrder,
       totalAnswers: 0,
       correctAnswers: 0,
       blankAnswers: 0,
+      totalScore: 0,
       optionFrequency: {},
+      choices: question.Choices,
     });
   }
 
@@ -405,6 +578,7 @@ export const GET = async () => {
 
       const answer = response.content || "";
       stat.totalAnswers += 1;
+      stat.totalScore += response.score || 0;
       if (!answer) stat.blankAnswers += 1;
       if (response.Question.type === "TKP" ? response.score > 0 : response.score > 0) {
         stat.correctAnswers += 1;
@@ -416,21 +590,75 @@ export const GET = async () => {
 
   const questionRows = Array.from(questionStats.values())
     .map((stat) => {
-      const difficulty = stat.totalAnswers
-        ? Math.round((stat.correctAnswers / stat.totalAnswers) * 100)
+      const difficulty = percentage(stat.correctAnswers, stat.totalAnswers);
+      const blankRate = percentage(stat.blankAnswers, stat.totalAnswers);
+      const averageScore = stat.totalAnswers
+        ? Math.round(stat.totalScore / stat.totalAnswers)
         : 0;
       const mostChosen = Object.entries(stat.optionFrequency).sort((a, b) => b[1] - a[1])[0];
+      const correctChoiceContents = new Set(
+        stat.choices
+          .filter((choice) => choice.isCorrect || choice.scoreValue > 0)
+          .map((choice) => choice.content)
+      );
+      const optionBreakdown = stat.choices.map((choice) => ({
+        content: choice.content,
+        isCorrect: choice.isCorrect || choice.scoreValue > 0,
+        scoreValue: choice.scoreValue,
+        selectedCount: stat.optionFrequency[choice.content] || 0,
+        selectedRate: percentage(stat.optionFrequency[choice.content] || 0, stat.totalAnswers),
+      }));
+      const unusedDistractors = optionBreakdown.filter(
+        (choice) => !choice.isCorrect && choice.selectedCount === 0
+      ).length;
+      const mostChosenIsCorrect = mostChosen ? correctChoiceContents.has(mostChosen[0]) : false;
+      const issueFlags: string[] = [];
+
+      if (!stat.totalAnswers) issueFlags.push("Belum ada data jawaban");
+      if (stat.totalAnswers >= 5 && difficulty <= 30) issueFlags.push("Terlalu sulit");
+      if (stat.totalAnswers >= 5 && difficulty >= 90) issueFlags.push("Terlalu mudah");
+      if (stat.totalAnswers >= 5 && blankRate >= 25) issueFlags.push("Banyak dikosongkan");
+      if (stat.totalAnswers >= 10 && unusedDistractors > 0) {
+        issueFlags.push(`${unusedDistractors} pengecoh tidak dipilih`);
+      }
+      if (stat.totalAnswers >= 5 && mostChosen && !mostChosenIsCorrect) {
+        issueFlags.push("Jawaban salah paling dominan");
+      }
+
+      const qualityStatus = !stat.totalAnswers
+        ? "Belum ada data"
+        : issueFlags.length
+        ? "Perlu ditinjau"
+        : "Sehat";
 
       return {
-        ...stat,
+        questionId: stat.questionId,
+        content: stat.content,
+        type: stat.type,
+        packageId: stat.packageId,
+        packageTitle: stat.packageTitle,
+        testName: stat.testName,
+        tryoutOrder: stat.tryoutOrder,
         difficulty,
+        blankRate,
+        averageScore,
         wrongAnswers: Math.max(stat.totalAnswers - stat.correctAnswers - stat.blankAnswers, 0),
         mostChosenAnswer: mostChosen ? mostChosen[0] : "-",
         mostChosenCount: mostChosen ? mostChosen[1] : 0,
+        mostChosenIsCorrect,
+        totalAnswers: stat.totalAnswers,
+        correctAnswers: stat.correctAnswers,
+        blankAnswers: stat.blankAnswers,
+        issueFlags,
+        qualityStatus,
+        optionBreakdown,
       };
     })
-    .sort((a, b) => a.difficulty - b.difficulty)
-    .slice(0, 12);
+    .sort((a, b) => {
+      const statusWeight = (value: string) =>
+        value === "Perlu ditinjau" ? 0 : value === "Belum ada data" ? 1 : 2;
+      return statusWeight(a.qualityStatus) - statusWeight(b.qualityStatus) || a.difficulty - b.difficulty;
+    });
 
   const recentAttempts = attempts.slice(0, 10).map((attempt) => ({
     id: attempt.id,
@@ -445,24 +673,30 @@ export const GET = async () => {
     completedAt: formatDate(attempt.completedAt),
   }));
 
-  const activeSessions = activeAttempts.map((attempt) => ({
-    id: attempt.id,
-    studentName: attempt.User.username,
-    email: attempt.User.email,
-    packageTitle: attempt.Package.title,
-    testName: attempt.Package.testName,
-    tryoutOrder: attempt.Package.tryoutOrder,
-    tryoutLabel: tryoutLabel(attempt.Package.tryoutOrder),
-    startedAt: formatDate(attempt.createdAt),
-    lastHeartbeatAt: formatDate(attempt.lastHeartbeatAt),
-    savedAnswers: attempt.responses.length,
-    securityEventCount: attempt._count.securityEvents,
-    recentSecurityEvents: attempt.securityEvents.map((event) => ({
-      id: event.id,
-      type: event.type,
-      createdAt: formatDate(event.createdAt),
-    })),
-  }));
+  const activeSessions = activeAttempts.map((attempt) => {
+    const sessionRiskScore = riskScore(attempt._count.securityEvents, 0, 1);
+
+    return {
+      id: attempt.id,
+      studentName: attempt.User.username,
+      email: attempt.User.email,
+      packageTitle: attempt.Package.title,
+      testName: attempt.Package.testName,
+      tryoutOrder: attempt.Package.tryoutOrder,
+      tryoutLabel: tryoutLabel(attempt.Package.tryoutOrder),
+      startedAt: formatDate(attempt.createdAt),
+      lastHeartbeatAt: formatDate(attempt.lastHeartbeatAt),
+      savedAnswers: attempt.responses.length,
+      securityEventCount: attempt._count.securityEvents,
+      riskScore: sessionRiskScore,
+      riskLevel: riskLevel(sessionRiskScore),
+      recentSecurityEvents: attempt.securityEvents.map((event) => ({
+        id: event.id,
+        type: event.type,
+        createdAt: formatDate(event.createdAt),
+      })),
+    };
+  });
 
   const securityEvents = recentSecurityEvents.map((event) => ({
     id: event.id,
@@ -477,6 +711,63 @@ export const GET = async () => {
     tryoutLabel: tryoutLabel(event.Attempt.Package.tryoutOrder),
   }));
 
+  const eventBreakdown = Object.entries(
+    recentSecurityEvents.reduce<Record<string, number>>((acc, event) => {
+      acc[event.type] = (acc[event.type] || 0) + 1;
+      return acc;
+    }, {})
+  )
+    .map(([type, count]) => ({ type, count }))
+    .sort((a, b) => b.count - a.count);
+
+  const riskSummary = studentRows.reduce(
+    (acc, student) => {
+      if (student.riskLevel === "Tinggi") acc.high += 1;
+      else if (student.riskLevel === "Sedang") acc.medium += 1;
+      else acc.low += 1;
+      return acc;
+    },
+    { low: 0, medium: 0, high: 0 }
+  );
+
+  const topRiskStudents = [...studentRows]
+    .sort((a, b) => b.riskScore - a.riskScore)
+    .slice(0, 8)
+    .map((student) => ({
+      id: student.id,
+      username: student.username,
+      email: student.email,
+      riskScore: student.riskScore,
+      riskLevel: student.riskLevel,
+      totalSecurityEvents: student.totalSecurityEvents,
+      totalPausedMinutes: student.totalPausedMinutes,
+    }));
+
+  const questionSummary = {
+    totalReviewed: questionRows.filter((question) => question.totalAnswers > 0).length,
+    needsReview: questionRows.filter((question) => question.qualityStatus === "Perlu ditinjau").length,
+    tooHard: questionRows.filter((question) => question.issueFlags.includes("Terlalu sulit")).length,
+    tooEasy: questionRows.filter((question) => question.issueFlags.includes("Terlalu mudah")).length,
+    highBlank: questionRows.filter((question) => question.issueFlags.includes("Banyak dikosongkan")).length,
+  };
+
+  const packageRowsWithQuality = packageRows.map((pkg) => {
+    const packageQuestions = questionRows.filter((question) => question.packageId === pkg.id);
+    return {
+      ...pkg,
+      reviewQuestionCount: packageQuestions.filter(
+        (question) => question.qualityStatus === "Perlu ditinjau"
+      ).length,
+      healthyQuestionCount: packageQuestions.filter(
+        (question) => question.qualityStatus === "Sehat"
+      ).length,
+      questionQualityRate: percentage(
+        packageQuestions.filter((question) => question.qualityStatus === "Sehat").length,
+        packageQuestions.filter((question) => question.totalAnswers > 0).length
+      ),
+    };
+  });
+
   return NextResponse.json({
     summary: {
       totalStudents: students.length,
@@ -488,13 +779,22 @@ export const GET = async () => {
       averageScore: avgScore,
       highestScore,
       lowestScore,
+      questionsNeedReview: questionSummary.needsReview,
+      highRiskStudents: riskSummary.high,
     },
     tests,
     students: studentRows,
-    packages: packageRows,
+    packages: packageRowsWithQuality,
     questions: questionRows,
+    questionSummary,
     recentAttempts,
     activeSessions,
     securityEvents,
+    securitySummary: {
+      riskSummary,
+      topRiskStudents,
+      eventBreakdown,
+      recentEventCount: recentSecurityEvents.length,
+    },
   });
 };

@@ -23,6 +23,8 @@ interface Props {
   correctAnswer?: string;
   tolerance?: number | null;
   explanation : string,
+  image?: string;
+  explanationImage?: string;
   slug : string;
   quizId : number;
 }
@@ -43,6 +45,8 @@ export const UpdateQuestionForm: React.FC<Props> = ({
   correctAnswer,
   tolerance,
   explanation,
+  image,
+  explanationImage,
   slug,
   quizId,
 }) => {
@@ -77,8 +81,10 @@ export const UpdateQuestionForm: React.FC<Props> = ({
           { value: "", poin: 0 },
           { value: "", poin: 0 },
         ],
-        image:'',
-        imageName:'',
+        image: image || "",
+        imageName: image ? "Gambar soal saat ini" : "",
+        explanationImage: explanationImage || "",
+        explanationImageName: explanationImage ? "Gambar pembahasan saat ini" : "",
       }}
       validationSchema={AddEditQuestionValidationNew}
       onSubmit={async (values, { setSubmitting }) => {
@@ -96,6 +102,7 @@ export const UpdateQuestionForm: React.FC<Props> = ({
           tolerance: values.answerType === "NUMERIC" ? Number(values.tolerance || 0) : undefined,
           explanation: values.explanation,
           image: values.image,
+          explanationImage: values.explanationImage,
           Choices: values.options.map(option => ({
             id: option._id,
             content: option.value,

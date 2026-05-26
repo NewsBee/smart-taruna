@@ -49,7 +49,6 @@ export const QuizModalContents: React.FC<Props> = ({
       // Jika berhasil, navigasikan ke halaman quiz
       // console.log(response);
       router.push(`/ujian/${currTest}/${response.data.attemptId}`);
-      setIsLoading(false);
     } catch (error: any) {
       // Jika gagal, cek apakah pengguna sedang mengerjakan paket soal lain
       if (
@@ -95,7 +94,20 @@ export const QuizModalContents: React.FC<Props> = ({
   return (
     <div className="p-5 md:p-10 overflow-hidden">
       <div style={{ maxHeight: "500px" }} className="overflow-auto">
-        <div>
+        <div className="relative">
+          {isLoading && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/80 backdrop-blur-sm">
+              <div className="rounded-2xl border border-indigo-100 bg-white px-6 py-5 text-center shadow-lg">
+                <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-indigo-100 border-t-indigo-600" />
+                <p className="mt-4 text-sm font-bold text-gray-950">
+                  Membuka sesi ujian
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Token sedang diverifikasi dan soal sedang disiapkan.
+                </p>
+              </div>
+            </div>
+          )}
           <p className="text-xl font-medium">Ujian {title} <span className="px-3 ml-2 py-0.5 text-xs w-fit rounded-md font-medium text-white bg-gray-700"> {duration} menit </span> </p>
           <p className="my-6">{description}</p>
           <div className="grid items-center mb-2 grid-quiz-modal-descriptions">
@@ -158,11 +170,11 @@ export const QuizModalContents: React.FC<Props> = ({
         </div>
         <div className="mt-10 flex justify-end">
           <div className="mr-4">
-            <Button onClick={onClose} variant="outlined" color="secondary">
+            <Button onClick={onClose} variant="outlined" color="secondary" disabled={isLoading}>
               Close
             </Button>
           </div>
-          <Button onClick={startQuiz} variant="contained" color="secondary">
+          <Button onClick={startQuiz} variant="contained" color="secondary" disabled={isLoading}>
             {isLoading ? ( // Mengganti konten button saat loading
               <svg
                 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
@@ -202,6 +214,7 @@ export const QuizModalContents: React.FC<Props> = ({
               id="exam-token"
               value={examToken}
               onChange={(event) => setExamToken(event.target.value.toUpperCase())}
+              disabled={isLoading}
               className="w-full rounded-md border border-gray-300 px-4 py-3 text-sm outline-none focus:border-indigo-600"
               placeholder="Masukkan token dari pengawas/admin"
             />

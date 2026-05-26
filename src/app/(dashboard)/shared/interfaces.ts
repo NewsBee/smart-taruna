@@ -12,6 +12,8 @@ export interface IQuestionForm {
     explanation ?: string;
     image: string; // URL gambar yang diupload
     imageName: string; // Nama file gambars will hold the image file
+    explanationImage?: string;
+    explanationImageName?: string;
 }
 export interface IQuestion {
     _id: string;
@@ -19,6 +21,7 @@ export interface IQuestion {
     title: string;
     options: IOption[];
     image ?: string;
+    explanationImage?: string;
     answerType?: string;
     correctAnswer?: string;
     tolerance?: number;

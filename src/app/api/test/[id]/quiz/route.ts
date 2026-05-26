@@ -44,7 +44,7 @@ export const PUT = async (
   context: { params: { id: any } }
 ) => {
   const questionId = context.params.id;
-  const { content, type, answerType, correctAnswer, tolerance, explanation, Choices = [], image } = await req.json();
+  const { content, type, answerType, correctAnswer, tolerance, explanation, explanationImage, Choices = [], image } = await req.json();
 
   try {
     const resolvedAnswerType = answerType || "MULTIPLE_CHOICE";
@@ -64,6 +64,7 @@ export const PUT = async (
               ? Number(tolerance)
               : null,
           explanation,
+          explanationImage,
           Choices: {
             deleteMany: {},
           },
@@ -106,10 +107,11 @@ export const PUT = async (
         correctAnswer: null,
         tolerance: null,
         explanation,
+        explanationImage,
         Choices: {
           updateMany: updateManyChoices,
         },
-        image
+        image,
       },
     });
     

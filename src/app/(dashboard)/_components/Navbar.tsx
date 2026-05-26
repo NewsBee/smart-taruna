@@ -1,12 +1,18 @@
 "use client";
 
-import Link from "next/link";
-import { Logo } from "@/components/logo";
-import { signOut, useSession } from "next-auth/react";
-import { StyledButton } from "@/components/styled-button";
-import { useRouter } from "next/navigation";
-import Box from "@mui/material/Box";
-import Image from "next/image";
+import {
+  AccountCircle,
+  Analytics,
+  Assignment,
+  Close,
+  Dashboard,
+  ExitToApp,
+  History,
+  Menu as MenuIcon,
+  People,
+  Person,
+  PlayCircle,
+} from "@mui/icons-material";
 import {
   Avatar,
   Divider,
@@ -15,160 +21,260 @@ import {
   MenuItem,
   Typography,
 } from "@mui/material";
-import React, { useEffect, useState } from "react"; // Jangan lupa untuk mengimpor React useState
-import { AccountCircle, ExitToApp, ManageAccounts } from "@mui/icons-material";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
+import React, { useEffect, useMemo, useState } from "react";
 
-interface Props {}
+type NavItem = {
+  label: string;
+  href: string;
+  icon: React.ReactNode;
+  adminOnly?: boolean;
+  studentOnly?: boolean;
+  match?: (pathname: string) => boolean;
+};
 
-export const NavBar: React.FC<Props> = () => {
-  const { data: session, status } = useSession();
+const navItems: NavItem[] = [
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: <Dashboard fontSize="small" />,
+    adminOnly: true,
+    match: (pathname) =>
+      pathname === "/dashboard" || pathname.startsWith("/dashboard/analytics"),
+  },
+  {
+    label: "Paket SKD",
+    href: "/dashboard/SKD",
+    icon: <Assignment fontSize="small" />,
+    adminOnly: true,
+    match: (pathname) => pathname.startsWith("/dashboard/SKD"),
+  },
+  {
+    label: "Paket TPA",
+    href: "/dashboard/TPA",
+    icon: <Analytics fontSize="small" />,
+    adminOnly: true,
+    match: (pathname) => pathname.startsWith("/dashboard/TPA"),
+  },
+  {
+    label: "Ujian",
+    href: "/ujian",
+    icon: <PlayCircle fontSize="small" />,
+    studentOnly: true,
+    match: (pathname) => pathname.startsWith("/ujian"),
+  },
+  {
+    label: "Riwayat",
+    href: "/history",
+    icon: <History fontSize="small" />,
+    studentOnly: true,
+    match: (pathname) => pathname.startsWith("/history") || pathname.startsWith("/hasil"),
+  },
+  {
+    label: "Pengguna",
+    href: "/dashboard/users",
+    icon: <People fontSize="small" />,
+    adminOnly: true,
+    match: (pathname) => pathname.startsWith("/dashboard/users"),
+  },
+];
+
+export const NavBar: React.FC = () => {
+  const { data: session } = useSession();
   const router = useRouter();
-  // console.log(session)
+  const pathname = usePathname();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [avatar, setAvatar] = useState("");
+  const isAdmin = session?.user?.role === "admin";
   const open = Boolean(anchorEl);
+
+  const visibleItems = useMemo(
+    () =>
+      navItems.filter((item) => {
+        if (item.adminOnly && !isAdmin) return false;
+        if (item.studentOnly && isAdmin) return false;
+        return true;
+      }),
+    [isAdmin]
+  );
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const response = await fetch("/api/profile");
-      if (response.ok) {
+      try {
+        const response = await fetch("/api/profile");
+        if (!response.ok) return;
+
         const data = await response.json();
-        // console.log(data.userProfile.avatar)
-        setAvatar(data.userProfile.avatar);
-      } else {
-        // Handle error atau setel state error jika perlu
-        console.error("Failed to fetch profile data");
+        setAvatar(data.userProfile?.avatar || data.avatar || "");
+      } catch {
+        setAvatar("");
       }
     };
 
-    fetchProfile();
-  }, []);
+    if (session?.user) {
+      fetchProfile();
+    }
+  }, [session]);
 
-  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-  // console.log(session)
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleProfile = () => {
-    router.push("/profile");
-    handleClose();
-  };
+  const closeMenu = () => setAnchorEl(null);
 
   const handleLogout = async () => {
-    // Call the signOut method from next-auth to initiate the logout process
-    const result = await signOut({
-      // Redirect to the home page or any other page after logging out
+    await signOut({
       redirect: true,
       callbackUrl: "/",
     });
-    if (result) {
-      router.push("/"); // Redirect to the URL provided by NextAuth.js or a desired path
-    }
   };
+
   return (
-    <div className="px-4 sm:px-10 py-4 flex items-center h-[8%]">
-      <Link
-        href={"/"}
-        className="font-semibold text-gray-888 text-xs sm:text-xl flex items-center"
-      >
-        <div className="relative w-10 h-10">
-          <Image
-            src="/images/logo.png"
-            alt="Quizco Logo"
-            layout="fill"
-            objectFit="cover" // or any other fitting method
-          />
-        </div>
-
-        <p>Smart Taruna</p>
-      </Link>
-      <div className="ml-auto flex items-center">
-        {/* <Link href="/auth/sign-up" className="mr-4">
-          <p className="cursor-pointer rounded-full px-3 py-2 bg-indigo-600 text-white font-normal">
-            Sign Up
-          </p>
+    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-xl">
+      <div className="mx-auto flex h-20 w-full max-w-[1680px] items-center gap-4 px-4 sm:px-6 lg:px-8 2xl:px-12">
+        <Link href="/dashboard" className="flex min-w-0 items-center gap-3">
+          <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-slate-100">
+            <Image src="/images/logo.png" alt="Smart Taruna" fill className="object-cover" />
+          </span>
+          <span className="hidden min-w-0 sm:block">
+            <span className="block truncate text-base font-bold leading-5 text-slate-950">
+              Smart Taruna
+            </span>
+            <span className="block truncate text-xs font-medium text-slate-500">
+              {isAdmin ? "Panel Admin CBT" : "Panel Siswa CBT"}
+            </span>
+          </span>
         </Link>
-        <Link href="/auth/sign-in">
-          <p className="text-indigo-600 cursor-pointer rounded-full px-2.5 py-1.5 border-indigo-600 border-2 text-primary font-normal">
-            Sign In
-          </p>
-        </Link> */}
 
-        {/* <SignedIn> */}
-        <Link href="/dashboard" className="">
-          <p className="text-default text-xs sm:text-sm cursor-pointer px-4">
-            Dashboard
-          </p>
-        </Link>
-        {session?.user?.role === "admin" && (
-          <Link href="/dashboard/users" className="">
-            <p className="text-default text-xs sm:text-sm cursor-pointer px-4">
-              Users
-            </p>
-          </Link>
-        )}
-        <div className="px-3">
-          <Avatar
-            src={avatar}
-            alt="Profile"
-            onClick={handleMenu}
-            sx={{ cursor: "pointer", width: 40, height: 40 }}
-          />
+        <nav className="ml-4 hidden flex-1 items-center gap-1 overflow-x-auto lg:flex">
+          {visibleItems.map((item) => {
+            const active = item.match?.(pathname) || pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`inline-flex h-11 items-center gap-2 rounded-lg px-4 text-sm font-semibold transition ${
+                  active
+                    ? "bg-slate-950 text-white shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
+                }`}
+              >
+                {item.icon}
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setMobileOpen((value) => !value)}
+            className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-800 lg:hidden"
+            aria-label="Buka menu"
+          >
+            {mobileOpen ? <Close /> : <MenuIcon />}
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => setAnchorEl(event.currentTarget)}
+            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-2 py-2 transition hover:bg-slate-50"
+          >
+            <Avatar
+              src={avatar}
+              alt={session?.user?.name || session?.user?.email || "Profil"}
+              sx={{ width: 36, height: 36 }}
+            />
+            <span className="hidden max-w-[160px] text-left md:block">
+              <span className="block truncate text-sm font-bold text-slate-950">
+                {session?.user?.name || session?.user?.email || "Pengguna"}
+              </span>
+              <span className="block truncate text-xs text-slate-500">
+                {isAdmin ? "Admin" : "Siswa"}
+              </span>
+            </span>
+          </button>
+
           <Menu
             anchorEl={anchorEl}
             keepMounted
-            open={Boolean(anchorEl)}
-            onClose={handleClose}
-            anchorOrigin={{
-              vertical: "bottom",
-              horizontal: "right",
-            }}
-            transformOrigin={{
-              vertical: "top",
-              horizontal: "right",
-            }}
+            open={open}
+            onClose={closeMenu}
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            transformOrigin={{ vertical: "top", horizontal: "right" }}
             PaperProps={{
               sx: {
-                width: 200, // Lebarkan kotak menu
-                padding: "10px 10px", // Tambahkan padding atas dan bawah
+                width: 230,
+                mt: 1,
+                borderRadius: "12px",
+                padding: "8px",
+                boxShadow: "0 18px 45px rgba(15, 23, 42, 0.14)",
               },
             }}
           >
-            <MenuItem onClick={handleProfile} sx={{ padding: "10px 16px" }}>
-              {" "}
-              {/* Tambahkan padding */}
+            <MenuItem
+              onClick={() => {
+                router.push("/profile");
+                closeMenu();
+              }}
+              sx={{ borderRadius: "8px", padding: "10px 12px" }}
+            >
               <ListItemIcon>
                 <AccountCircle fontSize="small" />
               </ListItemIcon>
-              <Typography variant="inherit">Profile</Typography>
+              <Typography variant="inherit">Profil Saya</Typography>
             </MenuItem>
-            <Divider />
-            <MenuItem onClick={handleLogout} sx={{ padding: "10px 16px" }}>
-              {" "}
-              {/* Tambahkan padding */}
+            <MenuItem
+              onClick={() => {
+                router.push("/profile");
+                closeMenu();
+              }}
+              sx={{ borderRadius: "8px", padding: "10px 12px" }}
+            >
               <ListItemIcon>
-                <ExitToApp fontSize="small" />
+                <Person fontSize="small" />
               </ListItemIcon>
-              <Typography variant="inherit">Sign out</Typography>
+              <Typography variant="inherit">Pengaturan Akun</Typography>
+            </MenuItem>
+            <Divider sx={{ my: 1 }} />
+            <MenuItem
+              onClick={handleLogout}
+              sx={{ borderRadius: "8px", padding: "10px 12px", color: "#be123c" }}
+            >
+              <ListItemIcon>
+                <ExitToApp fontSize="small" sx={{ color: "#be123c" }} />
+              </ListItemIcon>
+              <Typography variant="inherit">Keluar</Typography>
             </MenuItem>
           </Menu>
         </div>
-        {/* <Box sx={{ "& button:first-child": { mr: 2, fontWeight: 600 } }}>
-          {session && (
-            <StyledButton onClick={handleLogout} disableHoverEffect={true}>
-              Sign out
-            </StyledButton>
-          )}
-        </Box> */}
       </div>
-    </div>
+
+      {mobileOpen && (
+        <div className="border-t border-slate-200 bg-white px-4 py-3 shadow-xl lg:hidden">
+          <div className="grid gap-2 sm:grid-cols-2">
+            {visibleItems.map((item) => {
+              const active = item.match?.(pathname) || pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold ${
+                    active
+                      ? "bg-slate-950 text-white"
+                      : "bg-slate-50 text-slate-700 hover:bg-slate-100"
+                  }`}
+                >
+                  {item.icon}
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </header>
   );
 };

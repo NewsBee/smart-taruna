@@ -1,7 +1,7 @@
 "use client";
 
-import { Box, Button, CircularProgress } from "@material-ui/core";
-import { enqueueSnackbar, useSnackbar } from "notistack";
+import { Button } from "@material-ui/core";
+import { enqueueSnackbar } from "notistack";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ConfirmSubmitModalContent } from "../../../_components/ConfirmSubmitModal";
 import { EmptyResponse } from "../../../_components/EmptyResponse";
@@ -10,15 +10,21 @@ import { ShowResponses } from "../../../_components/FinishQuiz";
 import { ModalSkeleton } from "../../../_components/Modal";
 import { Player } from "../../../_components/Player";
 import { Loader } from "../../../_components/Svgs";
-import { errorMessages } from "../../../shared/constants";
 import { IResponse } from "../../../shared/interfaces";
 import { useQuizQuestions } from "../../../shared/queries";
 import axios from "axios";
-import { Sidebarcopy } from "@/app/(dashboard)/_components/Sidebarcopy";
-import { Sidebar } from "@/app/(dashboard)/_components/Sidebar";
 import CountDown from "@/app/(dashboard)/_components/CountDown";
-import { BottomBar } from "@/app/(dashboard)/_components/BottomBar";
 import { useRouter } from "next/navigation";
+import { resolveExamDuration } from "@/app/lib/exam-time";
+import {
+  FiAlertTriangle,
+  FiCheckCircle,
+  FiClock,
+  FiGrid,
+  FiShield,
+  FiWifi,
+  FiWifiOff,
+} from "react-icons/fi";
 
 export default function PlayerScreen({
   params,
@@ -322,19 +328,6 @@ export default function PlayerScreen({
 
   // console.log(attemptId)
 
-  if (!attemptId) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="100vh"
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   // Render error jika ada
   if (error) {
     const responseError = error as any;
@@ -348,8 +341,12 @@ export default function PlayerScreen({
     return <ErrorMessage message={"Sedang ada gangguan"} statusCode={400} />;
   }
 
+  if (isLoading || isFetching || !attemptId) {
+    return <ExamLoadingScreen title="Menyiapkan sesi ujian" />;
+  }
+
   // Render respons kosong jika tidak ada pertanyaan
-  if (!data || data.length === 0) {
+  if (!data?.questions?.length) {
     return (
       <div className="mt-10">
         <EmptyResponse resource="Quiz Questions" />
@@ -357,70 +354,122 @@ export default function PlayerScreen({
     );
   }
 
+  if (!response.length) {
+    return <ExamLoadingScreen title="Menyusun urutan soal" />;
+  }
+
+  const examDuration = resolveExamDuration(data.duration);
+  const answeredCount = response.filter((resp) => resp.response !== "").length;
+  const totalQuestions = data.questions.length;
+  const progressPercent = totalQuestions
+    ? Math.round((answeredCount / totalQuestions) * 100)
+    : 0;
+  const examTitle = data.testName || params.slug[0] || "Ujian";
+  const currentAnswered = Boolean(response[activeIndex]?.response);
+
   // Render komponen utama
-  return isLoading || isFetching ? (
-    <Loader halfScreen />
-  ) : (
-    <div
-      style={{ height: "92vh" }}
-      className="w-full flex flex-col flex-1 overflow-y-hidden"
-    >
-      <div className="flex flex-row flex-1 overflow-y-auto">
+  return (
+    <div className="flex min-h-screen w-full flex-col overflow-y-auto bg-slate-100 lg:h-[calc(100vh-64px)] lg:min-h-[720px] lg:overflow-hidden">
+      <div className="border-b border-slate-200 bg-white/95 px-4 py-4 shadow-sm backdrop-blur md:px-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-bold uppercase text-teal-700">
+                {examTitle}
+              </span>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                Paket #{packageId}
+              </span>
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
+                  isOffline
+                    ? "bg-amber-50 text-amber-700"
+                    : "bg-emerald-50 text-emerald-700"
+                }`}
+              >
+                {isOffline ? <FiWifiOff /> : <FiWifi />}
+                {isOffline ? "Koneksi terputus" : "Online"}
+              </span>
+            </div>
+            <h1 className="mt-3 text-xl font-bold text-slate-950 md:text-2xl">
+              Pengerjaan Try Out
+            </h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Soal aktif {activeIndex + 1} dari {totalQuestions}. Jawaban disimpan otomatis selama ujian berjalan.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <CountDown
+              startAt={data.createdAt}
+              duration={examDuration}
+              totalPausedMs={(data.totalPausedMs || 0) + extraPausedMs}
+              isPaused={isOffline}
+              onTimeUp={onSubmitTimeUp}
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={onSubmit}
+              style={{
+                minHeight: 48,
+                borderRadius: 14,
+                paddingInline: 22,
+                textTransform: "none",
+                fontWeight: 800,
+                backgroundColor: "#0f766e",
+              }}
+            >
+              Kumpulkan Jawaban
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-visible p-4 md:p-6 lg:overflow-hidden">
         {!quizEnd ? (
-          <>
-            {/* <Sidebar
-              responses={response}
-              questions={response}
-              activeIndex={activeIndex}
-              setActiveIndex={setActiveIndex}
-            /> */}
-            <div className="flex-1 overflow-y-auto">
-              <div className="min-h-[8%] border-b border-t border-gray-300 flex px-4 py-4 justify-between">
-                <p className="mt-auto hidden sm:block">
-                  Pertanyaan {activeIndex + 1}
-                  <CountDown
-                    startAt={data.createdAt}
-                    duration={data.duration}
-                    totalPausedMs={(data.totalPausedMs || 0) + extraPausedMs}
-                    isPaused={isOffline}
-                    onTimeUp={onSubmitTimeUp}
-                  />
-                </p>
+          <div className="grid min-h-full gap-4 lg:h-full lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px]">
+            <section className="min-h-0 pr-0 lg:overflow-y-auto lg:pr-1">
+              <div className="mb-4 grid gap-3 md:grid-cols-3">
+                <ExamMetricCard
+                  icon={<FiCheckCircle />}
+                  label="Terjawab"
+                  value={`${answeredCount}/${totalQuestions}`}
+                  tone="teal"
+                />
+                <ExamMetricCard
+                  icon={<FiClock />}
+                  label="Durasi Paket"
+                  value={`${examDuration} menit`}
+                  tone="indigo"
+                />
+                <ExamMetricCard
+                  icon={<FiShield />}
+                  label="Status Soal"
+                  value={currentAnswered ? "Sudah dijawab" : "Belum dijawab"}
+                  tone={currentAnswered ? "teal" : "amber"}
+                />
+              </div>
+
+              <div className="mb-4 space-y-3">
                 {isOffline && (
-                  <p className="mt-auto rounded bg-yellow-100 px-3 py-2 text-sm font-medium text-yellow-800">
+                  <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+                    <FiWifiOff className="mt-0.5 shrink-0" />
+                    <p>
                     Koneksi terputus. Jawaban terakhir akan disimpan lagi saat koneksi kembali.
-                  </p>
-                )}
-                {securityEventCount > 0 && (
-                  <p className="mt-auto rounded bg-rose-100 px-3 py-2 text-sm font-medium text-rose-700">
-                    Aktivitas keluar tab/window terdeteksi {securityEventCount} kali dan tercatat.
-                  </p>
-                )}
-                {!quizEnd && (
-                  <div className="flex items-center justify-center flex-col sm:flex-row mt-auto">
-                    <p className="sm:mr-4 mb-3 sm:mb-0 text-sm md:text-base">
-                      {response?.filter((resp) => resp.response !== "").length}/{" "}
-                      {data?.questions.length} Diisi
                     </p>
-                    <div className="bg-gray-200 rounded-full h-1 w-28 md:w-48">
-                      <div
-                        className="bg-indigo-600 rounded-full h-1"
-                        style={{
-                          width: `${
-                            (response?.filter((resp) => resp.response !== "")
-                              .length /
-                              data?.questions.length) *
-                            100
-                          }%`,
-                        }}
-                      ></div>
-                    </div>
                   </div>
                 )}
-                <Button variant="contained" color="primary" onClick={onSubmit}>
-                  Submit
-                </Button>
+                {securityEventCount > 0 && (
+                  <div className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+                    <FiAlertTriangle className="mt-0.5 shrink-0" />
+                    <p>
+                    Aktivitas keluar tab/window terdeteksi {securityEventCount} kali dan tercatat.
+                    </p>
+                  </div>
+                )}
               </div>
+
               {response && (
                 <Player
                   questions={response}
@@ -431,13 +480,31 @@ export default function PlayerScreen({
                   onResponseChange={saveResponse}
                 />
               )}
+            </section>
 
-              {/* <BottomBar
+            <aside className="hidden min-h-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:block">
+              <QuestionNavigator
                 responses={response}
-                questions={response}
                 activeIndex={activeIndex}
                 setActiveIndex={setActiveIndex}
-              /> */}
+                answeredCount={answeredCount}
+                totalQuestions={totalQuestions}
+                progressPercent={progressPercent}
+              />
+            </aside>
+
+            <div className="lg:hidden">
+              <QuestionNavigator
+                responses={response}
+                activeIndex={activeIndex}
+                setActiveIndex={setActiveIndex}
+                answeredCount={answeredCount}
+                totalQuestions={totalQuestions}
+                progressPercent={progressPercent}
+                compact
+              />
+            </div>
+
               <ModalSkeleton
                 open={confirmSubmitModalActive}
                 onClose={handleConfirmSubmitModalClose}
@@ -479,8 +546,7 @@ export default function PlayerScreen({
                   </div>
                 </div>
               </ModalSkeleton>
-            </div>
-          </>
+          </div>
         ) : (
           <ShowResponses
             as="AFTER_QUIZ_RESPONSE"
@@ -488,6 +554,153 @@ export default function PlayerScreen({
             responses={response}
           />
         )}
+      </div>
+    </div>
+  );
+}
+
+function ExamMetricCard({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  tone: "teal" | "indigo" | "amber";
+}) {
+  const toneClass = {
+    teal: "bg-teal-50 text-teal-700",
+    indigo: "bg-indigo-50 text-indigo-700",
+    amber: "bg-amber-50 text-amber-700",
+  }[tone];
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${toneClass}`}>
+          {icon}
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase text-slate-500">{label}</p>
+          <p className="mt-1 text-base font-bold text-slate-950">{value}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QuestionNavigator({
+  responses,
+  activeIndex,
+  setActiveIndex,
+  answeredCount,
+  totalQuestions,
+  progressPercent,
+  compact = false,
+}: {
+  responses: IResponse[];
+  activeIndex: number;
+  setActiveIndex: React.Dispatch<React.SetStateAction<number>>;
+  answeredCount: number;
+  totalQuestions: number;
+  progressPercent: number;
+  compact?: boolean;
+}) {
+  return (
+    <div className={`flex h-full flex-col ${compact ? "rounded-2xl border border-slate-200 bg-white shadow-sm" : ""}`}>
+      <div className="border-b border-slate-100 p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold text-slate-950">Peta Soal</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Pilih nomor untuk berpindah soal.
+            </p>
+          </div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+            <FiGrid />
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <div className="mb-2 flex items-center justify-between text-xs font-semibold text-slate-500">
+            <span>Progres</span>
+            <span>{progressPercent}%</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-teal-600 transition-all"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          <p className="mt-2 text-xs text-slate-500">
+            {answeredCount} dari {totalQuestions} soal sudah dijawab.
+          </p>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-5">
+        <div className="grid grid-cols-5 gap-2 xl:grid-cols-6">
+          {responses.map((item, index) => {
+            const isActive = index === activeIndex;
+            const isAnswered = Boolean(item.response);
+
+            return (
+              <button
+                key={item._id || index}
+                type="button"
+                onClick={() => setActiveIndex(index)}
+                className={`flex h-11 items-center justify-center rounded-xl border text-sm font-bold transition-all ${
+                  isActive
+                    ? "border-teal-600 bg-teal-600 text-white shadow-sm"
+                    : isAnswered
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-400"
+                    : "border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-400"
+                }`}
+              >
+                {index + 1}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="border-t border-slate-100 p-5">
+        <div className="grid grid-cols-3 gap-2 text-[11px] font-semibold text-slate-500">
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded bg-teal-600" />
+            Aktif
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded bg-emerald-100 ring-1 ring-emerald-200" />
+            Terjawab
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded bg-slate-100 ring-1 ring-slate-200" />
+            Kosong
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ExamLoadingScreen({ title }: { title: string }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" />
+        </div>
+        <h1 className="mt-5 text-xl font-bold text-slate-950">{title}</h1>
+        <p className="mt-3 text-sm leading-6 text-slate-500">
+          Sistem sedang mengambil data paket, jawaban tersimpan, dan timer ujian.
+          Mohon tunggu sebentar.
+        </p>
+        <div className="mt-6 h-2 overflow-hidden rounded-full bg-slate-100">
+          <div className="h-2 w-1/2 animate-pulse rounded-full bg-indigo-600" />
+        </div>
       </div>
     </div>
   );

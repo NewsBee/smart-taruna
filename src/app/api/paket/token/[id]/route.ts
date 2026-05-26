@@ -22,11 +22,18 @@ export const PUT = async (
 
   const pkg = await prismadb.package.findUnique({
     where: { id: packageId },
-    select: { id: true, testName: true },
+    select: { id: true, testName: true, deletedAt: true },
   });
 
   if (!pkg) {
     return NextResponse.json({ message: "Package not found" }, { status: 404 });
+  }
+
+  if (pkg.deletedAt) {
+    return NextResponse.json(
+      { message: "Paket di recycle bin tidak bisa dibuatkan token" },
+      { status: 409 }
+    );
   }
 
   let examToken = buildToken(pkg.testName);

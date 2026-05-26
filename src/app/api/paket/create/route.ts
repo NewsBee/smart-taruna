@@ -1,4 +1,5 @@
 import prismadb from "@/app/lib/prismadb";
+import { resolveExamDuration } from "@/app/lib/exam-time";
 import { generateExamToken, normalizeExamToken } from "@/app/api/ujian/_security";
 import { parsePassingGrades } from "@/app/api/paket/_passing-grade";
 import { NextResponse } from "next/server";
@@ -6,6 +7,7 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   const body = await req.json();
   const { testName, title,description,tagNames,duration } = body;
+  const resolvedDuration = resolveExamDuration(Number(duration));
   const examToken = normalizeExamToken(body.examToken) || generateExamToken();
   const requestedTryoutOrder = Number(body.tryoutOrder);
   const requestedMaxAttempts = Number(body.maxAttempts);
@@ -24,7 +26,7 @@ export async function POST(req: Request) {
     }
 
     const maxOrder = await prismadb.package.aggregate({
-      where: { testName },
+      where: { testName, deletedAt: null },
       _max: { tryoutOrder: true },
     });
     const tryoutOrder =
@@ -47,6 +49,7 @@ export async function POST(req: Request) {
       where: {
         testName,
         tryoutOrder,
+        deletedAt: null,
       },
       select: { id: true, title: true },
     });
@@ -65,7 +68,7 @@ export async function POST(req: Request) {
         testName,
         title,
         description,
-        duration : parseInt(duration,10),
+        duration: resolvedDuration,
         maxAttempts,
         examToken,
         tryoutOrder,

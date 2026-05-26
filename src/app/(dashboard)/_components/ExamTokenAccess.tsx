@@ -26,6 +26,7 @@ export const ExamTokenAccess = ({ testName, variant = "compact" }: Props) => {
     }
 
     setIsLoading(true);
+    let navigating = false;
 
     try {
       const response = await fetch("/api/ujian/token", {
@@ -43,6 +44,7 @@ export const ExamTokenAccess = ({ testName, variant = "compact" }: Props) => {
 
       if (!response.ok) {
         if (response.status === 409 && data.testName && data.packageId) {
+          navigating = true;
           router.push(`/ujian/${data.testName}/${data.packageId}`);
           return;
         }
@@ -50,11 +52,14 @@ export const ExamTokenAccess = ({ testName, variant = "compact" }: Props) => {
         throw new Error(data.message || "Token ujian tidak valid.");
       }
 
+      navigating = true;
       router.push(`/ujian/${data.testName}/${data.packageId}`);
     } catch (error: any) {
       setMessage(error.message || "Gagal mengakses ujian.");
     } finally {
-      setIsLoading(false);
+      if (!navigating) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -116,11 +121,7 @@ export const ExamTokenAccess = ({ testName, variant = "compact" }: Props) => {
           )}
         </Button>
 
-        {isLoading && (
-          <div className="mt-4 h-1 overflow-hidden rounded-full bg-slate-100">
-            <div className="h-full w-1/2 animate-pulse rounded-full bg-teal-600" />
-          </div>
-        )}
+        {isLoading && <TokenLoadingHint />}
       </form>
     );
   }
@@ -167,6 +168,26 @@ export const ExamTokenAccess = ({ testName, variant = "compact" }: Props) => {
           )}
         </Button>
       </div>
+      {isLoading && <TokenLoadingHint compact />}
     </form>
   );
 };
+
+function TokenLoadingHint({ compact = false }: { compact?: boolean }) {
+  return (
+    <div className={`${compact ? "mt-3" : "mt-4"} rounded-md border border-teal-100 bg-white/80 px-3 py-3`}>
+      <div className="flex items-center gap-3">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-teal-100 border-t-teal-600" />
+        <div>
+          <p className="text-sm font-semibold text-slate-800">Membuka sesi ujian</p>
+          <p className="text-xs text-slate-500">
+            Token sedang diverifikasi dan urutan soal sedang disiapkan.
+          </p>
+        </div>
+      </div>
+      <div className="mt-3 h-1 overflow-hidden rounded-full bg-slate-100">
+        <div className="h-full w-1/2 animate-pulse rounded-full bg-teal-600" />
+      </div>
+    </div>
+  );
+}

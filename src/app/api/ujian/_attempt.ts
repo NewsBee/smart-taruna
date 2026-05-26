@@ -1,4 +1,5 @@
 import { scoreAnswer } from "@/app/api/ujian/_scoring";
+import { resolveExamDuration } from "@/app/lib/exam-time";
 import prismadb from "@/app/lib/prismadb";
 
 const SERVER_TIMER_GRACE_MS = 1500;
@@ -21,8 +22,7 @@ export function getAttemptDeadline(attempt: {
   totalPausedMs?: number | null;
   Package?: { duration?: number | null } | null;
 }) {
-  const duration = attempt.Package?.duration;
-  if (!duration || duration <= 0) return null;
+  const duration = resolveExamDuration(attempt.Package?.duration);
 
   return new Date(
     attempt.createdAt.getTime() + duration * 60000 + (attempt.totalPausedMs || 0)

@@ -329,11 +329,11 @@ export const ShowResponses: React.FC<Props> = ({
                     </div>
 
                     {response.image && (
-                      <div className="mt-4 max-h-80 overflow-hidden rounded-md border border-gray-200 bg-gray-50">
+                      <div className="mt-4 flex max-h-80 items-center justify-center overflow-hidden rounded-md border border-gray-200 bg-gray-50 p-2">
                         <img
                           src={response.image}
                           alt="Gambar Soal"
-                          className="h-full w-full object-contain"
+                          className="max-h-72 max-w-full object-contain"
                         />
                       </div>
                     )}
@@ -371,6 +371,27 @@ export const ShowResponses: React.FC<Props> = ({
                       <div className="mt-4 rounded-md border border-blue-100 bg-blue-50 p-4">
                         <p className="text-sm font-semibold text-blue-900">Pembahasan</p>
                         <p className="mt-2 text-sm leading-6 text-blue-900">{response.explanation}</p>
+                        {response.explanationImage && (
+                          <div className="mt-3 flex max-h-96 items-center justify-center overflow-hidden rounded-md border border-blue-100 bg-white p-2">
+                            <img
+                              src={response.explanationImage}
+                              alt="Gambar pembahasan"
+                              className="max-h-80 max-w-full object-contain"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {!response.explanation && response.explanationImage && (
+                      <div className="mt-4 rounded-md border border-blue-100 bg-blue-50 p-4">
+                        <p className="text-sm font-semibold text-blue-900">Pembahasan</p>
+                        <div className="mt-3 flex max-h-96 items-center justify-center overflow-hidden rounded-md border border-blue-100 bg-white p-2">
+                          <img
+                            src={response.explanationImage}
+                            alt="Gambar pembahasan"
+                            className="max-h-80 max-w-full object-contain"
+                          />
+                        </div>
                       </div>
                     )}
                   </article>

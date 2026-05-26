@@ -18,9 +18,9 @@ export const DeleteModal = ({
   deleteLoading,
   onDelete,
   resource,
-  confirmMessage = "Apakah anda yakin??",
-  informMessage = `Anda ingin menghapus ${resource || "resource"} ini.`,
-  modalTitle = `Delete ${resource || "Resource"}`,
+  confirmMessage = "Apakah Anda yakin?",
+  informMessage = `Anda ingin menghapus ${resource || "data"} ini.`,
+  modalTitle = `Hapus ${resource || "Data"}`,
 }: IDeleteModal) => (
   <Modal
     aria-labelledby="transition-modal-title"
@@ -45,7 +45,7 @@ export const DeleteModal = ({
         <div className="flex flex-1 w-full mt-4">
           <div className="flex ml-auto">
             <Button onClick={handleDeleteModalClose} disabled={deleteLoading}>
-              Cancel
+              Batal
             </Button>
             <div className="ml-4">
               <Button
@@ -54,7 +54,7 @@ export const DeleteModal = ({
                 disabled={deleteLoading}
                 onClick={onDelete}
               >
-                Delete
+                Hapus
               </Button>
             </div>
           </div>

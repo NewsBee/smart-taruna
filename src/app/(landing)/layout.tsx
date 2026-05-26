@@ -9,7 +9,7 @@ const LandingLayout = ({ children }: { children: React.ReactNode }) => {
     <main className="">
       <Box component="main">
         <Header />
-        <div className="mx-auto max-w-screen-xl h-full w-full">{children}</div>
+        <div className="h-full w-full">{children}</div>
         <Footer />
       </Box>
     </main>

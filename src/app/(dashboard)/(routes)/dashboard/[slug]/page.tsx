@@ -5,10 +5,12 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import CloseIcon from "@mui/icons-material/Close";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import KeyIcon from "@mui/icons-material/Key";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import RestoreFromTrashIcon from "@mui/icons-material/RestoreFromTrash";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { Button, CircularProgress, IconButton } from "@mui/material";
 import { useRouter } from "next/navigation";
@@ -57,8 +59,18 @@ interface Package {
   tryoutOrder?: number | null;
   isLocked: boolean;
   isHidden: boolean;
+  deletedAt?: string | null;
+  deletedBy?: {
+    id: number;
+    username: string;
+    email: string;
+  } | null;
   questions: Question[];
   tags: Tag[];
+  _count?: {
+    attempts: number;
+    questions: number;
+  };
 }
 
 interface PackageDetail {
@@ -90,6 +102,9 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
   const [savingDurationId, setSavingDurationId] = useState<number | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [showRecycleBin, setShowRecycleBin] = useState(false);
+  const [restoringPackageId, setRestoringPackageId] = useState<number | null>(null);
+  const [permanentDeletingId, setPermanentDeletingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({
     title: "",
     description: "",
@@ -105,7 +120,9 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
 
   const { data, isLoading, refetch } = usePackagesByTestName(
     params.slug,
-    refreshData
+    refreshData,
+    {},
+    showRecycleBin ? "deleted" : "active"
   );
 
   const {
@@ -141,6 +158,10 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
 
     async function loadPackageDetails() {
       if (!data?.packages) return;
+      if (showRecycleBin) {
+        setPackageDetails({});
+        return;
+      }
 
       try {
         const details = await Promise.all(
@@ -157,7 +178,7 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
     }
 
     loadPackageDetails();
-  }, [data, refreshData]);
+  }, [data, refreshData, showRecycleBin]);
 
   useEffect(() => {
     setDurationDraft(
@@ -173,7 +194,7 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
 
     try {
       await deleteQuiz({ id: selectedPackage.id });
-      enqueueSnackbar("Paket berhasil dihapus", { variant: "success" });
+      enqueueSnackbar("Paket dipindahkan ke recycle bin", { variant: "success" });
       setSelectedPackage(null);
       setRefreshData((prev) => !prev);
       refetch();
@@ -181,6 +202,44 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
       enqueueSnackbar("Gagal menghapus paket", { variant: "error" });
     } finally {
       setDeleteModalActive(false);
+    }
+  };
+
+  const restorePackage = async (packageId: number) => {
+    setRestoringPackageId(packageId);
+
+    try {
+      await axios.patch("/api/paket/recycle-bin", { id: packageId });
+      enqueueSnackbar("Paket berhasil dipulihkan", { variant: "success" });
+      setSelectedPackage(null);
+      setRefreshData((prev) => !prev);
+      refetch();
+    } catch (error: any) {
+      enqueueSnackbar(
+        error.response?.data?.message || "Gagal memulihkan paket",
+        { variant: "error" }
+      );
+    } finally {
+      setRestoringPackageId(null);
+    }
+  };
+
+  const permanentDeletePackage = async (packageId: number) => {
+    setPermanentDeletingId(packageId);
+
+    try {
+      await axios.delete("/api/paket/recycle-bin", { data: { id: packageId } });
+      enqueueSnackbar("Paket berhasil dihapus permanen", { variant: "success" });
+      setSelectedPackage(null);
+      setRefreshData((prev) => !prev);
+      refetch();
+    } catch (error: any) {
+      enqueueSnackbar(
+        error.response?.data?.message || "Gagal menghapus permanen paket",
+        { variant: "error" }
+      );
+    } finally {
+      setPermanentDeletingId(null);
     }
   };
 
@@ -364,14 +423,46 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
               satu halaman admin.
             </p>
           </div>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => router.push(`/dashboard/${params.slug}/create`)}
-          >
-            Buat Paket
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={showRecycleBin ? "outlined" : "contained"}
+              onClick={() => {
+                setShowRecycleBin(false);
+                setSelectedPackage(null);
+              }}
+            >
+              Paket Aktif
+            </Button>
+            <Button
+              variant={showRecycleBin ? "contained" : "outlined"}
+              startIcon={<RestoreFromTrashIcon />}
+              onClick={() => {
+                setShowRecycleBin(true);
+                setSelectedPackage(null);
+              }}
+            >
+              Recycle Bin
+            </Button>
+            {!showRecycleBin && (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => router.push(`/dashboard/${params.slug}/create`)}
+              >
+                Buat Paket
+              </Button>
+            )}
+          </div>
         </div>
+
+        {showRecycleBin && (
+          <div className="mt-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
+            Recycle bin berisi paket yang sudah dihapus sementara. Paket di sini
+            tidak muncul untuk siswa dan tokennya tidak bisa digunakan. Pulihkan
+            paket jika masih dibutuhkan, atau hapus permanen hanya jika belum
+            pernah dikerjakan siswa.
+          </div>
+        )}
 
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
           <div className="rounded-md border border-slate-200 bg-white p-4">
@@ -400,7 +491,7 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
           </div>
         </div>
 
-        {selectedPackage && (
+        {selectedPackage && !showRecycleBin && (
           <div className="mt-6 rounded-md border border-teal-200 bg-teal-50 p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
@@ -541,6 +632,12 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
           <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
             {packages.map((pkg) => {
               const detail = packageDetails[pkg.id];
+              const attemptsCount = showRecycleBin
+                ? pkg._count?.attempts ?? 0
+                : detail?.attemptCount ?? 0;
+              const questionsCount = showRecycleBin
+                ? pkg._count?.questions ?? pkg.questions?.length ?? 0
+                : detail?.totalQuestions ?? pkg.questions?.length ?? 0;
               const tags =
                 pkg.tags?.length > 0
                   ? pkg.tags.map((tag) => tag.name)
@@ -558,6 +655,11 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <div className="flex flex-wrap gap-2">
+                        {showRecycleBin && (
+                          <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                            Recycle Bin
+                          </span>
+                        )}
                         <span
                           className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700"
                         >
@@ -598,6 +700,29 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
                     {pkg.description || "Belum ada deskripsi paket."}
                   </p>
 
+                  {showRecycleBin && (
+                    <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+                      <p>
+                        Dihapus:{" "}
+                        <span className="font-semibold">
+                          {pkg.deletedAt
+                            ? new Intl.DateTimeFormat("id-ID", {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              }).format(new Date(pkg.deletedAt))
+                            : "-"}
+                        </span>
+                      </p>
+                      <p>
+                        Oleh:{" "}
+                        <span className="font-semibold">
+                          {pkg.deletedBy?.username || pkg.deletedBy?.email || "-"}
+                        </span>
+                      </p>
+                    </div>
+                  )}
+
+                  {!showRecycleBin && (
                   <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2 text-slate-600">
@@ -626,12 +751,13 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
                       {pkg.examToken || "Belum ada token"}
                     </p>
                   </div>
+                  )}
 
                   <div className="mt-4 grid grid-cols-3 gap-3 text-sm">
                     <div>
                       <p className="text-slate-500">Soal</p>
                       <p className="font-bold text-slate-950">
-                        {detail?.totalQuestions ?? pkg.questions?.length ?? 0}
+                        {questionsCount}
                       </p>
                     </div>
                     <div>
@@ -643,7 +769,7 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
                     <div>
                       <p className="text-slate-500">Percobaan</p>
                       <p className="font-bold text-slate-950">
-                        {detail?.attemptCount ?? 0}
+                        {attemptsCount}
                       </p>
                     </div>
                   </div>
@@ -687,6 +813,42 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
                     className="mt-5 flex flex-wrap gap-2"
                     onClick={(event) => event.stopPropagation()}
                   >
+                    {showRecycleBin ? (
+                      <>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          startIcon={
+                            restoringPackageId === pkg.id ? (
+                              <CircularProgress size={16} color="inherit" />
+                            ) : (
+                              <RestoreFromTrashIcon />
+                            )
+                          }
+                          disabled={restoringPackageId === pkg.id}
+                          onClick={() => restorePackage(pkg.id)}
+                        >
+                          Pulihkan
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="error"
+                          startIcon={
+                            permanentDeletingId === pkg.id ? (
+                              <CircularProgress size={16} color="inherit" />
+                            ) : (
+                              <DeleteForeverIcon />
+                            )
+                          }
+                          disabled={permanentDeletingId === pkg.id}
+                          onClick={() => permanentDeletePackage(pkg.id)}
+                        >
+                          Hapus Permanen
+                        </Button>
+                      </>
+                    ) : (
+                      <>
                     <Button
                       size="small"
                       variant="contained"
@@ -713,6 +875,8 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
                       isHidden={pkg.isHidden}
                       testName={pkg.testName}
                     />
+                      </>
+                    )}
                   </div>
                 </article>
               );
@@ -732,6 +896,9 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
           handleDeleteModalClose={() => setDeleteModalActive(false)}
           onDelete={handleDelete}
           resource="Paket"
+          modalTitle="Pindahkan Paket ke Recycle Bin"
+          confirmMessage="Paket tidak akan dihapus permanen."
+          informMessage="Paket akan disembunyikan dari siswa, dikunci, dan bisa dipulihkan dari Recycle Bin."
         />
       )}
 

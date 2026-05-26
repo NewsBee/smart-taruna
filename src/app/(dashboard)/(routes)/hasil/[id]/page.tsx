@@ -78,6 +78,7 @@ export default function QuizResponse({ params }: { params: { id: any } }) {
       resp.Question.Choices.find((choice: IChoice) => choice.isCorrect)
         ?.content,
     explanation: resp.Question.explanation,
+    explanationImage: resp.Question.explanationImage,
     options: resp.Question.Choices.map((choice: IChoice) => ({
       value: choice.content,
       label: choice.content,

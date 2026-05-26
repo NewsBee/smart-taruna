@@ -152,10 +152,16 @@ export const useMyAttemptById = (id:any, options = {}) => {
   }, options);
 };
 
-export const usePackagesByTestName = (testName:any,refreshData:any, options = {}) => {
+export const usePackagesByTestName = (
+  testName: any,
+  refreshData: any,
+  options = {},
+  mode?: "active" | "deleted"
+) => {
+  const deletedQuery = mode === "deleted" ? "?deleted=only" : "";
   return QueryFactory(
-    ["Packages", testName, refreshData],
-    `/api/paket/${testName}`,
+    ["Packages", testName, refreshData, mode || "active"],
+    `/api/paket/${testName}${deletedQuery}`,
     options
   );
 };

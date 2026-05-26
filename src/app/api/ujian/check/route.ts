@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/app/lib/auth-options";
 import { ensureAttemptOpen } from "@/app/api/ujian/_attempt";
+import { resolveExamDuration } from "@/app/lib/exam-time";
 
 function formatDate(date: Date | null) {
   if (!date) return "-";
@@ -63,6 +64,7 @@ export const GET = async() =>{
     }, {status:410})
   }
 
+  const duration = resolveExamDuration(existingAttempt.Package.duration);
   const questionCount = Array.isArray(existingAttempt.questionOrder)
     ? existingAttempt.questionOrder.length
     : existingAttempt.Package.questions.length;
@@ -72,7 +74,7 @@ export const GET = async() =>{
     packageId: existingAttempt.Package.id,
     packageTitle: existingAttempt.Package.title,
     testName: existingAttempt.Package.testName,
-    duration: existingAttempt.Package.duration,
+    duration,
     tryoutOrder: existingAttempt.Package.tryoutOrder,
     tryoutLabel: existingAttempt.Package.tryoutOrder
       ? `TO ${existingAttempt.Package.tryoutOrder}`

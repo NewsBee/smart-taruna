@@ -1,6 +1,5 @@
 import { Button } from "@material-ui/core";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
-import { globalColors } from "../shared/constants";
 
 interface IPaginationButton {
   onClick: () => void;
@@ -18,22 +17,31 @@ export const PaginationButton: React.FC<IPaginationButton> = ({
     variant="outlined"
     color="primary"
     disabled={disabled}
+    style={{
+      borderRadius: 12,
+      borderColor: disabled ? "#cbd5e1" : "#0f766e",
+      color: disabled ? "#94a3b8" : "#0f766e",
+      padding: "10px 14px",
+      textTransform: "none",
+      fontWeight: 700,
+      backgroundColor: disabled ? "#f8fafc" : "#ffffff",
+    }}
   >
     {title === "Next Question" ? (
       <>
-        <p className="mr-2 hidden md:block">{title}</p>
+        <p className="mr-2 hidden md:block">Soal berikutnya</p>
         <MdNavigateNext
-          fill={disabled ? "#999" : globalColors.brand}
+          fill={disabled ? "#94a3b8" : "#0f766e"}
           size={30}
         />
       </>
     ) : (
       <>
         <MdNavigateBefore
-          fill={disabled ? "#999" : globalColors.brand}
+          fill={disabled ? "#94a3b8" : "#0f766e"}
           size={30}
         />
-        <p className="ml-2 hidden md:block">{title}</p>
+        <p className="ml-2 hidden md:block">Soal sebelumnya</p>
       </>
     )}
   </Button>

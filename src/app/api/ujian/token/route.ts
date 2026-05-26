@@ -31,6 +31,7 @@ export const POST = async (req: NextRequest) => {
       examToken: submittedToken,
       isHidden: false,
       isLocked: false,
+      deletedAt: null,
       ...(testName ? { testName } : {}),
     },
     select: {

@@ -70,6 +70,7 @@ export const POST = async (req: NextRequest, context: { params: { id: any } }) =
         where: { id: packageId },
         select: {
           id: true,
+          deletedAt: true,
           examToken: true,
           maxAttempts: true,
           Test: {
@@ -94,6 +95,13 @@ export const POST = async (req: NextRequest, context: { params: { id: any } }) =
         return NextResponse.json(
           { error: "Package not found" },
           { status: 404 }
+        );
+      }
+
+      if (relatedPackage.deletedAt) {
+        return NextResponse.json(
+          { error: "Paket sudah tidak tersedia" },
+          { status: 410 }
         );
       }
 

@@ -4,9 +4,8 @@ import { uiMessages } from "../../shared/constants";
 import { IQuestionForm } from "../../shared/interfaces";
 import { FormikError } from "../../shared/utils";
 import { useRouter } from "next/navigation";
-import { StyledButton } from "@/components/styled-button";
-import { warn } from "console";
 import axios from "axios";
+import { useState } from "react";
 
 interface Props {
   isLoading: boolean;
@@ -17,6 +16,9 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({
   isLoading,
   quizId,
 }) => {
+  const [uploadingField, setUploadingField] = useState<
+    "image" | "explanationImage" | null
+  >(null);
   const {
     touched,
     errors,
@@ -28,22 +30,32 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({
   } = useFormikContext<IQuestionForm>();
   // console.log(quizId)
   const router = useRouter();
-  const handleFileChange = async (
-    event: React.ChangeEvent<HTMLInputElement>
+  const clearUploadedImage = (target: "image" | "explanationImage") => {
+    setFieldValue(target, "");
+    setFieldValue(
+      target === "image" ? "imageName" : "explanationImageName",
+      ""
+    );
+  };
+
+  const uploadQuestionImage = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    target: "image" | "explanationImage"
   ) => {
     const file = event.target.files ? event.target.files[0] : null;
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      confirm("Ukuran file terlalu besar");
+      alert("Ukuran gambar maksimal 5 MB");
       return;
     }
 
     const formData = new FormData();
-
     formData.append("image", file);
+    formData.append("purpose", target === "explanationImage" ? "explanation" : "question");
 
     try {
+      setUploadingField(target);
       const response = await axios.post(
         `/api/pertanyaan/create/uploadimg/${quizId}`,
         formData,
@@ -53,18 +65,21 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({
           },
         }
       );
-      // console.log(response.data)
-      // Jika upload berhasil, simpan URL file yang dikembalikan API ke dalam form
       if (response.data && response.data.path) {
-        // Menggunakan setFieldValue dari useFormikContext untuk mengatur nilai field
-        setFieldValue("image", response.data.path); // Mengatur URL gambar yang diupload
-        setFieldValue("imageName", file.name); // Menyimpan nama file yang diupload
+        setFieldValue(target, response.data.path);
+        setFieldValue(
+          target === "image" ? "imageName" : "explanationImageName",
+          file.name
+        );
       } else {
         alert("Gagal mengupload file");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error uploading file:", error);
-      alert("Gagal mengupload file");
+      alert(error.response?.data?.message || "Gagal mengupload file");
+    } finally {
+      setUploadingField(null);
+      event.target.value = "";
     }
   };
 
@@ -72,24 +87,47 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({
 
   return (
     <form className="pb-2" onSubmit={handleSubmit}>
-      <div className="mt-4">
+      <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <p className="text-sm font-semibold text-slate-900">Gambar Soal</p>
+        <p className="mt-1 text-xs leading-5 text-slate-500">
+          Opsional. Gunakan gambar yang membantu siswa memahami pertanyaan.
+        </p>
         <Button
           variant="contained"
           component="label"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          className="mt-3 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          disabled={uploadingField === "image"}
         >
-          Upload Image
+          {uploadingField === "image" ? "Mengunggah..." : "Unggah Gambar Soal"}
           <input
             type="file"
             hidden
             accept="image/*" // Accept only image files
-            onChange={handleFileChange}
+            onChange={(event) => uploadQuestionImage(event, "image")}
             onBlur={handleBlur}
             name="image"
           />
         </Button>
         {values.imageName && (
           <Box className="mt-2 text-sm text-gray-600">{values.imageName}</Box>
+        )}
+        {values.image && (
+          <div>
+            <div className="mt-3 max-h-56 overflow-hidden rounded-lg border border-slate-200 bg-white">
+              <img
+                src={values.image}
+                alt="Preview gambar soal"
+                className="h-full max-h-56 w-full object-contain"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => clearUploadedImage("image")}
+              className="mt-3 rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
+            >
+              Hapus gambar soal
+            </button>
+          </div>
         )}
         {touched.image && errors.image && (
           <Box className="mt-1 text-sm text-red-500">{errors.image}</Box>
@@ -159,9 +197,56 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({
           error={!!(touched.explanation && errors.explanation)}
           helperText={touched.explanation && errors.explanation}
           id="explanation"
-          label="Pemabahasan soal"
+          label="Pembahasan soal"
           variant="outlined"
         />
+      </div>
+      <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <p className="text-sm font-semibold text-slate-900">Gambar Pembahasan</p>
+        <p className="mt-1 text-xs leading-5 text-slate-500">
+          Opsional. Cocok untuk pembahasan rumus, grafik, tabel, atau ilustrasi jawaban.
+        </p>
+        <Button
+          variant="contained"
+          component="label"
+          className="mt-3 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          disabled={uploadingField === "explanationImage"}
+        >
+          {uploadingField === "explanationImage"
+            ? "Mengunggah..."
+            : "Unggah Gambar Pembahasan"}
+          <input
+            type="file"
+            hidden
+            accept="image/*"
+            onChange={(event) => uploadQuestionImage(event, "explanationImage")}
+            onBlur={handleBlur}
+            name="explanationImage"
+          />
+        </Button>
+        {values.explanationImageName && (
+          <Box className="mt-2 text-sm text-gray-600">
+            {values.explanationImageName}
+          </Box>
+        )}
+        {values.explanationImage && (
+          <div>
+            <div className="mt-3 max-h-64 overflow-hidden rounded-lg border border-slate-200 bg-white">
+              <img
+                src={values.explanationImage}
+                alt="Preview gambar pembahasan"
+                className="h-full max-h-64 w-full object-contain"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => clearUploadedImage("explanationImage")}
+              className="mt-3 rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
+            >
+              Hapus gambar pembahasan
+            </button>
+          </div>
+        )}
       </div>
       {(values.answerType === "SHORT_TEXT" || values.answerType === "NUMERIC") && (
         <>
@@ -363,7 +448,7 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({
       <div className="mb-10">
         <div className="flex justify-end mt-4">
           <div className="mr-4">
-            <Button onClick={() => router.push("/dashboard")}>Cancel</Button>
+            <Button onClick={() => router.push("/dashboard")}>Batal</Button>
           </div>
 
           <Button
@@ -372,7 +457,7 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({
             disabled={isLoading}
             type="submit"
           >
-            Submit
+            Simpan Soal
           </Button>
         </div>
       </div>

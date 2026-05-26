@@ -79,11 +79,18 @@ export const PUT = async (
 
   const existingPackage = await prismadb.package.findUnique({
     where: { id: packageId },
-    select: { id: true, testName: true },
+    select: { id: true, testName: true, deletedAt: true },
   });
 
   if (!existingPackage) {
     return NextResponse.json({ message: "Paket tidak ditemukan" }, { status: 404 });
+  }
+
+  if (existingPackage.deletedAt) {
+    return NextResponse.json(
+      { message: "Paket di recycle bin tidak bisa diedit. Pulihkan dulu paketnya." },
+      { status: 409 }
+    );
   }
 
   const passingGrades = parsePassingGrades(
@@ -95,6 +102,7 @@ export const PUT = async (
   const duplicateToken = await prismadb.package.findFirst({
     where: {
       examToken,
+      deletedAt: null,
       NOT: { id: packageId },
     },
     select: { id: true, title: true },
@@ -111,6 +119,7 @@ export const PUT = async (
     where: {
       testName: existingPackage.testName,
       tryoutOrder,
+      deletedAt: null,
       NOT: { id: packageId },
     },
     select: { id: true, title: true },

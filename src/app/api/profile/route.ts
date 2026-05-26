@@ -173,7 +173,7 @@ export const GET = async () => {
       user.role === "admin"
         ? await Promise.all([
             prismadb.user.count({ where: { role: "siswa" } }),
-            prismadb.package.count(),
+            prismadb.package.count({ where: { deletedAt: null } }),
             prismadb.question.count(),
             prismadb.attempt.count(),
             prismadb.attempt.count({ where: { completedAt: null } }),
