@@ -398,6 +398,8 @@ export default function AdminAnalyticsDashboard({
   const [sessionFilter, setSessionFilter] = useState<"priority" | "all" | "normal">("priority");
   const [visibleSessionCount, setVisibleSessionCount] = useState(20);
   const [activitySearch, setActivitySearch] = useState("");
+  const [questionPackageId, setQuestionPackageId] = useState("");
+  const [questionFilter, setQuestionFilter] = useState<"all" | "review" | "hard" | "easy">("all");
   const router = useRouter();
 
   const selectedPackage = useMemo(() => {
@@ -410,6 +412,40 @@ export default function AdminAnalyticsDashboard({
       selectedTestName === "all" ? true : pkg.testName === selectedTestName
     );
   }, [data, selectedTestName]);
+
+  const questionPackages = useMemo(() => data?.packages || [], [data]);
+
+  useEffect(() => {
+    if (!questionPackages.some((pkg) => String(pkg.id) === questionPackageId)) {
+      setQuestionPackageId(questionPackages.length ? String(questionPackages[0].id) : "");
+    }
+  }, [questionPackages, questionPackageId]);
+
+  const questionsForPackage = useMemo(
+    () => (data?.questions || []).filter((question) => String(question.packageId) === questionPackageId),
+    [data, questionPackageId]
+  );
+
+  const packageQuestionSummary = useMemo(() => ({
+    totalReviewed: questionsForPackage.filter((question) => question.totalAnswers > 0).length,
+    needsReview: questionsForPackage.filter((question) => question.qualityStatus === "Perlu ditinjau").length,
+    tooHard: questionsForPackage.filter((question) => question.issueFlags.includes("Terlalu sulit")).length,
+    tooEasy: questionsForPackage.filter((question) => question.issueFlags.includes("Terlalu mudah")).length,
+    highBlank: questionsForPackage.filter((question) => question.issueFlags.includes("Banyak dikosongkan")).length,
+  }), [questionsForPackage]);
+
+  const visibleQuestionRows = useMemo(() => {
+    if (questionFilter === "review") {
+      return questionsForPackage.filter((question) => question.qualityStatus === "Perlu ditinjau");
+    }
+    if (questionFilter === "hard") {
+      return questionsForPackage.filter((question) => question.issueFlags.includes("Terlalu sulit"));
+    }
+    if (questionFilter === "easy") {
+      return questionsForPackage.filter((question) => question.issueFlags.includes("Terlalu mudah"));
+    }
+    return questionsForPackage;
+  }, [questionsForPackage, questionFilter]);
 
   useEffect(() => {
     if (
@@ -1429,38 +1465,62 @@ export default function AdminAnalyticsDashboard({
 
         {activeTab === "questions" && (
           <div className="mt-5 space-y-5">
+            <section className="flex flex-col gap-3 border-b border-gray-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <label htmlFor="question-package-filter" className="mb-1 block text-sm font-semibold text-gray-700">
+                  Paket analisis
+                </label>
+                <select
+                  id="question-package-filter"
+                  value={questionPackageId}
+                  onChange={(event) => setQuestionPackageId(event.target.value)}
+                  className="h-10 min-w-64 rounded-md border border-gray-300 bg-white px-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50"
+                  disabled={!questionPackages.length}
+                >
+                  {questionPackages.map((pkg) => (
+                    <option key={pkg.id} value={pkg.id}>
+                      {pkg.testName} | {pkg.tryoutLabel} - {pkg.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <p className="text-sm text-gray-500">
+                Ringkasan dan tabel hanya menghitung soal pada paket terpilih.
+              </p>
+            </section>
+
             <section className="grid gap-4 md:grid-cols-5">
               <MetricCard
                 title="Soal Dianalisis"
-                value={data.questionSummary.totalReviewed}
+                value={packageQuestionSummary.totalReviewed}
                 caption="Sudah memiliki jawaban siswa"
                 icon={<Quiz fontSize="small" />}
                 tone="indigo"
               />
               <MetricCard
                 title="Perlu Review"
-                value={data.questionSummary.needsReview}
+                value={packageQuestionSummary.needsReview}
                 caption="Terdeteksi terlalu sulit, mudah, kosong, atau pengecoh lemah"
                 icon={<WarningAmber fontSize="small" />}
                 tone="rose"
               />
               <MetricCard
                 title="Terlalu Sulit"
-                value={data.questionSummary.tooHard}
+                value={packageQuestionSummary.tooHard}
                 caption="Rasio benar maksimal 30%"
                 icon={<ManageSearch fontSize="small" />}
                 tone="amber"
               />
               <MetricCard
                 title="Terlalu Mudah"
-                value={data.questionSummary.tooEasy}
+                value={packageQuestionSummary.tooEasy}
                 caption="Rasio benar minimal 90%"
                 icon={<TrendingUp fontSize="small" />}
                 tone="emerald"
               />
               <MetricCard
                 title="Banyak Kosong"
-                value={data.questionSummary.highBlank}
+                value={packageQuestionSummary.highBlank}
                 caption="Minimal 25% siswa tidak menjawab"
                 icon={<Assessment fontSize="small" />}
                 tone="slate"
@@ -1472,6 +1532,25 @@ export default function AdminAnalyticsDashboard({
               <p className="mt-1 text-sm text-gray-600">
                 Diurutkan dari soal yang paling perlu ditinjau. Gunakan kolom opsi untuk melihat distraktor yang tidak efektif.
               </p>
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <label htmlFor="question-quality-filter" className="text-sm font-medium text-gray-700">
+                  Filter hasil
+                  <select
+                    id="question-quality-filter"
+                    value={questionFilter}
+                    onChange={(event) => setQuestionFilter(event.target.value as typeof questionFilter)}
+                    className="ml-3 h-10 rounded-md border border-gray-300 bg-white px-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50"
+                  >
+                    <option value="review">Perlu review</option>
+                    <option value="hard">Terlalu sulit</option>
+                    <option value="easy">Terlalu mudah</option>
+                    <option value="all">Tampilkan semua</option>
+                  </select>
+                </label>
+                <span className="text-sm text-gray-500">
+                  {visibleQuestionRows.length} soal ditampilkan
+                </span>
+              </div>
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full min-w-[1280px] text-left text-sm">
                   <thead className="border-b bg-gray-50 text-xs uppercase text-gray-500">
@@ -1488,7 +1567,15 @@ export default function AdminAnalyticsDashboard({
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {data.questions.map((question) => (
+                    {!visibleQuestionRows.length ? (
+                      <tr>
+                        <td colSpan={9} className="px-3 py-10 text-center text-sm text-gray-500">
+                          {questionPackages.length
+                            ? "Tidak ada soal yang cocok dengan filter ini."
+                            : "Belum ada paket yang dapat dianalisis."}
+                        </td>
+                      </tr>
+                    ) : visibleQuestionRows.map((question) => (
                       <tr key={question.questionId} className="align-top hover:bg-gray-50">
                         <td className="px-3 py-3">
                           <QualityBadge status={question.qualityStatus} />

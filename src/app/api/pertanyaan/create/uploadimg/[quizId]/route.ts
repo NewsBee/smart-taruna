@@ -1,6 +1,5 @@
-import { authOptions } from "@/app/lib/auth-options";
-import { getUploadErrorMessage, uploadImageToGcs } from "@/app/lib/gcs-upload";
-import { getServerSession } from "next-auth";
+import { getUploadErrorMessage, uploadImageLocally } from "@/app/lib/local-upload";
+import { requireAdmin } from "@/app/lib/require-admin";
 import { NextRequest, NextResponse } from "next/server";
 
 function resolveFolder(purpose: FormDataEntryValue | null, quizId: string) {
@@ -16,11 +15,8 @@ export async function POST(
   context: { params: { quizId: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
+    const denied = await requireAdmin();
+    if (denied) return denied;
     const data = await req.formData();
     const imageFile = data.get("image");
 
@@ -31,7 +27,7 @@ export async function POST(
       );
     }
 
-    const uploaded = await uploadImageToGcs(
+    const uploaded = await uploadImageLocally(
       imageFile,
       resolveFolder(data.get("purpose"), context.params.quizId),
       imageFile.name

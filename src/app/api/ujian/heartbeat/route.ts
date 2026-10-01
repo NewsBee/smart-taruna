@@ -1,6 +1,5 @@
 import { authOptions } from "@/app/lib/auth-options";
-import { ensureAttemptOpen } from "@/app/api/ujian/_attempt";
-import prismadb from "@/app/lib/prismadb";
+import { ensureAttemptOpen, recordAttemptHeartbeat } from "@/app/api/ujian/_attempt";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -17,16 +16,11 @@ export const POST = async (req: NextRequest) => {
     return NextResponse.json({ message: "Invalid request" }, { status: 400 });
   }
 
-  const attempt = await prismadb.attempt.findUnique({
-    where: { id: attemptNumber },
-    select: { id: true, userId: true, completedAt: true },
-  });
+  const attemptStatus = await ensureAttemptOpen(attemptNumber, Number(session.user.id));
 
-  if (!attempt || attempt.userId !== Number(session.user.id)) {
+  if (attemptStatus.status === "not_found") {
     return NextResponse.json({ message: "Sesi ujian tidak ditemukan" }, { status: 404 });
   }
-
-  const attemptStatus = await ensureAttemptOpen(attempt.id, Number(session.user.id));
 
   if (attemptStatus.status === "expired") {
     return NextResponse.json(
@@ -40,14 +34,12 @@ export const POST = async (req: NextRequest) => {
     );
   }
 
-  if (attempt.completedAt || attemptStatus.status === "completed") {
+  if (attemptStatus.status === "completed") {
     return NextResponse.json({ ok: true, completed: true }, { status: 200 });
   }
 
-  await prismadb.attempt.update({
-    where: { id: attemptNumber },
-    data: { lastHeartbeatAt: new Date() },
-  });
-
-  return NextResponse.json({ ok: true }, { status: 200 });
+  const heartbeat = await recordAttemptHeartbeat(attemptNumber, Number(session.user.id));
+  if (!heartbeat) return NextResponse.json({ message: "Sesi ujian tidak ditemukan" }, { status: 404 });
+  if (heartbeat.completed) return NextResponse.json({ ok: true, completed: true }, { status: 200 });
+  return NextResponse.json({ ok: true, ...heartbeat }, { status: 200 });
 };

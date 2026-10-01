@@ -1,11 +1,10 @@
 "use client";
 
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import GoogleIcon from "@mui/icons-material/Google";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { CircularProgress, IconButton } from "@mui/material";
-import { signIn } from "next-auth/react";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -63,21 +62,27 @@ const RegistrationPage = () => {
         }),
       });
 
-      const data = await res.json();
+      const responseText = await res.text();
+      let data: { message?: string } = {};
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        data = {};
+      }
+
       if (res.ok) {
         router.push("/auth/sign-in");
       } else {
-        throw new Error(data.message || "Terjadi kesalahan saat registrasi.");
+        throw new Error(
+          data.message ||
+            "Registrasi gagal karena server sedang tidak dapat diakses."
+        );
       }
     } catch (error: any) {
       setMsg(error.message);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleGoogleSignUp = () => {
-    signIn("google", { callbackUrl: "/dashboard" });
   };
 
   return (
@@ -106,14 +111,9 @@ const RegistrationPage = () => {
                 ringkasan hasil ujian setelah selesai.
               </p>
 
-              <button
-                type="button"
-                onClick={handleGoogleSignUp}
-                className="mt-6 inline-flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-slate-300 bg-white text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-              >
-                <GoogleIcon fontSize="small" className="text-teal-600" />
-                Daftar dengan Google
-              </button>
+              <div className="mt-6">
+                <GoogleSignInButton label="Daftar dengan Google" />
+              </div>
 
               <div className="my-5 flex items-center gap-3 text-xs font-semibold uppercase text-slate-400">
                 <span className="h-px flex-1 bg-slate-200" />

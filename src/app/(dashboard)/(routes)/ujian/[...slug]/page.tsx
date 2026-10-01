@@ -15,6 +15,7 @@ import { useQuizQuestions } from "../../../shared/queries";
 import axios from "axios";
 import CountDown from "@/app/(dashboard)/_components/CountDown";
 import { useRouter } from "next/navigation";
+import { useExamAnswers } from "@/hooks/useExamAnswers";
 import { resolveExamDuration } from "@/app/lib/exam-time";
 import {
   FiAlertTriangle,
@@ -39,14 +40,19 @@ export default function PlayerScreen({
   // console.log(params.slug[0]);
   // console.log(data);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [response, setResponse] = useState<IResponse[]>([]);
+
   const [quizEnd, setQuizEnd] = useState(false);
   const [isSubmitConfirmed, setIsSubmitConfirmed] = useState(false);
   const [score, setScore] = useState(0);
-  const [attemptId, setAttemptId] = useState(null);
+  const attemptId: number | null = data?.attemptId ?? null;
   const [isOffline, setIsOffline] = useState(false);
-  const [offlineStartedAt, setOfflineStartedAt] = useState<number | null>(null);
-  const [extraPausedMs, setExtraPausedMs] = useState(0);
+  const [isConnectionPaused, setIsConnectionPaused] = useState(
+    typeof navigator !== "undefined" && !navigator.onLine
+  );
+  const [totalPausedMs, setTotalPausedMs] = useState(data?.totalPausedMs || 0);
+  const [timeUp, setTimeUp] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const timeUpSubmitting = useRef(false);
   const [securityEventCount, setSecurityEventCount] = useState(0);
   const [leaveWarningOpen, setLeaveWarningOpen] = useState(false);
   const [pendingLeaveUrl, setPendingLeaveUrl] = useState<string | null>(null);
@@ -63,49 +69,37 @@ export default function PlayerScreen({
   };
 
   const router = useRouter();
+  const goToResult = useCallback((id: number) => {
+    allowLeaveRef.current = true;
+    router.push(`/hasil/${id}`);
+  }, [router]);
+  const { response, setResponse, saveResponse, clearDraft, pendingCount, saveError, storageError } =
+    useExamAnswers(data, goToResult);
 
-  const onSubmitTimeUp = async () => {
-    try {
-      // Replace '/api/path-to-submit-quiz' dengan endpoint API Anda yang sebenarnya
-      const res = await axios.post("/api/ujian/submit", {
-        attemptId,
-        responses: response,
-      });
-      // console.log(res.data);
+  useEffect(() => {
+    if (typeof data?.totalPausedMs === "number") setTotalPausedMs(data.totalPausedMs);
+  }, [data?.totalPausedMs]);
 
-      // Redirect atau menampilkan pesan sukses
-      enqueueSnackbar("Jawaban berhasil dikirim !", {
-        variant: "success",
-      });
-      allowLeaveRef.current = true;
-      router.push(`/hasil/${attemptId}`); // Sesuaikan path navigasi sesuai kebutuhan
-    } catch (error) {
-      console.error("Error submitting quiz:", error);
-      enqueueSnackbar("Gagal mengirim jawaban.", { variant: "error" });
-    }
-  };
+  const onSubmitTimeUp = () => setTimeUp(true);
 
-  const saveResponse = useCallback(async (questionId: string, answer: string) => {
-    if (!attemptId) return;
-
-    try {
-      await axios.post("/api/ujian/response", {
-        attemptId,
-        questionId,
-        response: answer,
-      });
-    } catch (error: any) {
-      if (error.response?.data?.autoSubmitted) {
-        enqueueSnackbar("Waktu ujian habis. Jawaban otomatis dikumpulkan.", {
-          variant: "info",
-        });
-        allowLeaveRef.current = true;
-        router.push(`/hasil/${attemptId}`);
-        return;
-      }
-      console.error("Error autosaving answer:", error);
-    }
-  }, [attemptId, router]);
+  useEffect(() => {
+    if (!timeUp || !attemptId) return;
+    const submit = async () => {
+      if (!navigator.onLine || timeUpSubmitting.current || allowLeaveRef.current) return;
+      timeUpSubmitting.current = true;
+      try {
+        await axios.post("/api/ujian/submit", { attemptId, responses: response }, { timeout: 20000 });
+        clearDraft();
+        goToResult(attemptId);
+      } catch (error: any) {
+        setSubmitError(error.response?.data?.message || "Pengumpulan belum berhasil. Sistem akan mencoba kembali.");
+      } finally { timeUpSubmitting.current = false; }
+    };
+    void submit();
+    const timer = setInterval(submit, 5000);
+    window.addEventListener("online", submit);
+    return () => { clearInterval(timer); window.removeEventListener("online", submit); };
+  }, [timeUp, attemptId, response, clearDraft, goToResult]);
 
   const logSecurityEvent = useCallback(
     async (type: string) => {
@@ -129,61 +123,41 @@ export default function PlayerScreen({
   );
 
   useEffect(() => {
-    const fetchAttemptId = async () => {
-      try {
-        const response = await axios.get("/api/ujian/check");
-        setAttemptId(response.data.attemptId);
-      } catch (error) {
-        console.error("Error fetching current attempt:", error);
-        // Handle error (misalnya menampilkan pesan error)
-      }
-    };
-
-    fetchAttemptId();
-  }, []);
-
-  // console.log(response)
-
-  useEffect(() => {
-    if (data && data.questions) {
-      // Mengubah data soal menjadi format yang dibutuhkan oleh state response
-      const newResponses = data.questions.map((q: any) => ({
-        _id: q.id.toString(),
-        title: q.content,
-        image: q.image,
-        answerType: q.answerType,
-        correctAnswer: q.correctAnswer,
-        tolerance: q.tolerance,
-        quiz: data.testName, // Nama tes, misalnya 'SKD'
-        response: q.savedResponse || "",
-        options: q.choices.map((choice: any) => ({
-          value: choice.content,
-          label: choice.content,
-        })),
-      }));
-      setResponse(newResponses);
-    }
-  }, [data, packageId]);
-
-  useEffect(() => {
     if (!attemptId) return;
 
-    const heartbeat = setInterval(() => {
-      axios.post("/api/ujian/heartbeat", { attemptId }).then((response) => {
-        if (response.data?.autoSubmitted) {
+    const sendHeartbeat = () => {
+      if (!navigator.onLine) {
+        setIsConnectionPaused(true);
+        return;
+      }
+      axios.post("/api/ujian/heartbeat", { attemptId }).then((heartbeatResponse) => {
+        if (typeof heartbeatResponse.data?.totalPausedMs === "number") {
+          setTotalPausedMs(heartbeatResponse.data.totalPausedMs);
+        }
+        if (heartbeatResponse.data?.completed) {
           enqueueSnackbar("Waktu ujian habis. Jawaban otomatis dikumpulkan.", {
             variant: "info",
           });
-          allowLeaveRef.current = true;
-          router.push(`/hasil/${attemptId}`);
-        }
+          clearDraft();
+          goToResult(attemptId);
+        } else setIsConnectionPaused(false);
       }).catch((error) => {
+        setIsConnectionPaused(true);
         console.error("Error sending heartbeat:", error);
       });
-    }, 15000);
+    };
+    const handleOffline = () => setIsConnectionPaused(true);
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", sendHeartbeat);
+    sendHeartbeat();
+    const heartbeat = setInterval(sendHeartbeat, 15000);
 
-    return () => clearInterval(heartbeat);
-  }, [attemptId, router]);
+    return () => {
+      clearInterval(heartbeat);
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", sendHeartbeat);
+    };
+  }, [attemptId, clearDraft, goToResult]);
 
   useEffect(() => {
     if (!attemptId) return;
@@ -216,48 +190,15 @@ export default function PlayerScreen({
   }, [attemptId, logSecurityEvent]);
 
   useEffect(() => {
-    const updateStatus = () => {
-      const offline = !navigator.onLine;
-      setIsOffline(offline);
-      if (offline) {
-        setOfflineStartedAt((current) => current ?? Date.now());
-      }
-    };
+    const updateStatus = () => setIsOffline(!navigator.onLine);
     updateStatus();
-
-    const syncSavedResponses = async () => {
-      if (!attemptId) return;
-      if (offlineStartedAt) {
-        const pausedMs = Date.now() - offlineStartedAt;
-        try {
-          const pauseResponse = await axios.post("/api/ujian/pause", {
-            attemptId,
-            pausedMs,
-          });
-          setExtraPausedMs((current) => current + (pauseResponse.data.addedPausedMs || 0));
-        } catch (error) {
-          console.error("Error saving paused duration:", error);
-        } finally {
-          setOfflineStartedAt(null);
-        }
-      }
-      response
-        .filter((item) => item.response !== "")
-        .forEach((item) => {
-          saveResponse(item._id, item.response);
-        });
-    };
-
     window.addEventListener("online", updateStatus);
-    window.addEventListener("online", syncSavedResponses);
     window.addEventListener("offline", updateStatus);
-
     return () => {
       window.removeEventListener("online", updateStatus);
-      window.removeEventListener("online", syncSavedResponses);
       window.removeEventListener("offline", updateStatus);
     };
-  }, [attemptId, response, offlineStartedAt, saveResponse]);
+  }, []);
 
   useEffect(() => {
     const handleBeforeUnload = (e: any) => {
@@ -341,7 +282,7 @@ export default function PlayerScreen({
     return <ErrorMessage message={"Sedang ada gangguan"} statusCode={400} />;
   }
 
-  if (isLoading || isFetching || !attemptId) {
+  if (isLoading || !attemptId) {
     return <ExamLoadingScreen title="Menyiapkan sesi ujian" />;
   }
 
@@ -359,6 +300,7 @@ export default function PlayerScreen({
   }
 
   const examDuration = resolveExamDuration(data.duration);
+  const connectionUnavailable = isOffline || isConnectionPaused;
   const answeredCount = response.filter((resp) => resp.response !== "").length;
   const totalQuestions = data.questions.length;
   const progressPercent = totalQuestions
@@ -382,13 +324,13 @@ export default function PlayerScreen({
               </span>
               <span
                 className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
-                  isOffline
+                  connectionUnavailable
                     ? "bg-amber-50 text-amber-700"
                     : "bg-emerald-50 text-emerald-700"
                 }`}
               >
-                {isOffline ? <FiWifiOff /> : <FiWifi />}
-                {isOffline ? "Koneksi terputus" : "Online"}
+                {connectionUnavailable ? <FiWifiOff /> : <FiWifi />}
+                {connectionUnavailable ? "Koneksi terputus" : "Online"}
               </span>
             </div>
             <h1 className="mt-3 text-xl font-bold text-slate-950 md:text-2xl">
@@ -403,8 +345,8 @@ export default function PlayerScreen({
             <CountDown
               startAt={data.createdAt}
               duration={examDuration}
-              totalPausedMs={(data.totalPausedMs || 0) + extraPausedMs}
-              isPaused={isOffline}
+              totalPausedMs={totalPausedMs}
+              isPaused={isConnectionPaused}
               onTimeUp={onSubmitTimeUp}
             />
             <Button
@@ -452,11 +394,18 @@ export default function PlayerScreen({
               </div>
 
               <div className="mb-4 space-y-3">
-                {isOffline && (
+                <p role="status" className="text-sm text-slate-700">
+                  {pendingCount ? `${pendingCount} jawaban menunggu dikirim` : "Semua jawaban tersimpan di server"}
+                </p>
+                {(saveError || storageError || submitError) && (
+                  <p role="alert" className="text-sm text-rose-700">{storageError || submitError || saveError}</p>
+                )}
+                {timeUp && <p role="status" className="text-sm text-amber-800">Waktu habis. Menyelesaikan sesi ujian...</p>}
+                {connectionUnavailable && (
                   <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
                     <FiWifiOff className="mt-0.5 shrink-0" />
                     <p>
-                    Koneksi terputus. Jawaban terakhir akan disimpan lagi saat koneksi kembali.
+                    Koneksi terputus. Timer dijeda dan dilanjutkan setelah server tersambung kembali, sesuai batas jeda yang ditetapkan server. Draft jawaban tersimpan di browser.
                     </p>
                   </div>
                 )}
@@ -478,6 +427,7 @@ export default function PlayerScreen({
                   activeIndex={activeIndex}
                   setActiveIndex={setActiveIndex}
                   onResponseChange={saveResponse}
+                  disabled={timeUp}
                 />
               )}
             </section>
@@ -513,6 +463,7 @@ export default function PlayerScreen({
                   handleConfirmSubmitModalClose={handleConfirmSubmitModalClose}
                   responses={response}
                   onConfirmSubmit={() => {
+                    clearDraft();
                     allowLeaveRef.current = true;
                     setIsSubmitConfirmed(true);
                   }}

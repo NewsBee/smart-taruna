@@ -232,7 +232,7 @@ export default function AddQuestions({
             </div>
 
             <div className="px-5 py-5 md:px-6">
-              <AddQuestionForm quizId={packageId} />
+              <AddQuestionForm quizId={packageId} testName={testName} />
             </div>
           </section>
         </section>

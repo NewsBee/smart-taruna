@@ -58,6 +58,25 @@ export async function POST(req: Request) {
       message: "User created successfully",
     });
   } catch (error: any) {
-    console.log(error);
+    console.error("Error creating user:", error);
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          user: null,
+          message: error.issues[0]?.message || "Data registrasi tidak valid",
+        },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        user: null,
+        message:
+          "Registrasi sedang tidak tersedia karena layanan database bermasalah.",
+      },
+      { status: 503 }
+    );
   }
 }

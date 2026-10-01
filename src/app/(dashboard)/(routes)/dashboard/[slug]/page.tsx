@@ -26,6 +26,7 @@ import {
   usePackagesByTestName,
 } from "@/app/(dashboard)/shared/queries";
 import axios from "axios";
+import { getPassingGradeTypes } from "@/app/(dashboard)/shared/passingGrades";
 
 interface Tag {
   id: number;
@@ -110,13 +111,12 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
     description: "",
     duration: "",
     maxAttempts: "",
-    passingGradeTWK: "",
-    passingGradeTIU: "",
-    passingGradeTKP: "",
+    passingGrades: {} as Record<string, string>,
     examToken: "",
     tryoutOrder: "",
     tags: "",
   });
+  const passingGradeTypes = getPassingGradeTypes(params.slug);
 
   const { data, isLoading, refetch } = usePackagesByTestName(
     params.slug,
@@ -287,9 +287,12 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
       description: pkg.description || "",
       duration: pkg.duration ? String(pkg.duration) : "",
       maxAttempts: pkg.maxAttempts ? String(pkg.maxAttempts) : "1",
-      passingGradeTWK: String(gradeMap.get("TWK") ?? 0),
-      passingGradeTIU: String(gradeMap.get("TIU") ?? 0),
-      passingGradeTKP: String(gradeMap.get("TKP") ?? 0),
+      passingGrades: Object.fromEntries(
+        getPassingGradeTypes(pkg.testName).map((grade) => [
+          grade.type,
+          String(gradeMap.get(grade.type) ?? 0),
+        ])
+      ),
       examToken: pkg.examToken || "",
       tryoutOrder: pkg.tryoutOrder ? String(pkg.tryoutOrder) : "",
       tags: pkg.tags?.map((tag) => tag.name).join(", ") || params.slug.toUpperCase(),
@@ -302,6 +305,16 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
     value: string
   ) => {
     setEditForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const updatePassingGradeField = (type: string, value: string) => {
+    setEditForm((current) => ({
+      ...current,
+      passingGrades: {
+        ...current.passingGrades,
+        [type]: value,
+      },
+    }));
   };
 
   const savePackageEdit = async () => {
@@ -319,11 +332,7 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
         description: editForm.description,
         duration: editForm.duration,
         maxAttempts: editForm.maxAttempts,
-        passingGrades: {
-          TWK: editForm.passingGradeTWK,
-          TIU: editForm.passingGradeTIU,
-          TKP: editForm.passingGradeTKP,
-        },
+        passingGrades: editForm.passingGrades,
         examToken: editForm.examToken,
         tryoutOrder: editForm.tryoutOrder,
         tagNames,
@@ -1015,26 +1024,19 @@ export default function PaketPage({ params }: { params: { slug: string } }) {
                   <p className="mt-1 text-xs text-slate-500">
                     Isi 0 untuk kategori yang tidak digunakan pada paket ini.
                   </p>
-                  <div className="mt-4 grid gap-3 md:grid-cols-3">
-                    {[
-                      ["passingGradeTWK", "TWK"],
-                      ["passingGradeTIU", "TIU"],
-                      ["passingGradeTKP", "TKP"],
-                    ].map(([field, label]) => (
-                      <div key={field}>
+                  <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                    {passingGradeTypes.map((grade) => (
+                      <div key={grade.type}>
                         <label className="text-xs font-semibold text-slate-600">
-                          {label}
+                          {grade.label}
                         </label>
                         <input
                           type="number"
                           min={0}
                           max={999}
-                          value={editForm[field as keyof typeof editForm]}
+                          value={editForm.passingGrades[grade.type] ?? 0}
                           onChange={(event) =>
-                            updateEditField(
-                              field as keyof typeof editForm,
-                              event.target.value
-                            )
+                            updatePassingGradeField(grade.type, event.target.value)
                           }
                           className="mt-2 h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-50"
                           placeholder="0"

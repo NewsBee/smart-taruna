@@ -1,137 +1,38 @@
 import prismadb from "@/app/lib/prismadb";
+import { requireAdmin } from "@/app/lib/require-admin";
+import { planChoiceUpdates, questionSchema } from "@/app/api/pertanyaan/_validation";
 import { NextRequest, NextResponse } from "next/server";
 
-interface Choice {
-  id: number;
-  content: string;
-  isCorrect: boolean;
-  scoreValue: number;
+export async function GET(req: NextRequest, context: { params: { id: string } }) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const id = Number(context.params.id);
+  if (!Number.isSafeInteger(id) || id < 1) return NextResponse.json({ message: "ID tidak valid." }, { status: 400 });
+  const quiz = await prismadb.question.findUnique({ where: { id }, include: { Choices: true } });
+  return quiz ? NextResponse.json(quiz) : NextResponse.json({ message: "Soal tidak ditemukan." }, { status: 404 });
 }
 
-interface Option {
-  content: string;
-  isCorrect: boolean;
-  scoreValue: number;
-}
-
-export const GET = async (
-  req: NextRequest,
-  context: { params: { id: any } }
-) => {
-  const quizId = context.params.id;
-
-  const quiz = await prismadb.question.findUnique({
-    where: {
-      id: parseInt(quizId),
-    },
-    include: {
-      Choices: true,
-    },
-  });
-
-  if (quiz) {
-    return NextResponse.json(quiz);
-  } else {
-    return NextResponse.json(
-      { message: "Gagal mengambil data" },
-      { status: 500 }
-    );
+export async function PUT(req: NextRequest, context: { params: { id: string } }) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const id = Number(context.params.id);
+  if (!Number.isSafeInteger(id) || id < 1) return NextResponse.json({ message: "ID tidak valid." }, { status: 400 });
+  const parsed = questionSchema.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
+  const existing = await prismadb.question.findUnique({ where: { id }, include: { Choices: true } });
+  if (!existing) return NextResponse.json({ message: "Soal tidak ditemukan." }, { status: 404 });
+  const { Choices, ...data } = parsed.data;
+  const ownedIds = new Set(existing.Choices.map((choice) => choice.id));
+  if (Choices.some((choice) => choice.id && !ownedIds.has(choice.id))) {
+    return NextResponse.json({ message: "Pilihan tidak termasuk soal ini." }, { status: 400 });
   }
-};
-
-export const PUT = async (
-  req: NextRequest,
-  context: { params: { id: any } }
-) => {
-  const questionId = context.params.id;
-  const { content, type, answerType, correctAnswer, tolerance, explanation, explanationImage, Choices = [], image } = await req.json();
-
   try {
-    const resolvedAnswerType = answerType || "MULTIPLE_CHOICE";
-    const isInputQuestion =
-      resolvedAnswerType === "SHORT_TEXT" || resolvedAnswerType === "NUMERIC";
-
-    if (isInputQuestion) {
-      const updatedQuestion = await prismadb.question.update({
-        where: { id: parseInt(questionId) },
-        data: {
-          content,
-          type,
-          answerType: resolvedAnswerType,
-          correctAnswer,
-          tolerance:
-            resolvedAnswerType === "NUMERIC" && tolerance !== undefined
-              ? Number(tolerance)
-              : null,
-          explanation,
-          explanationImage,
-          Choices: {
-            deleteMany: {},
-          },
-          image,
-        },
-      });
-
-      return NextResponse.json({ updatedQuestion }, { status: 200 });
-    }
-
-    const updateManyChoices = Choices.map((choice: Choice) => {
-      // Logika untuk menentukan isCorrect dan scoreValue berdasarkan tipe soal
-      const isCorrect =
-        type === "TKP" || resolvedAnswerType === "SCORED_CHOICE"
-          ? true
-          : choice.isCorrect; // Semua choice dianggap benar untuk TKP
-      const scoreValue =
-        type === "TKP" || resolvedAnswerType === "SCORED_CHOICE"
-          ? choice.scoreValue
-          : choice.isCorrect
-          ? 5
-          : 0; // Gunakan scoreValue dari frontend untuk TKP, atau tetapkan 5 jika benar dan 0 jika salah untuk tipe lain
-
-      return {
-        where: { id: choice.id },
-        data: {
-          content: choice.content,
-          isCorrect: isCorrect,
-          scoreValue: scoreValue
-        },
-      };
-    });
-
     const updatedQuestion = await prismadb.question.update({
-      where: { id: parseInt(questionId) },
-      data: {
-        content,
-        type,
-        answerType: resolvedAnswerType,
-        correctAnswer: null,
-        tolerance: null,
-        explanation,
-        explanationImage,
-        Choices: {
-          updateMany: updateManyChoices,
-        },
-        image,
-      },
+      where: { id }, data: { ...data, Choices: planChoiceUpdates(Choices) }, include: { Choices: true },
     });
-    
-    return NextResponse.json({ updatedQuestion }, { status: 200 });
+    return NextResponse.json({ updatedQuestion });
   } catch (error) {
-    console.log(error);
-    return NextResponse.json(
-      { message: "Internal Server Error", error },
-      { status: 500 }
-    );
+    console.error("Error updating question:", error);
+    return NextResponse.json({ message: "Gagal menyimpan soal." }, { status: 500 });
   }
-
-  //   const updatedQuestion = await prismadb.question.findByIdAndUpdate(
-  //     id,
-  //     { title, correct, options },
-  //     { new: true }
-  //   );
-  //   if (updatedQuestion) {
-  //     return NextResponse.json({ updatedQuestion }, { status: 200 });
-  //   } else {
-  //     return NextResponse.json({ message:"Internal Server Error" }, { status: 500 });
-  //   }
-};
+}

@@ -18,9 +18,10 @@ import { useEffect } from "react";
 
 interface Props {
   quizId: number;
+  testName?: string;
 }
 
-export const AddQuestionForm: React.FC<Props> = ({ quizId }) => {
+export const AddQuestionForm: React.FC<Props> = ({ quizId, testName }) => {
   const { enqueueSnackbar } = useSnackbar();
   if (!quizId) {
     enqueueSnackbar(errorMessages.default, { variant: "error" });
@@ -188,7 +189,11 @@ export const AddQuestionForm: React.FC<Props> = ({ quizId }) => {
         }
       }}
     >
-      <AddEditQuestionFormFields quizId={quizId} isLoading={isLoading} />
+      <AddEditQuestionFormFields
+        quizId={quizId}
+        isLoading={isLoading}
+        testName={testName}
+      />
     </Formik>
   );
 };

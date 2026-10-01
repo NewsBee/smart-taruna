@@ -14,23 +14,17 @@ export const AddEditQuizValidation = Yup.object().shape({
       .min(1, 'Batas percobaan minimal 1 kali')
       .max(20, 'Batas percobaan maksimal 20 kali')
       .required('Batas percobaan wajib diisi'),
-    passingGrades: Yup.object().shape({
-      TWK: Yup.number()
-        .typeError('Passing grade TWK harus berupa angka')
-        .integer('Passing grade TWK harus bilangan bulat')
-        .min(0, 'Passing grade TWK minimal 0')
-        .max(999, 'Passing grade TWK maksimal 999'),
-      TIU: Yup.number()
-        .typeError('Passing grade TIU harus berupa angka')
-        .integer('Passing grade TIU harus bilangan bulat')
-        .min(0, 'Passing grade TIU minimal 0')
-        .max(999, 'Passing grade TIU maksimal 999'),
-      TKP: Yup.number()
-        .typeError('Passing grade TKP harus berupa angka')
-        .integer('Passing grade TKP harus bilangan bulat')
-        .min(0, 'Passing grade TKP minimal 0')
-        .max(999, 'Passing grade TKP maksimal 999'),
-    }),
+    passingGrades: Yup.object().test(
+      'passing-grade-values',
+      'Passing grade harus berupa bilangan bulat 0 sampai 999',
+      (value) => {
+        if (!value || typeof value !== 'object') return true;
+        return Object.values(value).every((item) => {
+          const numberValue = Number(item);
+          return Number.isInteger(numberValue) && numberValue >= 0 && numberValue <= 999;
+        });
+      }
+    ),
     examToken: Yup.string()
       .trim()
       .min(6, 'Exam token minimal 6 karakter')

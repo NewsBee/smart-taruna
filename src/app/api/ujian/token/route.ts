@@ -164,6 +164,7 @@ export const POST = async (req: NextRequest) => {
       packageId: packageByToken.id,
       testId: packageByToken.Test.id,
       createdAt: new Date(),
+      lastHeartbeatAt: new Date(),
       examTokenVerifiedAt: new Date(),
       questionOrder,
       choiceOrder,

@@ -34,7 +34,7 @@ export const Option: React.FC<Props> = ({
   const classes = getClasses();
 
   return (
-    <button disabled={disabled} onClick={onClick} className={classes}>
+    <button disabled={disabled} aria-pressed={isSelected} onClick={onClick} className={classes}>
       <div
         className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border text-sm font-bold transition-all ${
           isSelected

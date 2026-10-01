@@ -10,6 +10,7 @@ interface Props {
   response: IResponse[];
   setResponse: React.Dispatch<React.SetStateAction<IResponse[] | []>>;
   onResponseChange?: (questionId: string, answer: string) => void;
+  disabled?: boolean;
 }
 
 export const Player: React.FC<Props> = ({
@@ -19,6 +20,7 @@ export const Player: React.FC<Props> = ({
   response,
   setResponse,
   onResponseChange,
+  disabled = false,
 }) => {
   const [selectedOption, setSelectedOption] = useState<string>("");
   const currentQuestion = questions?.[activeIndex];
@@ -38,7 +40,7 @@ export const Player: React.FC<Props> = ({
   //   });
   // };
   const onOptionClick = (option: string) => {
-    if (!currentQuestion) return;
+    if (!currentQuestion || disabled) return;
     // console.log(response)
     setSelectedOption(option);
     setResponse((res) =>
@@ -50,7 +52,7 @@ export const Player: React.FC<Props> = ({
   };
 
   const onInputChange = (answer: string) => {
-    if (!currentQuestion) return;
+    if (!currentQuestion || disabled) return;
     setSelectedOption(answer);
     setResponse((res) =>
       res.map((r, index) =>
@@ -159,6 +161,7 @@ export const Player: React.FC<Props> = ({
               className="mt-4 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-100 md:text-base"
               type={currentQuestion.answerType === "NUMERIC" ? "number" : "text"}
               value={selectedOption}
+              disabled={disabled}
               onChange={(event) => onInputChange(event.target.value)}
               placeholder="Ketik jawaban"
             />
@@ -167,6 +170,7 @@ export const Player: React.FC<Props> = ({
             <Option
               key={i}
               index={i}
+              disabled={disabled}
               onClick={() => onOptionClick(option.value)}
               selectedOption={selectedOption}
               option={option}

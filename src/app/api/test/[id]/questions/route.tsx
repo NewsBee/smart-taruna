@@ -1,4 +1,6 @@
 import { authOptions } from "@/app/lib/auth-options";
+import { requireAdmin } from "@/app/lib/require-admin";
+import { questionSchema } from "@/app/api/pertanyaan/_validation";
 import { ensureAttemptOpen } from "@/app/api/ujian/_attempt";
 import {
   createChoiceOrder,
@@ -228,6 +230,7 @@ export const GET = async (
 
     // Transformasi data untuk response
     const transformedData = {
+      userId,
       packageId: packageWithQuestions.id,
       attemptId: attempt.id,
       title: packageWithQuestions.title,
@@ -252,7 +255,6 @@ export const GET = async (
         type: question.type,
         answerType: question.answerType,
         image: question.image,
-        explanationImage: question.explanationImage,
         savedResponse: savedResponseMap.get(question.id) ?? "",
         choices: orderedChoices.map((choice) => ({
           id: choice.id,
@@ -308,8 +310,12 @@ export const GET = async (
 // }
 
 export async function POST(req: Request, context: { params: { id: any } }) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
   const packageId = context.params.id;
-  const { content, type, answerType, correctAnswer, tolerance, explanation, explanationImage, Choices = [], image } = await req.json();
+  const parsed = questionSchema.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ message: parsed.error.issues[0].message }, { status: 400 });
+  const { content, type, answerType, correctAnswer, tolerance, explanation, explanationImage, Choices = [], image } = parsed.data;
   try {
     // Periksa apakah tipe soal adalah TKP dan sesuaikan nilai isCorrect jika benar
     const resolvedAnswerType = answerType || "MULTIPLE_CHOICE";
@@ -370,6 +376,8 @@ export async function POST(req: Request, context: { params: { id: any } }) {
 }
 
 export const DELETE = async (req: Request) => {
+  const denied = await requireAdmin();
+  if (denied) return denied;
   const body = await req.json();
   const { id } = body;
 

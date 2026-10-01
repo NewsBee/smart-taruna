@@ -120,8 +120,8 @@ export const UpdateQuestionForm: React.FC<Props> = ({
               { variant: "success" }
             );
             router.push(`/dashboard/${slug}/${quizId}`);
-            queryClient.invalidateQueries(["Quiz Questions",'quiz']);
-            queryClient.invalidateQueries(["Quiz Question"]);
+            queryClient.invalidateQueries(["quizQuestions"]);
+            queryClient.invalidateQueries(["quiz"]);
           },
           onError: (error) => {
             // console.log(error)
@@ -134,7 +134,7 @@ export const UpdateQuestionForm: React.FC<Props> = ({
         });
       }}
     >
-      <AddEditQuestionFormFields isLoading={false} />
+      <AddEditQuestionFormFields isLoading={isLoading} quizId={quizId} testName={slug} />
     </Formik>
   );
 };

@@ -76,8 +76,11 @@ export const authOptions: NextAuthOptions = {
     async signIn({ account, profile }) {
       if (account?.provider !== "google") return true;
 
-      const email = profile?.email;
-      if (!email) return false;
+      const googleProfile = profile as
+        | { email?: string; email_verified?: boolean; name?: string }
+        | undefined;
+      const email = googleProfile?.email;
+      if (!email || googleProfile?.email_verified !== true) return false;
 
       const existingUser = await prismadb.user.findUnique({
         where: { email },
@@ -85,7 +88,7 @@ export const authOptions: NextAuthOptions = {
 
       if (existingUser) return true;
 
-      const username = await getUniqueUsername(profile.name, email);
+      const username = await getUniqueUsername(googleProfile.name, email);
       const password = await hash(randomUUID(), 10);
 
       await prismadb.user.create({

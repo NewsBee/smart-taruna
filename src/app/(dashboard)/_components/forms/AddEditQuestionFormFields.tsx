@@ -6,15 +6,18 @@ import { FormikError } from "../../shared/utils";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useState } from "react";
+import { getQuestionTypes } from "../../shared/questionTypes";
 
 interface Props {
   isLoading: boolean;
   quizId?: number;
+  testName?: string;
 }
 
 export const AddEditQuestionFormFields: React.FC<Props> = ({
   isLoading,
   quizId,
+  testName,
 }) => {
   const [uploadingField, setUploadingField] = useState<
     "image" | "explanationImage" | null
@@ -30,6 +33,10 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({
   } = useFormikContext<IQuestionForm>();
   // console.log(quizId)
   const router = useRouter();
+  const questionTypes = getQuestionTypes(testName);
+  const questionTypeOptions = values.type && !questionTypes.some((item) => item.type === values.type)
+    ? [...questionTypes, { type: values.type, label: `${values.type} (lama)` }]
+    : questionTypes;
   const clearUploadedImage = (target: "image" | "explanationImage") => {
     setFieldValue(target, "");
     setFieldValue(
@@ -160,10 +167,11 @@ export const AddEditQuestionFormFields: React.FC<Props> = ({
           label="Tipe soal"
           variant="outlined"
         >
-          <MenuItem value="TIU">TIU</MenuItem>
-          <MenuItem value="TWK">TWK</MenuItem>
-          <MenuItem value="TKP">TKP</MenuItem>
-          <MenuItem value="TPA">TPA</MenuItem>
+          {questionTypeOptions.map((item) => (
+            <MenuItem key={item.type} value={item.type}>
+              {item.label}
+            </MenuItem>
+          ))}
           {/* <MenuItem value="TBI">TBI</MenuItem> */}
         </TextField>
       </div>

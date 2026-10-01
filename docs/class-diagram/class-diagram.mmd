@@ -1,0 +1,119 @@
+%% UML domain class diagram generated from prisma/schema.prisma.
+%% Nullable attributes use ?. Relationships are associations, not inheritance.
+classDiagram
+direction TB
+class User {
+  +id: Int
+  +username: String
+  +email: String
+  +password: String
+  +role: String
+  +gender: String?
+  +phoneNumber: String?
+  +education: String?
+  +major: String?
+  +institution: String?
+  +createdAt: DateTime
+  +updatedAt: DateTime
+  +profileImage: String?
+  +bio: String?
+  +birthDate: DateTime?
+}
+class SocialLink {
+  +id: Int
+  +userId: Int
+  +platform: String
+  +link: String
+}
+class Test {
+  +id: Int
+  +name: String
+  +createdAt: DateTime
+  +updatedAt: DateTime
+}
+class Package {
+  +id: Int
+  +testName: String
+  +title: String
+  +description: String
+  +duration: Int?
+  +maxAttempts: Int
+  +isHidden: Boolean
+  +isLocked: Boolean
+  +deletedAt: DateTime?
+  +deletedById: Int?
+  +examToken: String?
+  +tryoutOrder: Int?
+}
+class PackagePassingGrade {
+  +id: Int
+  +packageId: Int
+  +type: String
+  +minScore: Int
+}
+class Tag {
+  +id: Int
+  +name: String
+}
+class Question {
+  +id: Int
+  +content: String
+  +type: String
+  +answerType: String
+  +correctAnswer: String?
+  +tolerance: Float?
+  +packageId: Int
+  +image: String?
+  +explanation: String?
+  +explanationImage: String?
+}
+class Choice {
+  +id: Int
+  +content: String
+  +isCorrect: Boolean
+  +scoreValue: Int
+  +questionId: Int
+}
+class Attempt {
+  +id: Int
+  +score: Int?
+  +testId: Int
+  +packageId: Int
+  +userId: Int
+  +createdAt: DateTime
+  +completedAt: DateTime?
+  +lastHeartbeatAt: DateTime?
+  +totalPausedMs: Int
+  +examTokenVerifiedAt: DateTime?
+  +questionOrder: Json?
+  +choiceOrder: Json?
+}
+class Response {
+  +id: Int
+  +content: String?
+  +score: Int
+  +attemptId: Int
+  +questionId: Int
+}
+class SecurityEvent {
+  +id: Int
+  +attemptId: Int
+  +userId: Int
+  +type: String
+  +metadata: Json?
+  +createdAt: DateTime
+}
+User "1" -- "0..*" Attempt : mengerjakan
+User "1" -- "0..*" SecurityEvent : memiliki log
+User "0..1" -- "0..*" Package : mencatat penghapusan
+User "1" -- "0..*" SocialLink : memiliki profil sosial
+Test "1" -- "0..*" Package : mengelompokkan
+Test "1" -- "0..*" Attempt : jenis ujian sesi
+Package "1" -- "0..*" Question : memuat soal
+Package "1" -- "0..*" Attempt : dikerjakan dalam
+Package "0..*" -- "0..*" Tag : ditandai
+Package "1" -- "0..*" PackagePassingGrade : memiliki ambang lulus
+Question "1" -- "0..*" Choice : memiliki opsi
+Question "1" -- "0..*" Response : dijawab melalui
+Attempt "1" -- "0..*" Response : menyimpan jawaban
+Attempt "1" -- "0..*" SecurityEvent : mencatat aktivitas

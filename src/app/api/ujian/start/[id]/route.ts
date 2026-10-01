@@ -144,6 +144,7 @@ export const POST = async (req: NextRequest, context: { params: { id: any } }) =
             packageId: packageId,
             testId: relatedPackage.Test.id,
             createdAt: new Date(),
+            lastHeartbeatAt: new Date(),
             examTokenVerifiedAt: new Date(),
             questionOrder,
             choiceOrder,

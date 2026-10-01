@@ -1,18 +1,26 @@
 import { useFormikContext } from "formik";
 import { useState } from "react";
 import { IQuiz } from "../shared/interfaces";
+import { getPassingGradeTypes } from "../shared/passingGrades";
 
 function getError(errors: any, touched: any, field: string) {
   return touched[field] && errors[field] ? String(errors[field]) : "";
 }
 
-export const AddEditQuizFormFields = ({ id }: { id?: string }) => {
+export const AddEditQuizFormFields = ({
+  id,
+  testName,
+}: {
+  id?: string;
+  testName?: string;
+}) => {
   const { touched, errors, values, handleBlur, handleChange, setFieldValue } =
     useFormikContext<IQuiz>();
   const [tagDraft, setTagDraft] = useState("");
 
   const tags = values.tags || [];
   const passingGrades = values.passingGrades || {};
+  const passingGradeTypes = getPassingGradeTypes(testName);
 
   const addTag = () => {
     const nextTag = tagDraft.trim();
@@ -175,22 +183,22 @@ export const AddEditQuizFormFields = ({ id }: { id?: string }) => {
             </p>
           </div>
         </div>
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
-          {["TWK", "TIU", "TKP"].map((type) => (
-            <div key={type}>
+        <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {passingGradeTypes.map((grade) => (
+            <div key={grade.type}>
               <label
-                htmlFor={`passingGrades.${type}`}
+                htmlFor={`passingGrades.${grade.type}`}
                 className="text-sm font-semibold text-slate-800"
               >
-                {type}
+                {grade.label}
               </label>
               <input
-                id={`passingGrades.${type}`}
-                name={`passingGrades.${type}`}
+                id={`passingGrades.${grade.type}`}
+                name={`passingGrades.${grade.type}`}
                 type="number"
                 min={0}
                 max={999}
-                value={passingGrades[type] ?? 0}
+                value={passingGrades[grade.type] ?? 0}
                 onChange={handleChange}
                 onBlur={handleBlur}
                 className="mt-2 h-11 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-950 outline-none transition focus:border-teal-600 focus:ring-4 focus:ring-teal-50"

@@ -50,7 +50,7 @@ export const GET = async (req: NextRequest, context: { params: { id: any } }) =>
           },
         },
         // Include other related data if needed
-        User: true, // Asumsi Anda memiliki relasi ke tabel User
+        User: { select: { id: true, username: true, email: true } },
       },
     });
 
@@ -59,6 +59,9 @@ export const GET = async (req: NextRequest, context: { params: { id: any } }) =>
       return NextResponse.json({message: "Anda tidak memiliki akses"}, {status: 403});
     }
 
+    if (!attempt.completedAt && session.user.role !== "admin") {
+      return NextResponse.json({ message: "Pembahasan tersedia setelah ujian selesai." }, { status: 403 });
+    }
     if (attempt) {
       return NextResponse.json({attempt})
     } else {

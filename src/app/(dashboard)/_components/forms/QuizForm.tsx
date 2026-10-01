@@ -8,6 +8,7 @@ import { IQuizForm } from "../../shared/interfaces";
 import { AddEditQuizValidation } from "../../shared/validationSchema";
 import { AddEditQuizFormFields } from "../AddEditQuizFormFields";
 import { useRouter } from "next/navigation";
+import { getDefaultPassingGrades } from "../../shared/passingGrades";
 
 interface Props {
   mutateAsync: UseMutateAsyncFunction<any, AxiosError<any, any>, any, unknown>;
@@ -36,11 +37,7 @@ export const QuizForm: React.FC<Props> = ({
   const router = useRouter()
 
   const queryClient = useQueryClient();
-  const normalizedTestName = String(testname || "").toUpperCase();
-  const defaultPassingGrades =
-    normalizedTestName === "SKD"
-      ? { TWK: 65, TIU: 80, TKP: 166 }
-      : { TWK: 0, TIU: 0, TKP: 0 };
+  const defaultPassingGrades = getDefaultPassingGrades(testname);
 
   return (
     <Formik<IQuizForm>
@@ -114,7 +111,7 @@ export const QuizForm: React.FC<Props> = ({
       {({ handleSubmit, isSubmitting }) => (
         <form className="pb-2" onSubmit={handleSubmit}>
           <div>
-            <AddEditQuizFormFields id={id} />
+            <AddEditQuizFormFields id={id} testName={testname} />
             <div className="mt-6 flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
               <Button
                 variant="outlined"

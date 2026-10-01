@@ -64,10 +64,5 @@ export const POST = async (req: NextRequest) => {
     },
   });
 
-  await prismadb.attempt.update({
-    where: { id: attemptId },
-    data: { lastHeartbeatAt: new Date() },
-  });
-
   return NextResponse.json({ saved: true }, { status: 200 });
 };

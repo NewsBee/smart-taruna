@@ -1,5 +1,5 @@
 import { Button } from "@material-ui/core";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { IResponse } from "../shared/interfaces";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -21,6 +21,9 @@ export const ConfirmSubmitModalContent: React.FC<Props> = ({
   attemptId,
   onConfirmSubmit, // Pastikan prop ini diterima
 }) => {
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const submittingRef = useRef(false);
   const [marked, setMarked] = useState(0);
   const [unmarked, setUnmarked] = useState(0);
   // const [attemptId, setAttemptId] = useState(null);
@@ -28,17 +31,20 @@ export const ConfirmSubmitModalContent: React.FC<Props> = ({
   // console.log(responses)
 
   const handleSubmitAnswers = async () => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setSubmitting(true);
+    setSubmitError("");
     try {
-      // Call your API to submit the responses
-      const res = await axios.post('/api/ujian/submit', { attemptId, responses });
-      console.log('Submit response:', res.data);
+      await axios.post('/api/ujian/submit', { attemptId, responses }, { timeout: 20000 });
       onConfirmSubmit?.();
       handleConfirmSubmitModalClose();
-      // Handle post-submit actions (e.g., navigate to results page)
-    } catch (error) {
-      console.error('Error submitting quiz:', error);
-    } finally{
-      router.push(`/hasil/${attemptId}`)
+      router.push(`/hasil/${attemptId}`);
+    } catch (error: any) {
+      setSubmitError(error.response?.data?.message || "Jawaban belum berhasil dikumpulkan. Periksa koneksi lalu coba lagi.");
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
   };
 
@@ -96,17 +102,18 @@ export const ConfirmSubmitModalContent: React.FC<Props> = ({
           </p>
         )}
       </div>
+      {submitError && <p role="alert" className="mx-10 text-sm text-rose-700">{submitError}</p>}
       <div className="flex flex-1 w-full mt-4 px-10 pb-8">
         <div className="flex ml-auto">
-          <Button onClick={handleConfirmSubmitModalClose}>Batal</Button>
+          <Button disabled={submitting} onClick={handleConfirmSubmitModalClose}>Batal</Button>
           <div className="ml-4">
             <Button
               variant="contained"
               color="primary"
-              disabled={isQuizCorrectAnsLoading || marked === 0}
+              disabled={submitting || isQuizCorrectAnsLoading || marked === 0}
               onClick={handleSubmitAnswers}
             >
-              Kumpulkan
+              {submitting ? "Mengumpulkan..." : "Kumpulkan"}
             </Button>
           </div>
         </div>

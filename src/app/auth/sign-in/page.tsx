@@ -2,10 +2,10 @@
 
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import GoogleIcon from "@mui/icons-material/Google";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import { IconButton } from "@mui/material";
 import { signIn } from "next-auth/react";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -39,10 +39,6 @@ const LoginPage = () => {
 
     setError("Email atau password tidak sesuai.");
     setIsLoading(false);
-  };
-
-  const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl: "/dashboard" });
   };
 
   return (
@@ -116,14 +112,9 @@ const LoginPage = () => {
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                className="mt-6 inline-flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-slate-300 bg-white text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-              >
-                <GoogleIcon fontSize="small" className="text-teal-600" />
-                Masuk dengan Google
-              </button>
+              <div className="mt-6">
+                <GoogleSignInButton label="Masuk dengan Google" />
+              </div>
 
               <div className="my-5 flex items-center gap-3 text-xs font-semibold uppercase text-slate-400">
                 <span className="h-px flex-1 bg-slate-200" />

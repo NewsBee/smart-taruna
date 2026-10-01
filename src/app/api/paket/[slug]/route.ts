@@ -8,6 +8,9 @@ const MAIN_TEST_NAMES = ["SKD", "TPA"];
 export const GET = async(req: NextRequest, context: { params: { slug: any } } ) =>{
   const slug = String(context.params.slug || "").toUpperCase();
   const deletedMode = req.nextUrl.searchParams.get("deleted");
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const isAdmin = session.user.role === "admin";
 
   if (!MAIN_TEST_NAMES.includes(slug)) {
     return NextResponse.json({ packages: [] });
@@ -22,6 +25,7 @@ export const GET = async(req: NextRequest, context: { params: { slug: any } } ) 
 
     const packages = await prismadb.package.findMany({
         where: {
+          ...(isAdmin ? {} : { isHidden: false }),
           Test: {
             name: slug,
           },
@@ -37,19 +41,19 @@ export const GET = async(req: NextRequest, context: { params: { slug: any } } ) 
           description: true,
           duration: true,
           maxAttempts: true,
-          examToken: true,
+          examToken: isAdmin,
           tryoutOrder: true,
           isHidden: true,
           isLocked: true,
           deletedAt: true,
-          deletedBy: {
+          deletedBy: isAdmin ? {
             select: {
               id: true,
               username: true,
               email: true,
             },
-          },
-          questions: true, // Opsional, jika Anda ingin memasukkan pertanyaan dari masing-masing paket
+          } : false,
+          questions: isAdmin ? true : { select: { id: true } },
           tags: true,
           passingGrades: {
             orderBy: { type: "asc" },
